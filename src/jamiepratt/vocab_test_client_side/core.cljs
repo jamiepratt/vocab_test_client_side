@@ -136,13 +136,13 @@
                       :result :wrong})
                    (:wrong question)))
         {:label "don't know"
-         :result :unknown}))
+         :result :dk}))
 
 (defn summarize-results [answers]
   {:answered (count answers)
    :total (count questions)
    :correct (count (filter #(= :correct (:result %)) answers))
-   :unknown (count (filter #(= :unknown (:result %)) answers))
+   :dk (count (filter #(= :dk (:result %)) answers))
    :wrong (count (filter #(= :wrong (:result %)) answers))})
 
 (defn feedback-for [choice question]
@@ -150,9 +150,9 @@
     :correct {:kind :correct
               :selected (:label choice)
               :message "Correct"}
-    :unknown {:kind :wrong
-              :selected (:label choice)
-              :message (:correct question)}
+    :dk {:kind :wrong
+         :selected (:label choice)
+         :message (str "Correct answer: " (:correct question))}
     :wrong {:kind :wrong
             :selected (:label choice)
             :message (str "Correct answer: " (:correct question))}))
@@ -164,7 +164,9 @@
              state
              (let [answer {:question-index current-question-index
                            :word (:word question)
+                           :word-class (:word-class question)
                            :band (:band question)
+                           :choices (mapv :label (choice-options question))
                            :selected (:label choice)
                            :correct (:correct question)
                            :result (:result choice)}
@@ -238,19 +240,20 @@
 
 (defn quiz-screen [{:keys [current-question-index answer-locked? feedback]}]
   (let [question (nth questions current-question-index)
-        progress (* 100 (/ current-question-index (count questions)))]
+        current-question-number (inc current-question-index)
+        progress (* 100 (/ current-question-number (count questions)))]
     [:main {:class "min-h-screen bg-slate-50 px-4 py-8 text-slate-950 sm:px-6"}
      [:section {:aria-labelledby "question-word"
                 :class "mx-auto grid w-full max-w-2xl gap-6 rounded-lg border border-slate-200 bg-white p-6 shadow-xl shadow-slate-950/10 sm:p-8"}
       [:div {:class "h-2 overflow-hidden rounded-full bg-slate-100"
              :role "progressbar"
-             :aria-valuemin 0
+             :aria-valuemin 1
              :aria-valuemax (count questions)
-             :aria-valuenow current-question-index}
+             :aria-valuenow current-question-number}
        [:div {:class "h-full rounded-full bg-emerald-700 transition-all"
               :style {:width (str progress "%")}}]]
       [:div {:class "flex flex-wrap items-center justify-between gap-3 text-sm font-semibold text-slate-600"}
-       [:span (str (inc current-question-index) " / " (count questions))]
+       [:span (str current-question-number " / " (count questions))]
        [:span {:class "rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800"}
         (band-labels (:band question))]]
       [:div {:class "grid gap-2 text-center"}
@@ -284,6 +287,10 @@
      "Results"]
     [:p {:class "text-base text-slate-700"}
      (str (:correct results-data) " of " (:total results-data) " correct")]
+    [:div {:class "grid gap-2 text-sm font-semibold text-slate-700"}
+     [:p (str "Answered: " (:answered results-data))]
+     [:p (str "Wrong: " (:wrong results-data))]
+     [:p (str "Don't know: " (:dk results-data))]]
     [:button {:type "button"
               :class button-class
               :on-click begin-test}

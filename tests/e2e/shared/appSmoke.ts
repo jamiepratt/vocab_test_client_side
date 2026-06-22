@@ -1,5 +1,37 @@
 import { expect, type Page } from "@playwright/test";
 
+async function expectProgress(page: Page, current: number) {
+  const total = 80;
+
+  await expect(page.getByText(`${current} / ${total}`)).toBeVisible();
+  await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", String(current));
+  await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuemax", String(total));
+}
+
+async function expectQuestion(page: Page, question: {
+  current: number;
+  word: string;
+  wordClass: string;
+  band: string;
+  choices: string[];
+}) {
+  await expectProgress(page, question.current);
+  await expect(page.getByText(question.band, { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: question.word })).toBeVisible();
+  await expect(page.getByText(question.wordClass, { exact: true })).toBeVisible();
+  await expect(page.getByText("Select the correct meaning")).toBeVisible();
+
+  for (const choice of question.choices) {
+    await expect(page.getByRole("button", { name: choice, exact: true })).toBeVisible();
+  }
+}
+
+async function expectChoicesLocked(page: Page, choices: string[]) {
+  for (const choice of choices) {
+    await expect(page.getByRole("button", { name: choice, exact: true })).toBeDisabled();
+  }
+}
+
 export async function runAppSmoke(page: Page) {
   await page.goto("/index.html");
 
@@ -16,16 +48,90 @@ export async function runAppSmoke(page: Page) {
 
   await page.getByRole("button", { name: "Begin Test" }).click();
 
-  await expect(page.getByText("1 / 80")).toBeVisible();
-  await expect(page.getByText("0-250", { exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { level: 2, name: "woda" })).toBeVisible();
-  await expect(page.getByText("noun", { exact: true })).toBeVisible();
-  await expect(page.getByText("Select the correct meaning")).toBeVisible();
-  await expect(page.getByRole("button", { name: "water" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "fire" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "air" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "earth" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "don't know" })).toBeVisible();
+  const firstChoices = ["water", "fire", "air", "earth", "don't know"];
+  await expectQuestion(page, {
+    current: 1,
+    word: "woda",
+    wordClass: "noun",
+    band: "0-250",
+    choices: firstChoices,
+  });
+
+  await page.getByRole("button", { name: "water", exact: true }).click();
+
+  await expect(page.getByText("Correct", { exact: true })).toBeVisible();
+  await expectChoicesLocked(page, firstChoices);
+  await expect(page.getByRole("button", { name: "Next" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Next" }).click();
+
+  const secondChoices = ["to eat", "to drink", "to sleep", "to walk", "don't know"];
+  await expectQuestion(page, {
+    current: 2,
+    word: "jeść",
+    wordClass: "verb",
+    band: "0-250",
+    choices: secondChoices,
+  });
+
+  await page.getByRole("button", { name: "to drink", exact: true }).click();
+
+  await expect(page.getByText("Correct answer: to eat", { exact: true })).toBeVisible();
+  await expectChoicesLocked(page, secondChoices);
+  await expect(page.getByRole("button", { name: "Next" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Next" }).click();
+
+  const thirdChoices = ["big / large", "small", "fast", "heavy", "don't know"];
+  await expectQuestion(page, {
+    current: 3,
+    word: "duży",
+    wordClass: "adj",
+    band: "0-250",
+    choices: thirdChoices,
+  });
+
+  await page.getByRole("button", { name: "don't know", exact: true }).click();
+
+  await expect(page.getByText("Correct answer: big / large", { exact: true })).toBeVisible();
+  await expectChoicesLocked(page, thirdChoices);
+  await expect(page.getByRole("button", { name: "Next" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Next" }).click();
+
+  for (let current = 4; current <= 79; current++) {
+    await expectProgress(page, current);
+    await page.getByRole("button", { name: "don't know", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Next" })).toBeVisible();
+    await page.getByRole("button", { name: "Next" }).click();
+  }
+
+  const lastChoices = [
+    "unyielding / steadfast / indomitable",
+    "fragile / weak",
+    "flexible",
+    "hesitant",
+    "don't know",
+  ];
+  await expectQuestion(page, {
+    current: 80,
+    word: "niezłomny",
+    wordClass: "adj",
+    band: "3.5K+",
+    choices: lastChoices,
+  });
+
+  await page.getByRole("button", { name: "don't know", exact: true }).click();
+
+  await expect(page.getByText("Correct answer: unyielding / steadfast / indomitable", { exact: true })).toBeVisible();
+  await expectChoicesLocked(page, lastChoices);
+
+  await page.getByRole("button", { name: "Next" }).click();
+
+  await expect(page.getByRole("heading", { level: 1, name: "Results" })).toBeVisible();
+  await expect(page.getByText("1 of 80 correct", { exact: true })).toBeVisible();
+  await expect(page.getByText("Wrong: 1", { exact: true })).toBeVisible();
+  await expect(page.getByText("Don't know: 78", { exact: true })).toBeVisible();
 
   await expect(page.getByRole("heading", { level: 2, name: "Counter" })).toHaveCount(0);
   await expect(page.getByText("Status: Disabled")).toHaveCount(0);
