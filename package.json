@@ -1,0 +1,29 @@
+{
+  "name": "vocab-test-client-side",
+  "private": true,
+  "scripts": {
+    "css:build": "mkdir -p public/css && tailwindcss -i ./src/styles.css -o ./public/css/app.css",
+    "css:watch": "mkdir -p public/css && tailwindcss -i ./src/styles.css -o ./public/css/app.css --watch",
+    "css:release": "mkdir -p target/release/public/css && tailwindcss -i ./src/styles.css -o ./target/release/public/css/app.css --minify",
+    "shadow:watch": "clojure -M:shadow watch dev",
+    "dev": "sh -c 'npm run css:watch & css_pid=$!; trap \"kill $css_pid 2>/dev/null\" EXIT INT TERM; npm run shadow:watch'",
+    "compile": "npm run css:build && clojure -M:shadow compile dev",
+    "release": "npm run css:release && clojure -M:shadow release release",
+    "server": "clojure -M:shadow server",
+    "lint:clj": "clj-kondo --lint src deps.edn shadow-cljs.edn",
+    "test:e2e": "playwright test -c playwright.dev.config.ts",
+    "test:e2e:headed": "playwright test -c playwright.dev.config.ts --headed",
+    "test:e2e:release": "npm run release && mkdir -p target/release/public && cp public/index.html target/release/public/index.html && playwright test -c playwright.release.config.ts",
+    "verify": "npm run lint:clj && npm run compile && npm run test:e2e && npm run test:e2e:release"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "@tailwindcss/cli": "^4.3.1",
+    "tailwindcss": "^4.3.1"
+  },
+  "dependencies": {
+    "process": "^0.11.10",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
+  }
+}

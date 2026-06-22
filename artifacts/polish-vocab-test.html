@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Polish Passive Vocabulary Test</title>
+<style>
+:root {
+  --bg: #f4f1ea;
+  --card: #ffffff;
+  --text: #1e1c19;
+  --text-dim: #79746b;
+  --accent: #b03030;
+  --accent-light: #f5e0e0;
+  --correct: #2d7a4f;
+  --correct-bg: rgba(45,122,79,0.08);
+  --wrong: #a02828;
+  --wrong-bg: rgba(160,40,40,0.07);
+  --border: #dcd6cb;
+  --progress-bg: #e3ded5;
+  --b1: #4a8a5e;
+  --b2: #3a7a9a;
+  --b3: #b08020;
+  --b4: #b06020;
+  --b5: #a03050;
+  --b6: #6a3a9a;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.55;
+  font-size: 17px;
+}
+
+.container { max-width: 620px; margin: 0 auto; padding: 24px 18px 80px; }
+
+.start-screen { text-align: center; padding: 48px 10px; }
+.start-screen h1 {
+  font-family: 'Lora', serif;
+  font-weight: 700;
+  font-size: 33px;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+.start-screen .subtitle {
+  color: var(--text-dim);
+  font-size: 15px;
+  margin-bottom: 30px;
+  font-family: 'Lora', serif;
+  font-style: italic;
+}
+.info-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 24px 26px;
+  text-align: left;
+  margin-bottom: 26px;
+  font-size: 16px;
+  line-height: 1.7;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.info-box strong { color: var(--accent); }
+.info-box .band-line {
+  font-size: 14px;
+  padding: 2px 0;
+  color: var(--text-dim);
+}
+.info-box .band-line .bname {
+  color: var(--text);
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+}
+
+.btn {
+  background: var(--accent);
+  color: #fff;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  padding: 13px 44px;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.btn:hover { transform: scale(1.02); }
+.btn:active { transform: scale(0.97); }
+
+.progress-bar {
+  background: var(--progress-bg);
+  height: 3px;
+  border-radius: 2px;
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.4s ease;
+}
+.q-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+.band-tag {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 10px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.question-area { display: none; }
+.question-area.active { display: block; }
+
+.polish-word {
+  font-family: 'Lora', serif;
+  font-weight: 700;
+  font-size: 44px;
+  color: var(--accent);
+  text-align: center;
+  margin: 26px 0 6px;
+  letter-spacing: -0.3px;
+}
+.word-class {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-bottom: 22px;
+  font-family: 'Lora', serif;
+  font-style: italic;
+}
+.prompt {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 500;
+}
+
+.choices { display: flex; flex-direction: column; gap: 8px; }
+.choice-btn {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 7px;
+  padding: 13px 18px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 16px;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+  line-height: 1.45;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+.choice-btn:hover:not(.disabled) {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+.choice-btn.correct { border-color: var(--correct); background: var(--correct-bg); }
+.choice-btn.wrong { border-color: var(--wrong); background: var(--wrong-bg); }
+.choice-btn.disabled { cursor: default; opacity: 0.5; }
+.choice-btn.disabled.correct { opacity: 1; }
+.choice-btn.dk-btn { color: var(--text-dim); font-style: italic; }
+
+.feedback {
+  text-align: center;
+  margin-top: 16px;
+  font-size: 15px;
+  min-height: 22px;
+}
+.feedback.correct-fb { color: var(--correct); font-weight: 500; }
+.feedback.wrong-fb { color: var(--wrong); }
+
+.next-btn-wrap { text-align: center; margin-top: 14px; }
+.next-btn {
+  background: transparent;
+  border: 1.5px solid var(--accent);
+  color: var(--accent);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 6px;
+  padding: 9px 28px;
+  cursor: pointer;
+}
+.next-btn:hover { background: var(--accent-light); }
+
+.results { display: none; padding: 30px 0; }
+.results h2 {
+  font-family: 'Lora', serif;
+  font-size: 30px;
+  color: var(--accent);
+  margin-bottom: 22px;
+  text-align: center;
+  font-weight: 700;
+}
+.score-big {
+  text-align: center;
+  font-size: 68px;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+  font-family: 'Lora', serif;
+}
+.score-label {
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-dim);
+  margin-bottom: 28px;
+}
+
+.rcard {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 22px 24px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.rcard h3 {
+  font-size: 13px;
+  color: var(--accent);
+  margin-bottom: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+.band-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 9px;
+  font-size: 14px;
+}
+.band-label {
+  font-weight: 600;
+  min-width: 60px;
+  font-size: 10px;
+  padding: 3px 6px;
+  border-radius: 5px;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+}
+.band-bar-track {
+  flex: 1;
+  background: var(--progress-bg);
+  height: 9px;
+  border-radius: 5px;
+  overflow: hidden;
+}
+.band-bar-fill { height: 100%; border-radius: 5px; transition: width 0.6s ease; }
+.band-score {
+  min-width: 62px;
+  text-align: right;
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.assessment { line-height: 1.75; font-size: 16px; }
+.level-tag {
+  display: inline-block;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--accent);
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  padding: 6px 18px;
+  margin: 10px 0 14px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.estimate-box {
+  background: var(--bg);
+  border-left: 3px solid var(--accent);
+  padding: 14px 18px;
+  margin: 14px 0;
+  border-radius: 0 6px 6px 0;
+}
+.estimate-box .big-num {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--accent);
+  font-family: 'Lora', serif;
+}
+.note-text {
+  color: var(--text-dim);
+  font-size: 14px;
+  margin-top: 12px;
+  font-style: italic;
+}
+
+.wrong-words h3 { color: var(--wrong); }
+.wrong-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 15px;
+}
+.wrong-item:last-child { border-bottom: none; }
+.wrong-item .pl-w {
+  font-family: 'Lora', serif;
+  font-weight: 700;
+  color: var(--text);
+  font-size: 17px;
+  white-space: nowrap;
+}
+.wrong-item .eng-w { color: var(--text-dim); font-size: 14px; line-height: 1.4; }
+.wrong-item .band-mini {
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  margin-right: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  white-space: nowrap;
+}
+
+@media (max-width: 420px) {
+  .polish-word { font-size: 32px; }
+  .choice-btn { font-size: 15px; padding: 11px 14px; }
+  .score-big { font-size: 54px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="start-screen" id="startScreen">
+  <h1>Polish Vocabulary Test</h1>
+  <p class="subtitle">Anchored low, ranging wide · Polish → English</p>
+  <div class="info-box">
+    <strong>Format:</strong> You'll see a Polish word. Pick the correct English meaning from 4 choices.<br><br>
+    You estimated ~500 words but suspect you know more — so this test ranges well past 500 to find where you actually top out.<br><br>
+    <strong>80 words across 6 bands:</strong><br>
+    <span class="band-line"><span class="bname">Band 1</span> — top 250 (sanity) · 12 words</span>
+    <span class="band-line"><span class="bname">Band 2</span> — 250–500 (your estimate) · 16 words</span>
+    <span class="band-line"><span class="bname">Band 3</span> — 500–1,000 · 18 words</span>
+    <span class="band-line"><span class="bname">Band 4</span> — 1,000–2,000 · 16 words</span>
+    <span class="band-line"><span class="bname">Band 5</span> — 2,000–3,500 · 10 words</span>
+    <span class="band-line"><span class="bname">Band 6</span> — 3,500+ (ceiling) · 8 words</span>
+    <br><br>
+    <strong>Don't guess.</strong> Pick "don't know" if unsure — it makes the estimate accurate.<br><br>
+    ~12 minutes.
+  </div>
+  <button class="btn" onclick="startTest()">Begin Test</button>
+</div>
+
+<div class="question-area" id="questionArea">
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="q-meta">
+    <span id="qCount"></span>
+    <span class="band-tag" id="bandTag"></span>
+  </div>
+  <div class="polish-word" id="polishWord"></div>
+  <div class="word-class" id="wordClass"></div>
+  <div class="prompt">Select the correct meaning</div>
+  <div class="choices" id="choices"></div>
+  <div class="feedback" id="feedback"></div>
+  <div class="next-btn-wrap" id="nextWrap" style="display:none;">
+    <button class="next-btn" onclick="nextQuestion()">Next →</button>
+  </div>
+</div>
+
+<div class="results" id="resultsArea"></div>
+
+</div>
+
+<script>
+const questions = [
+  // ===== Band 1 (top 250) — sanity — 12 =====
+  {w:"woda",cl:"noun",band:"B1",correct:"water",wrong:["fire","air","earth"]},
+  {w:"jeść",cl:"verb",band:"B1",correct:"to eat",wrong:["to drink","to sleep","to walk"]},
+  {w:"duży",cl:"adj",band:"B1",correct:"big / large",wrong:["small","fast","heavy"]},
+  {w:"dom",cl:"noun",band:"B1",correct:"house / home",wrong:["car","road","tree"]},
+  {w:"dobry",cl:"adj",band:"B1",correct:"good",wrong:["bad","new","old"]},
+  {w:"pies",cl:"noun",band:"B1",correct:"dog",wrong:["cat","bird","fish"]},
+  {w:"czytać",cl:"verb",band:"B1",correct:"to read",wrong:["to write","to speak","to listen"]},
+  {w:"dzień",cl:"noun",band:"B1",correct:"day",wrong:["night","week","month"]},
+  {w:"pić",cl:"verb",band:"B1",correct:"to drink",wrong:["to eat","to cook","to wash"]},
+  {w:"mały",cl:"adj",band:"B1",correct:"small / little",wrong:["big","tall","wide"]},
+  {w:"dziękuję",cl:"interj",band:"B1",correct:"thank you",wrong:["please","sorry","hello"]},
+  {w:"kobieta",cl:"noun",band:"B1",correct:"woman",wrong:["man","child","friend"]},
+
+  // ===== Band 2 (250–500) — your estimate — 16 =====
+  {w:"szybko",cl:"adverb",band:"B2",correct:"quickly / fast",wrong:["slowly","quietly","carefully"]},
+  {w:"kupować",cl:"verb",band:"B2",correct:"to buy",wrong:["to sell","to give","to pay"]},
+  {w:"miasto",cl:"noun",band:"B2",correct:"city / town",wrong:["village","country","street"]},
+  {w:"pieniądze",cl:"noun",band:"B2",correct:"money",wrong:["time","work","food"]},
+  {w:"szczęśliwy",cl:"adj",band:"B2",correct:"happy",wrong:["sad","angry","tired"]},
+  {w:"zawsze",cl:"adverb",band:"B2",correct:"always",wrong:["never","sometimes","often"]},
+  {w:"zamknąć",cl:"verb",band:"B2",correct:"to close / to shut",wrong:["to open","to push","to pull"]},
+  {w:"gorący",cl:"adj",band:"B2",correct:"hot",wrong:["cold","warm","wet"]},
+  {w:"trudny",cl:"adj",band:"B2",correct:"difficult / hard",wrong:["easy","simple","soft"]},
+  {w:"mówić",cl:"verb",band:"B2",correct:"to speak / to say",wrong:["to listen","to read","to think"]},
+  {w:"spać",cl:"verb",band:"B2",correct:"to sleep",wrong:["to wake","to dream","to rest"]},
+  {w:"jutro",cl:"adverb",band:"B2",correct:"tomorrow",wrong:["yesterday","today","now"]},
+  {w:"praca",cl:"noun",band:"B2",correct:"work / job",wrong:["play","rest","study"]},
+  {w:"zimny",cl:"adj",band:"B2",correct:"cold",wrong:["hot","warm","dry"]},
+  {w:"droga",cl:"noun/adj",band:"B2",correct:"road / way / expensive (fem.)",wrong:["bridge","building","cheap"]},
+  {w:"biec",cl:"verb",band:"B2",correct:"to run",wrong:["to walk","to jump","to sit"]},
+
+  // ===== Band 3 (500–1000) — 18 =====
+  {w:"pamiętać",cl:"verb",band:"B3",correct:"to remember",wrong:["to forget","to learn","to know"]},
+  {w:"zapomnieć",cl:"verb",band:"B3",correct:"to forget",wrong:["to remember","to lose","to leave"]},
+  {w:"wyjaśnić",cl:"verb",band:"B3",correct:"to explain",wrong:["to ask","to answer","to translate"]},
+  {w:"spotkać",cl:"verb",band:"B3",correct:"to meet",wrong:["to leave","to find","to call"]},
+  {w:"zdrowie",cl:"noun",band:"B3",correct:"health",wrong:["sickness","strength","life"]},
+  {w:"pogoda",cl:"noun",band:"B3",correct:"weather",wrong:["climate","temperature","season"]},
+  {w:"niebezpieczny",cl:"adj",band:"B3",correct:"dangerous",wrong:["safe","careful","scary"]},
+  {w:"prawie",cl:"adverb",band:"B3",correct:"almost / nearly",wrong:["exactly","completely","rarely"]},
+  {w:"zmęczony",cl:"adj",band:"B3",correct:"tired",wrong:["hungry","bored","sad"]},
+  {w:"wiedza",cl:"noun",band:"B3",correct:"knowledge",wrong:["power","wisdom","memory"]},
+  {w:"rynek",cl:"noun",band:"B3",correct:"market / town square",wrong:["shop","mall","bank"]},
+  {w:"oczywiście",cl:"adverb",band:"B3",correct:"of course / obviously",wrong:["maybe","rarely","secretly"]},
+  {w:"czysty",cl:"adj",band:"B3",correct:"clean / pure",wrong:["dirty","wet","empty"]},
+  {w:"silny",cl:"adj",band:"B3",correct:"strong",wrong:["weak","tall","fast"]},
+  {w:"martwić się",cl:"verb",band:"B3",correct:"to worry",wrong:["to relax","to celebrate","to hurry"]},
+  {w:"pomysł",cl:"noun",band:"B3",correct:"idea",wrong:["problem","answer","plan"]},
+  {w:"obowiązek",cl:"noun",band:"B3",correct:"duty / obligation",wrong:["right","hobby","reward"]},
+  {w:"uśmiechać się",cl:"verb",band:"B3",correct:"to smile",wrong:["to cry","to laugh","to frown"]},
+
+  // ===== Band 4 (1000–2000) — 16 =====
+  {w:"doświadczenie",cl:"noun",band:"B4",correct:"experience",wrong:["experiment","accident","education"]},
+  {w:"wpływ",cl:"noun",band:"B4",correct:"influence / impact",wrong:["entrance","income","result"]},
+  {w:"unikać",cl:"verb",band:"B4",correct:"to avoid",wrong:["to confront","to accept","to seek"]},
+  {w:"wymagać",cl:"verb",band:"B4",correct:"to require / to demand",wrong:["to offer","to suggest","to refuse"]},
+  {w:"zarządzać",cl:"verb",band:"B4",correct:"to manage / to administer",wrong:["to obey","to observe","to abandon"]},
+  {w:"środowisko",cl:"noun",band:"B4",correct:"environment",wrong:["equipment","entertainment","experiment"]},
+  {w:"społeczeństwo",cl:"noun",band:"B4",correct:"society",wrong:["company","community center","relationship"]},
+  {w:"zniszczyć",cl:"verb",band:"B4",correct:"to destroy",wrong:["to build","to repair","to protect"]},
+  {w:"oszukać",cl:"verb",band:"B4",correct:"to deceive / to cheat",wrong:["to help","to warn","to forgive"]},
+  {w:"wydatki",cl:"noun",band:"B4",correct:"expenses / spending",wrong:["income","savings","profit"]},
+  {w:"sprzeciwiać się",cl:"verb",band:"B4",correct:"to oppose / to object",wrong:["to agree","to support","to suggest"]},
+  {w:"naprawić",cl:"verb",band:"B4",correct:"to repair / to fix",wrong:["to break","to destroy","to replace"]},
+  {w:"bezpieczeństwo",cl:"noun",band:"B4",correct:"safety / security",wrong:["danger","emergency","insurance"]},
+  {w:"zachowanie",cl:"noun",band:"B4",correct:"behavior / conduct",wrong:["appearance","attitude","achievement"]},
+  {w:"ostrożny",cl:"adj",band:"B4",correct:"careful / cautious",wrong:["reckless","brave","lazy"]},
+  {w:"przekonać",cl:"verb",band:"B4",correct:"to persuade / to convince",wrong:["to force","to threaten","to confuse"]},
+
+  // ===== Band 5 (2000–3500) — 10 =====
+  {w:"nieuchronny",cl:"adj",band:"B5",correct:"inevitable / unavoidable",wrong:["impossible","unexpected","unimportant"]},
+  {w:"zawiły",cl:"adj",band:"B5",correct:"intricate / complicated",wrong:["simple","obvious","brief"]},
+  {w:"wytrwałość",cl:"noun",band:"B5",correct:"perseverance / persistence",wrong:["laziness","weakness","impatience"]},
+  {w:"ulga",cl:"noun",band:"B5",correct:"relief",wrong:["pain","burden","anxiety"]},
+  {w:"oszustwo",cl:"noun",band:"B5",correct:"fraud / scam / deception",wrong:["honesty","gift","agreement"]},
+  {w:"przeszkoda",cl:"noun",band:"B5",correct:"obstacle / barrier",wrong:["opportunity","solution","shortcut"]},
+  {w:"wzmocnić",cl:"verb",band:"B5",correct:"to strengthen / to reinforce",wrong:["to weaken","to remove","to soften"]},
+  {w:"skłonność",cl:"noun",band:"B5",correct:"tendency / inclination",wrong:["aversion","ability","obligation"]},
+  {w:"zniechęcać",cl:"verb",band:"B5",correct:"to discourage",wrong:["to encourage","to inspire","to reward"]},
+  {w:"pogłębić",cl:"verb",band:"B5",correct:"to deepen / to intensify",wrong:["to flatten","to lighten","to shorten"]},
+
+  // ===== Band 6 (3500+) — ceiling — 8 =====
+  {w:"znikomy",cl:"adj",band:"B6",correct:"negligible / minimal",wrong:["enormous","sufficient","obvious"]},
+  {w:"nikczemny",cl:"adj",band:"B6",correct:"vile / despicable",wrong:["noble / honorable","ordinary","generous"]},
+  {w:"żmudny",cl:"adj",band:"B6",correct:"tedious / laborious / painstaking",wrong:["effortless","exciting","quick"]},
+  {w:"oszczerstwo",cl:"noun",band:"B6",correct:"slander / defamation",wrong:["compliment","confession","agreement"]},
+  {w:"zuchwały",cl:"adj",band:"B6",correct:"audacious / insolent / bold",wrong:["timid / shy","polite","cautious"]},
+  {w:"przebiegły",cl:"adj",band:"B6",correct:"cunning / sly / crafty",wrong:["honest / naive","clumsy","generous"]},
+  {w:"ułuda",cl:"noun",band:"B6",correct:"illusion / delusion",wrong:["reality","certainty","truth"]},
+  {w:"niezłomny",cl:"adj",band:"B6",correct:"unyielding / steadfast / indomitable",wrong:["fragile / weak","flexible","hesitant"]},
+];
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+let currentQ = 0, results = [], answered = false;
+
+const bandColors = {
+  'B1':'var(--b1)','B2':'var(--b2)','B3':'var(--b3)',
+  'B4':'var(--b4)','B5':'var(--b5)','B6':'var(--b6)'
+};
+const bandNames = {
+  'B1':'0–250','B2':'250–500','B3':'500–1K',
+  'B4':'1K–2K','B5':'2K–3.5K','B6':'3.5K+'
+};
+
+function startTest() {
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('questionArea').classList.add('active');
+  showQuestion();
+}
+
+function showQuestion() {
+  answered = false;
+  const q = questions[currentQ], total = questions.length;
+
+  document.getElementById('progressFill').style.width = ((currentQ/total)*100)+'%';
+  document.getElementById('qCount').textContent = `${currentQ+1} / ${total}`;
+
+  const tag = document.getElementById('bandTag');
+  tag.textContent = bandNames[q.band];
+  tag.style.background = bandColors[q.band]+'18';
+  tag.style.color = bandColors[q.band];
+
+  document.getElementById('polishWord').textContent = q.w;
+  document.getElementById('wordClass').textContent = q.cl;
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('nextWrap').style.display = 'none';
+
+  const options = shuffle([
+    {text:q.correct, isCorrect:true},
+    ...q.wrong.map(w => ({text:w, isCorrect:false}))
+  ]);
+  options.push({text:"don't know", isCorrect:false, isDk:true});
+
+  const choicesDiv = document.getElementById('choices');
+  choicesDiv.innerHTML = '';
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn' + (opt.isDk ? ' dk-btn' : '');
+    btn.textContent = opt.isDk ? '🤷  '+opt.text : opt.text;
+    btn.onclick = () => handleChoice(btn, opt, q);
+    choicesDiv.appendChild(btn);
+  });
+}
+
+function handleChoice(btn, opt, q) {
+  if (answered) return;
+  answered = true;
+
+  const fb = document.getElementById('feedback');
+  document.querySelectorAll('.choice-btn').forEach(b => {
+    b.classList.add('disabled');
+    const txt = b.textContent.replace('🤷  ','').trim();
+    if (txt === q.correct) b.classList.add('correct');
+  });
+
+  if (opt.isCorrect) {
+    btn.classList.add('correct');
+    fb.textContent = '✓ Correct';
+    fb.className = 'feedback correct-fb';
+    results.push({...q, result:'correct'});
+  } else if (opt.isDk) {
+    fb.textContent = q.correct;
+    fb.className = 'feedback wrong-fb';
+    results.push({...q, result:'dk'});
+  } else {
+    btn.classList.add('wrong');
+    fb.textContent = '✗  ' + q.correct;
+    fb.className = 'feedback wrong-fb';
+    results.push({...q, result:'wrong'});
+  }
+
+  document.getElementById('nextWrap').style.display = 'block';
+}
+
+function nextQuestion() {
+  currentQ++;
+  if (currentQ >= questions.length) showResults();
+  else showQuestion();
+}
+
+function showResults() {
+  document.getElementById('questionArea').classList.remove('active');
+  const area = document.getElementById('resultsArea');
+  area.style.display = 'block';
+
+  const bands = ['B1','B2','B3','B4','B5','B6'];
+  const bandData = {};
+  bands.forEach(b => { bandData[b] = {total:0,correct:0,wrong:0,dk:0}; });
+
+  let totalCorrect = 0;
+  const wrongList = [];
+
+  results.forEach(r => {
+    bandData[r.band].total++;
+    if (r.result==='correct') { bandData[r.band].correct++; totalCorrect++; }
+    else if (r.result==='dk') { bandData[r.band].dk++; wrongList.push(r); }
+    else { bandData[r.band].wrong++; wrongList.push(r); }
+  });
+
+  const pct = Math.round((totalCorrect/questions.length)*100);
+
+  const bp = {};
+  bands.forEach(b => { bp[b] = bandData[b].total>0 ? bandData[b].correct/bandData[b].total : 0; });
+
+  const bandSizes = {'B1':250,'B2':250,'B3':500,'B4':1000,'B5':1500,'B6':2500};
+  let vocabEstimate = 0;
+  bands.forEach(b => { vocabEstimate += bp[b] * bandSizes[b]; });
+  vocabEstimate = Math.round(vocabEstimate / 50) * 50;
+
+  const wrongCount = results.filter(r => r.result==='wrong').length;
+  const guessingBias = wrongCount * 0.25 * 35;
+  const adjustedEstimate = Math.max(0, vocabEstimate - Math.round(guessingBias/50)*50);
+
+  let ceilingBand = 'B1';
+  bands.forEach(b => { if (bp[b] >= 0.5) ceilingBand = b; });
+
+  let levelDesc = '';
+  if (bp['B1'] < 0.7) {
+    levelDesc = 'Even the top 250 words are shaky, which puts the vocabulary under 250. This is very early — the focus should be on drilling the most frequent words until they\'re automatic.';
+  } else if (bp['B2'] < 0.5) {
+    levelDesc = 'The top 250 are solid but the 250–500 band is patchy. Real vocabulary is probably 300–450 — close to the 500 estimate, perhaps a touch under. Solid beginner foundation.';
+  } else if (bp['B3'] < 0.4) {
+    levelDesc = 'The 500 estimate was accurate, maybe even a little low. The top 500 are solid and a few 500–1,000 words are sticking. This is a real A1 foundation — enough for basic survival Polish.';
+  } else if (bp['B3'] >= 0.4 && bp['B4'] < 0.35) {
+    levelDesc = 'You know more than you thought. The 500–1,000 band is partially solid, putting you around 700–1,000 words — well above your 500 guess. This is solid A1, approaching A2. You\'re underselling yourself.';
+  } else if (bp['B4'] >= 0.45) {
+    levelDesc = 'You significantly underestimated. Your vocabulary extends well into the 1,000–2,000 range — you\'re probably around 1,200–1,800 words, not 500. This is solid A2 territory. Either you\'ve absorbed more than you realized or you have strong cognate/Slavic-language support.';
+  } else {
+    levelDesc = 'Roughly in the 600–900 range — above your 500 estimate. A solid beginner foundation with the start of intermediate vocabulary.';
+  }
+
+  let honesty = '';
+  if (wrongCount/questions.length > 0.15) {
+    honesty = '<div class="note-text">⚠️ Your wrong-guess rate is notable. Some correct answers may be lucky hits (1/4 odds). The real vocabulary could be 50–150 words below the estimate.</div>';
+  } else if (results.filter(r=>r.result==='dk').length > wrongCount*2) {
+    honesty = '<div class="note-text">✓ You used "don\'t know" honestly. This estimate is probably accurate or slightly conservative.</div>';
+  }
+
+  const diff = adjustedEstimate - 500;
+  let vsClaimed = '';
+  if (Math.abs(diff) < 150) {
+    vsClaimed = '<strong>Your ~500 estimate was accurate.</strong> Results are within ±150 words.';
+  } else if (diff > 0) {
+    vsClaimed = `<strong>You knew more than you thought.</strong> Your vocabulary appears ~${Math.abs(diff)} words above your 500 guess.`;
+  } else {
+    vsClaimed = `<strong>Slightly below your estimate.</strong> Your vocabulary appears ~${Math.abs(diff)} words under your 500 guess — but this is well within normal range.`;
+  }
+
+  // Polish-specific note about cases
+  const caseNote = '<div class="note-text" style="margin-top:16px"><strong>A note on Polish:</strong> This test shows words in their dictionary (nominative) form. Polish has 7 cases, so in real text these words appear with different endings (e.g. <em>woda → wodę → wodą → wodzie</em>). Recognizing a word in its base form is easier than recognizing all its inflected forms, so your reading-comprehension vocabulary may feel smaller than this score suggests until the case system clicks.</div>';
+
+  let bandHTML = '';
+  bands.forEach(b => {
+    const d = bandData[b];
+    const p = d.total>0 ? Math.round((d.correct/d.total)*100) : 0;
+    bandHTML += `<div class="band-row">
+      <span class="band-label" style="background:${bandColors[b]}18;color:${bandColors[b]}">${bandNames[b]}</span>
+      <div class="band-bar-track"><div class="band-bar-fill" style="width:${p}%;background:${bandColors[b]}"></div></div>
+      <span class="band-score">${d.correct}/${d.total} (${p}%)</span>
+    </div>`;
+  });
+
+  let wrongHTML = '';
+  if (wrongList.length > 0) {
+    wrongHTML = `<div class="rcard wrong-words"><h3>Words to review (${wrongList.length})</h3>`;
+    wrongList.forEach(r => {
+      const label = r.result==='dk' ? '—' : '✗';
+      wrongHTML += `<div class="wrong-item">
+        <div style="display:flex;align-items:baseline;gap:8px;flex-shrink:0">
+          <span class="band-mini" style="background:${bandColors[r.band]}18;color:${bandColors[r.band]}">${bandNames[r.band]}</span>
+          <span class="pl-w">${label} ${r.w}</span>
+        </div>
+        <span class="eng-w">${r.correct}</span>
+      </div>`;
+    });
+    wrongHTML += '</div>';
+  }
+
+  area.innerHTML = `
+    <h2>Results</h2>
+    <div class="score-big">${pct}%</div>
+    <div class="score-label">${totalCorrect} of ${questions.length} correct</div>
+
+    <div class="rcard">
+      <h3>Accuracy by frequency band</h3>
+      ${bandHTML}
+    </div>
+
+    <div class="rcard assessment">
+      <h3>Vocabulary estimate</h3>
+      <div class="level-tag">Ceiling: ${bandNames[ceilingBand]}</div>
+      <div class="estimate-box">
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px">Estimated passive vocabulary</div>
+        <div class="big-num">~${adjustedEstimate.toLocaleString()} words</div>
+      </div>
+      <p>${vsClaimed}</p>
+      <br>
+      <p>${levelDesc}</p>
+      ${honesty}
+      ${caseNote}
+      <div class="note-text">Passive vocabulary (recognition) is typically 2–3× active vocabulary (production). This test measures recognition only.</div>
+    </div>
+
+    ${wrongHTML}
+
+    <div style="text-align:center;margin-top:20px">
+      <button class="btn" onclick="location.reload()">Retake</button>
+    </div>
+  `;
+}
+</script>
+</body>
+</html>
