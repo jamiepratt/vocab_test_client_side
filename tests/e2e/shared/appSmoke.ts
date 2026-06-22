@@ -56,6 +56,7 @@ async function expectQuestion(page: Page, question: {
   await expect(page.getByRole("heading", { level: 2, name: question.word })).toBeVisible();
   await expect(page.getByText(question.wordClass, { exact: true })).toBeVisible();
   await expect(page.getByText("Select the correct meaning")).toBeVisible();
+  await expect(page.locator("main button")).toHaveText(question.choices);
 
   for (const choice of question.choices) {
     await expect(page.getByRole("button", { name: choice, exact: true })).toBeVisible();
@@ -111,6 +112,9 @@ async function expectReviewList(page: Page) {
 
 export async function runAppSmoke(page: Page) {
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => {
+    Math.random = () => 0;
+  });
   await page.goto("/index.html");
 
   await expect(page.getByRole("heading", { level: 1, name: "Polish Vocabulary Test" })).toBeVisible();
@@ -127,7 +131,7 @@ export async function runAppSmoke(page: Page) {
 
   await page.getByRole("button", { name: "Begin Test" }).click();
 
-  const firstChoices = ["water", "fire", "air", "earth", "don't know"];
+  const firstChoices = ["fire", "air", "earth", "water", "don't know"];
   await expectQuestion(page, {
     current: 1,
     word: "woda",
@@ -146,7 +150,7 @@ export async function runAppSmoke(page: Page) {
 
   await page.getByRole("button", { name: "Next" }).click();
 
-  const secondChoices = ["to eat", "to drink", "to sleep", "to walk", "don't know"];
+  const secondChoices = ["to drink", "to sleep", "to walk", "to eat", "don't know"];
   await expectQuestion(page, {
     current: 2,
     word: "jeść",
@@ -163,7 +167,7 @@ export async function runAppSmoke(page: Page) {
 
   await page.getByRole("button", { name: "Next" }).click();
 
-  const thirdChoices = ["big / large", "small", "fast", "heavy", "don't know"];
+  const thirdChoices = ["small", "fast", "heavy", "big / large", "don't know"];
   await expectQuestion(page, {
     current: 3,
     word: "duży",
@@ -188,10 +192,10 @@ export async function runAppSmoke(page: Page) {
   }
 
   const lastChoices = [
-    "unyielding / steadfast / indomitable",
     "fragile / weak",
     "flexible",
     "hesitant",
+    "unyielding / steadfast / indomitable",
     "don't know",
   ];
   await expectQuestion(page, {

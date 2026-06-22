@@ -151,6 +151,7 @@
 (defn initial-state []
   {:screen :start
    :current-question-index 0
+   :question-choices []
    :answers []
    :answer-locked? false
    :feedback nil
@@ -165,18 +166,24 @@
 (def button-class
   "inline-flex min-h-11 w-full items-center justify-center rounded-md bg-[#991b1b] px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#7f1d1d] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#991b1b] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto")
 
-(defn begin-test []
-  (reset! app-state (assoc (initial-state) :screen :quiz)))
+(defn answer-options [question]
+  (into [{:label (:correct question)
+          :result :correct}]
+        (map (fn [wrong]
+               {:label wrong
+                :result :wrong})
+             (:wrong question))))
 
 (defn choice-options [question]
-  (conj (into [{:label (:correct question)
-                :result :correct}]
-              (map (fn [wrong]
-                     {:label wrong
-                      :result :wrong})
-                   (:wrong question)))
+  (conj (vec (shuffle (answer-options question)))
         {:label "don't know"
          :result :dk}))
+
+(defn begin-test []
+  (reset! app-state
+          (assoc (initial-state)
+                 :screen :quiz
+                 :question-choices (mapv choice-options questions))))
 
 (defn round-nearest-50 [n]
   (* 50 (js/Math.round (/ n 50))))
@@ -316,7 +323,7 @@
             :selected (:label choice)
             :message (str "Correct answer: " (:correct question))}))
 
-(defn record-answer [question choice]
+(defn record-answer [question choices choice]
   (swap! app-state
          (fn [{:keys [answer-locked? current-question-index answers] :as state}]
            (if answer-locked?
@@ -325,7 +332,7 @@
                            :word (:word question)
                            :word-class (:word-class question)
                            :band (:band question)
-                           :choices (mapv :label (choice-options question))
+                           :choices (mapv :label choices)
                            :selected (:label choice)
                            :correct (:correct question)
                            :result (:result choice)}
@@ -378,7 +385,7 @@
               :on-click begin-test}
      "Begin Test"]]])
 
-(defn choice-button [question answer-locked? feedback choice]
+(defn choice-button [question choices answer-locked? feedback choice]
   (let [correct-answer? (= (:label choice) (:correct question))
         selected-answer? (= (:label choice) (:selected feedback))
         selected-result (:kind feedback)
@@ -395,11 +402,13 @@
     [:button {:type "button"
               :class (str base-class " " state-class)
               :disabled answer-locked?
-              :on-click #(record-answer question choice)}
+              :on-click #(record-answer question choices choice)}
      (:label choice)]))
 
-(defn quiz-screen [{:keys [current-question-index answer-locked? feedback]}]
+(defn quiz-screen [{:keys [current-question-index question-choices answer-locked? feedback]}]
   (let [question (nth questions current-question-index)
+        choices (or (get question-choices current-question-index)
+                    (choice-options question))
         current-question-number (inc current-question-index)
         progress (* 100 (/ current-question-number (count questions)))]
     [:main {:class "min-h-screen bg-[#faf7f0] px-3 py-5 text-stone-950 sm:px-6 sm:py-8"}
@@ -424,9 +433,9 @@
         (:word-class question)]
        [:p {:class "text-base text-stone-700"} "Select the correct meaning"]]
       [:div {:class "grid gap-3"}
-       (for [choice (choice-options question)]
+       (for [choice choices]
          ^{:key (:label choice)}
-         [choice-button question answer-locked? feedback choice])]
+         [choice-button question choices answer-locked? feedback choice])]
       (when feedback
         [:p {:class (if (= :correct (:kind feedback))
                       "rounded-md bg-emerald-50 p-3 text-sm font-semibold text-emerald-800"
