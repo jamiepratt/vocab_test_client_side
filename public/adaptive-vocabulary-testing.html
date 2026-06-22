@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Adaptive Vocabulary Size Testing from Frequency Lists</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #18212a;
+      --muted: #596673;
+      --line: #d9e1e8;
+      --paper: #f6f8fa;
+      --panel: #ffffff;
+      --accent: #176f73;
+      --accent-2: #8b4d1b;
+      --code: #eef4f5;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0;
+      line-height: 1.62;
+    }
+
+    a {
+      color: var(--accent);
+      font-weight: 720;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+    }
+
+    header {
+      border-bottom: 1px solid var(--line);
+      background: var(--panel);
+    }
+
+    .header-inner,
+    main,
+    footer {
+      width: min(980px, calc(100% - 36px));
+      margin: 0 auto;
+    }
+
+    .header-inner {
+      padding: clamp(32px, 6vw, 76px) 0 28px;
+    }
+
+    .eyebrow {
+      margin: 0 0 12px;
+      color: var(--accent-2);
+      font-size: 13px;
+      font-weight: 820;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 820px;
+      margin: 0;
+      font-size: clamp(34px, 6vw, 66px);
+      line-height: 1.02;
+      font-weight: 840;
+    }
+
+    .dek {
+      max-width: 760px;
+      margin: 18px 0 0;
+      color: var(--muted);
+      font-size: clamp(18px, 2.2vw, 23px);
+      line-height: 1.45;
+    }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 24px;
+    }
+
+    nav a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 36px;
+      padding: 6px 11px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--paper);
+      color: var(--ink);
+      font-size: 14px;
+      text-decoration: none;
+    }
+
+    main {
+      padding: 34px 0 56px;
+    }
+
+    section {
+      padding: 28px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    section:last-child {
+      border-bottom: 0;
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: clamp(24px, 3vw, 34px);
+      line-height: 1.16;
+    }
+
+    h3 {
+      margin: 24px 0 8px;
+      font-size: 19px;
+      line-height: 1.25;
+    }
+
+    p {
+      max-width: 760px;
+      margin: 0 0 14px;
+    }
+
+    ul,
+    ol {
+      max-width: 790px;
+      margin: 0 0 16px;
+      padding-left: 24px;
+    }
+
+    li {
+      margin: 6px 0;
+    }
+
+    code,
+    pre {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    }
+
+    code {
+      padding: 1px 5px;
+      border-radius: 5px;
+      background: var(--code);
+      font-size: 0.92em;
+    }
+
+    pre {
+      max-width: 840px;
+      overflow-x: auto;
+      margin: 16px 0;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--ink);
+      line-height: 1.45;
+    }
+
+    pre code {
+      padding: 0;
+      background: transparent;
+      font-size: 14px;
+    }
+
+    table {
+      width: min(820px, 100%);
+      margin: 16px 0;
+      border-collapse: collapse;
+      background: var(--panel);
+      font-size: 15px;
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #edf3f4;
+      font-weight: 780;
+    }
+
+    .callout {
+      max-width: 840px;
+      margin: 18px 0;
+      padding: 16px 18px;
+      border-left: 5px solid var(--accent);
+      border-radius: 0 8px 8px 0;
+      background: var(--panel);
+    }
+
+    .callout p:last-child {
+      margin-bottom: 0;
+    }
+
+    .formula {
+      display: inline-block;
+      margin: 4px 0;
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: var(--code);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      font-size: 0.94em;
+    }
+
+    footer {
+      padding: 24px 0 38px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    @media (max-width: 640px) {
+      .header-inner,
+      main,
+      footer {
+        width: min(100% - 28px, 980px);
+      }
+
+      nav a {
+        width: 100%;
+      }
+
+      table {
+        font-size: 14px;
+      }
+
+      th,
+      td {
+        padding: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <p class="eyebrow">Vocabulary measurement</p>
+      <h1>Adaptive vocabulary size testing from a frequency list</h1>
+      <p class="dek">A practical summary of how to estimate how many words a learner knows in a target foreign language, starting from a ranked frequency list and improving the test with response data.</p>
+      <nav aria-label="Article sections">
+        <a href="#baseline">Baseline</a>
+        <a href="#calibration">Calibration</a>
+        <a href="#mapping">Rank mapping</a>
+        <a href="#sample-size">Sample size</a>
+        <a href="#implementation">Implementation</a>
+        <a href="#sources">Sources</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section id="baseline">
+      <h2>The proven baseline</h2>
+      <p>Use Computerized Adaptive Testing, backed by Item Response Theory. For a vocabulary test, the simplest strong model is the Rasch model. Each user has one latent vocabulary ability, and each word has one calibrated difficulty.</p>
+      <p><span class="formula">P(knows word i | theta, b_i) = logistic(theta - b_i)</span></p>
+      <p>Here, <code>theta</code> is the user's vocabulary ability and <code>b_i</code> is the difficulty of item <code>i</code>. A word with difficulty near the current user ability gives the most information. That is why the adaptive test can be short: after each answer it updates <code>theta</code>, then chooses the next word near that new estimate.</p>
+      <div class="callout">
+        <p>Frequency rank is useful, but only as a starting prior. The adaptive test should eventually use calibrated item difficulty from real responses.</p>
+      </div>
+      <p>A good production item bank mixes yes/no recognition items, multiple-choice meaning checks, and pseudowords. Yes/no items are fast. Multiple-choice items reduce self-report inflation. Pseudowords detect guessing or low attention.</p>
+    </section>
+
+    <section id="calibration">
+      <h2>How to calibrate item difficulty</h2>
+      <p>Calibration means collecting enough pilot responses to estimate each word's real difficulty and remove bad items. The test should not start fully adaptive during this phase, because full adaptivity over-samples some words and starves others.</p>
+      <ol>
+        <li>Build an initial item pool from frequency bands. Use lemmas or word families, not raw inflected forms.</li>
+        <li>Run a balanced pilot. Each user gets words from very common, common, middle, rare, and very rare bands.</li>
+        <li>Convert answers to binary responses. Real word known or multiple-choice correct is <code>1</code>. Unknown or wrong is <code>0</code>.</li>
+        <li>Use pseudowords and multiple-choice misses to filter unreliable sessions before fitting the model.</li>
+        <li>Fit a Rasch model to estimate user abilities and item difficulties.</li>
+        <li>Discard weak items, then refit.</li>
+      </ol>
+      <p>Common discard rules: too few responses, poor item-total correlation, bad Rasch fit, broken distractors, extreme ambiguity, or high false-positive rates. A practical fit cutoff is to inspect infit/outfit mean-square values and remove items far from the expected range, often above about <code>1.3</code> for noisy items.</p>
+      <pre><code>{
+  "word": "chien",
+  "rank": 814,
+  "type": "yes-no",
+  "difficulty": -1.22,
+  "fit": { "infit": 0.98, "outfit": 1.04 },
+  "responses": 427
+}</code></pre>
+      <p>After this point, adaptive testing should select by <code>difficulty</code>, not raw frequency rank.</p>
+    </section>
+
+    <section id="mapping">
+      <h2>How to map ability to word count</h2>
+      <p>After Rasch calibration, each real item has both a frequency rank and a calibrated difficulty. Fit a monotone relationship between <code>log(rank)</code> and item difficulty.</p>
+      <p><span class="formula">difficulty = f(log(rank))</span></p>
+      <p>A simple first version is linear regression:</p>
+      <p><span class="formula">b_i = alpha + beta * log(rank_i)</span></p>
+      <p>Then invert it:</p>
+      <p><span class="formula">rank(theta) = exp((theta - alpha) / beta)</span></p>
+      <p>A better version uses monotone spline or isotonic regression. The best scoring method estimates expected known words across the whole vocabulary universe:</p>
+      <p><span class="formula">V(theta) = sum over ranks r of logistic(theta - f(log(r)))</span></p>
+      <p>This is better than a hard boundary because real vocabulary is not contiguous. A learner can know rare cognates and miss common abstract words. The expected sum handles that uncertainty.</p>
+    </section>
+
+    <section id="sample-size">
+      <h2>How many users are needed</h2>
+      <p>Plan by responses per item, not raw user count.</p>
+      <p><span class="formula">users_needed = (real_items * target_responses_per_item) / real_items_per_user</span></p>
+      <table>
+        <thead>
+          <tr>
+            <th>Calibration level</th>
+            <th>Target responses per item</th>
+            <th>Example: 250 words, 30 real answers/test</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Rough MVP</td>
+            <td>100</td>
+            <td>About 834 users</td>
+          </tr>
+          <tr>
+            <td>Usable product</td>
+            <td>250-400</td>
+            <td>About 2,100-3,400 users</td>
+          </tr>
+          <tr>
+            <td>Strong public scoring</td>
+            <td>500-1000</td>
+            <td>About 4,200-8,400 users</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>For a small product, a reasonable path is 500-1000 users for the first pilot, 2000-3000 for decent calibration, and 5000+ before treating the score as robust.</p>
+      <p>A balanced pilot test could show each user 5 very common words, 8 common words, 8 middle words, 6 rare words, 3 very rare words, and 5-8 pseudowords or check items.</p>
+    </section>
+
+    <section id="implementation">
+      <h2>Implementation shape</h2>
+      <p>The adaptive loop is small once the item bank is calibrated.</p>
+      <pre><code>start posterior over theta
+repeat until 30 items or confidence interval is narrow:
+  pick unused item with difficulty nearest current theta
+  ask yes/no or multiple-choice item
+  score answer as 1 or 0
+  update posterior over theta
+estimate vocab size from final theta
+show attention/trust indicator from pseudowords and check items</code></pre>
+      <p>For fitting the Rasch model, use an established package first. In R, <code>TAM</code>, <code>mirt</code>, or <code>eRm</code> are common choices. In Python, <code>py-irt</code> or a custom logistic optimizer can work, but item-fit diagnostics are easier with mature psychometric tooling.</p>
+      <p>The Polish Vocabulary Size Test is a useful concrete benchmark. It used Item Response Theory, Computerized Adaptive Testing, yes/no items, multiple-choice checks, and pseudowords. It reports 30 stimuli, about two minutes of test time, conversion from logits to word counts, and response filtering through an attention index.</p>
+      <p>PVST also appears publicly available at <a href="https://myvocab.info/pl">myvocab.info/pl</a>. The URL returned HTTP 200 when checked on June 22, 2026.</p>
+    </section>
+
+    <section id="sources">
+      <h2>Sources</h2>
+      <ul>
+        <li><a href="https://arxiv.org/pdf/2507.19869">The Polish Vocabulary Size Test: A Novel Adaptive Test for Receptive Vocabulary Assessment</a></li>
+        <li><a href="https://arxiv.org/abs/2412.07170">On the Consistency of Bayesian Adaptive Testing under the Rasch Model</a></li>
+        <li><a href="https://arxiv.org/abs/1707.03012">Application and Simulation of Computerized Adaptive Tests Through the Package catsim</a></li>
+        <li><a href="https://en.wikipedia.org/wiki/Computerized_adaptive_testing">Computerized adaptive testing overview</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>Part of the Vocab Test Client Side project. Static HTML is copied into the GitHub Pages artifact by the deploy workflow.</p>
+  </footer>
+</body>
+</html>

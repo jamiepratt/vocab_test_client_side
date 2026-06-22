@@ -34,4 +34,7 @@
 /playwright-report
 /test-results
 /target
+/data/subtlex-pl/subtlex-pl.zip
+/data/subtlex-pl/subtlex-pl.csv
+/data/subtlex-pl/subtlex-pl-lemmas-master.csv
 npm-debug.log*

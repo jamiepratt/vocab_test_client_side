@@ -43,8 +43,8 @@ jobs:
       - name: Build release
         run: npm run release
 
-      - name: Copy static shell
-        run: cp public/index.html target/release/public/index.html
+      - name: Copy static HTML
+        run: cp public/*.html target/release/public/
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
