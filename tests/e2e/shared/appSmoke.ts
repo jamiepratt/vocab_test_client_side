@@ -32,6 +32,38 @@ async function expectChoicesLocked(page: Page, choices: string[]) {
   }
 }
 
+async function expectBandBreakdown(page: Page) {
+  const breakdown = page.getByRole("region", { name: "Accuracy by frequency band" });
+  const expectedBands = [
+    ["0-250", "1/12 (8%)"],
+    ["250-500", "0/16 (0%)"],
+    ["500-1K", "0/18 (0%)"],
+    ["1K-2K", "0/16 (0%)"],
+    ["2K-3.5K", "0/10 (0%)"],
+    ["3.5K+", "0/8 (0%)"],
+  ];
+
+  await expect(breakdown).toBeVisible();
+
+  for (const [band, score] of expectedBands) {
+    const row = breakdown.getByRole("listitem").filter({ hasText: band });
+    await expect(row).toContainText(score);
+  }
+}
+
+async function expectReviewList(page: Page) {
+  const review = page.getByRole("region", { name: "Words to review (79)" });
+
+  await expect(review).toBeVisible();
+  await expect(review.getByRole("listitem")).toHaveCount(79);
+  await expect(review.getByRole("listitem").filter({ hasText: "jeść" })).toContainText("0-250");
+  await expect(review.getByRole("listitem").filter({ hasText: "jeść" })).toContainText("to eat");
+  await expect(review.getByRole("listitem").filter({ hasText: "duży" })).toContainText("big / large");
+  await expect(review.getByRole("listitem").filter({ hasText: "szybko" })).toContainText("quickly / fast");
+  await expect(review.getByRole("listitem").filter({ hasText: "niezłomny" })).toContainText("3.5K+");
+  await expect(review.getByRole("listitem").filter({ hasText: "niezłomny" })).toContainText("unyielding / steadfast / indomitable");
+}
+
 export async function runAppSmoke(page: Page) {
   await page.goto("/index.html");
 
@@ -142,8 +174,24 @@ export async function runAppSmoke(page: Page) {
   await expect(page.getByText("This test shows words in their dictionary (nominative) form. Polish has 7 cases")).toBeVisible();
   await expect(page.getByText("woda -> wode -> woda -> wodzie")).toBeVisible();
   await expect(page.getByText("Passive vocabulary (recognition) is typically 2-3x active vocabulary (production). This test measures recognition only.")).toBeVisible();
+  await expectBandBreakdown(page);
+  await expectReviewList(page);
 
   await expect(page.getByText("Select the correct meaning")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "don't know", exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Retake" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Retake" }).click();
+
+  await expectQuestion(page, {
+    current: 1,
+    word: "woda",
+    wordClass: "noun",
+    band: "0-250",
+    choices: firstChoices,
+  });
+  await expect(page.getByText("Correct", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Correct answer:", { exact: false })).toHaveCount(0);
+  await expect(page.getByRole("heading", { level: 1, name: "Results" })).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Words to review (79)" })).toHaveCount(0);
 }

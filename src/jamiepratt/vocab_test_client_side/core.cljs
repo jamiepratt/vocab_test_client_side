@@ -256,6 +256,7 @@
         correct (count (filter #(= :correct (:result %)) answers))
         dk (count (filter #(= :dk (:result %)) answers))
         wrong (count (filter #(= :wrong (:result %)) answers))
+        review-answers (filterv #(not= :correct (:result %)) answers)
         band-stats (band-stats-for answers)
         vocab-estimate (weighted-vocab-estimate band-stats)
         adjusted-estimate (adjusted-vocab-estimate vocab-estimate wrong)]
@@ -266,6 +267,7 @@
      :wrong wrong
      :accuracy-pct (js/Math.round (* 100 (/ correct total)))
      :band-stats band-stats
+     :review-answers review-answers
      :vocab-estimate vocab-estimate
      :adjusted-estimate adjusted-estimate
      :ceiling-band (ceiling-band band-stats)
@@ -417,6 +419,25 @@
      [:span {:class "font-semibold text-slate-700"}
       (str correct "/" answered " (" pct "%)")]]))
 
+(defn review-answer-row [{:keys [band word correct]}]
+  [:li {:class "grid gap-1 rounded-md border border-slate-200 p-3 text-sm sm:grid-cols-3 sm:items-center"}
+   [:span {:class "font-bold text-emerald-800"} (band-labels band)]
+   [:span {:class "font-semibold text-slate-950"} word]
+   [:span {:class "text-slate-700"} correct]])
+
+(defn review-section [review-answers]
+  (when (seq review-answers)
+    (let [heading (str "Words to review (" (count review-answers) ")")]
+      [:section {:aria-labelledby "review-heading"
+                 :class "grid gap-3"}
+       [:h2 {:id "review-heading"
+             :class "text-lg font-bold text-slate-950"}
+        heading]
+       [:ul {:class "grid gap-2"}
+        (for [{:keys [question-index] :as answer} review-answers]
+          ^{:key question-index}
+          [review-answer-row answer])]])))
+
 (defn results-screen [{:keys [results-data]}]
   [:main {:class "min-h-screen bg-slate-50 px-4 py-8 text-slate-950 sm:px-6"}
    [:section {:aria-labelledby "results-heading"
@@ -442,6 +463,7 @@
       (for [band-id ordered-band-ids]
         ^{:key band-id}
         [band-result-row results-data band-id])]]
+    [review-section (:review-answers results-data)]
     [:section {:aria-labelledby "estimate-heading"
                :class "grid gap-4 border-t border-slate-200 pt-6"}
      [:div {:class "flex flex-wrap items-center justify-between gap-3"}
