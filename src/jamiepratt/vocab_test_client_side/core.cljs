@@ -26,6 +26,17 @@
 (def band-labels
   (into {} (map (juxt :id :label) bands)))
 
+(def ordered-band-ids
+  (mapv :id bands))
+
+(def band-sizes
+  {:B1 250
+   :B2 250
+   :B3 500
+   :B4 1000
+   :B5 1500
+   :B6 2500})
+
 (def questions
   [{:word "woda" :word-class "noun" :band :B1 :correct "water" :wrong ["fire" "air" "earth"]}
    {:word "jeść" :word-class "verb" :band :B1 :correct "to eat" :wrong ["to drink" "to sleep" "to walk"]}
@@ -138,12 +149,129 @@
         {:label "don't know"
          :result :dk}))
 
+(defn round-nearest-50 [n]
+  (* 50 (js/Math.round (/ n 50))))
+
+(defn empty-band-stats []
+  (into {} (map (fn [band-id]
+                  [band-id {:answered 0
+                            :correct 0
+                            :wrong 0
+                            :dk 0
+                            :proportion 0
+                            :pct 0}])
+                ordered-band-ids)))
+
+(defn add-band-answer [stats {:keys [band result]}]
+  (-> stats
+      (update-in [band :answered] inc)
+      (update-in [band result] inc)))
+
+(defn with-band-proportions [stats]
+  (into {}
+        (map (fn [[band-id {:keys [answered correct] :as stat}]]
+               (let [proportion (if (pos? answered)
+                                  (/ correct answered)
+                                  0)]
+                 [band-id (assoc stat
+                                 :proportion proportion
+                                 :pct (js/Math.round (* 100 proportion)))]))
+             stats)))
+
+(defn band-stats-for [answers]
+  (with-band-proportions
+    (reduce add-band-answer (empty-band-stats) answers)))
+
+(defn band-proportion [band-stats band-id]
+  (get-in band-stats [band-id :proportion] 0))
+
+(defn weighted-vocab-estimate [band-stats]
+  (round-nearest-50
+   (reduce +
+           (map (fn [band-id]
+                  (* (band-proportion band-stats band-id)
+                     (band-sizes band-id)))
+                ordered-band-ids))))
+
+(defn adjusted-vocab-estimate [vocab-estimate wrong-count]
+  (let [guessing-bias (* wrong-count 0.25 35)
+        rounded-bias (round-nearest-50 guessing-bias)]
+    (max 0 (- vocab-estimate rounded-bias))))
+
+(defn ceiling-band [band-stats]
+  (reduce (fn [highest band-id]
+            (if (>= (band-proportion band-stats band-id) 0.5)
+              band-id
+              highest))
+          :B1
+          ordered-band-ids))
+
+(defn level-interpretation [band-stats]
+  (let [b1 (band-proportion band-stats :B1)
+        b2 (band-proportion band-stats :B2)
+        b3 (band-proportion band-stats :B3)
+        b4 (band-proportion band-stats :B4)]
+    (cond
+      (< b1 0.7)
+      "Even the top 250 words are shaky, which puts the vocabulary under 250. This is very early - the focus should be on drilling the most frequent words until they're automatic."
+
+      (< b2 0.5)
+      "The top 250 are solid but the 250-500 band is patchy. Real vocabulary is probably 300-450 - close to the 500 estimate, perhaps a touch under. Solid beginner foundation."
+
+      (< b3 0.4)
+      "The 500 estimate was accurate, maybe even a little low. The top 500 are solid and a few 500-1,000 words are sticking. This is a real A1 foundation - enough for basic survival Polish."
+
+      (and (>= b3 0.4) (< b4 0.35))
+      "You know more than you thought. The 500-1,000 band is partially solid, putting you around 700-1,000 words - well above your 500 guess. This is solid A1, approaching A2. You're underselling yourself."
+
+      (>= b4 0.45)
+      "You significantly underestimated. Your vocabulary extends well into the 1,000-2,000 range - you're probably around 1,200-1,800 words, not 500. This is solid A2 territory. Either you've absorbed more than you realized or you have strong cognate/Slavic-language support."
+
+      :else
+      "Roughly in the 600-900 range - above your 500 estimate. A solid beginner foundation with the start of intermediate vocabulary.")))
+
+(defn estimate-comparison [adjusted-estimate]
+  (let [diff (- adjusted-estimate 500)
+        abs-diff (js/Math.abs diff)]
+    (cond
+      (< abs-diff 150)
+      "Your ~500 estimate was accurate. Results are within +/-150 words."
+
+      (pos? diff)
+      (str "You knew more than you thought. Your vocabulary appears ~" abs-diff " words above your 500 guess.")
+
+      :else
+      (str "Slightly below your estimate. Your vocabulary appears ~" abs-diff " words under your 500 guess - but this is well within normal range."))))
+
+(defn honesty-note [wrong-count dk-count total]
+  (cond
+    (> (/ wrong-count total) 0.15)
+    "Your wrong-guess rate is notable. Some correct answers may be lucky hits (1/4 odds). The real vocabulary could be 50-150 words below the estimate."
+
+    (> dk-count (* wrong-count 2))
+    "You used \"don't know\" honestly. This estimate is probably accurate or slightly conservative."))
+
 (defn summarize-results [answers]
-  {:answered (count answers)
-   :total (count questions)
-   :correct (count (filter #(= :correct (:result %)) answers))
-   :dk (count (filter #(= :dk (:result %)) answers))
-   :wrong (count (filter #(= :wrong (:result %)) answers))})
+  (let [total (count questions)
+        correct (count (filter #(= :correct (:result %)) answers))
+        dk (count (filter #(= :dk (:result %)) answers))
+        wrong (count (filter #(= :wrong (:result %)) answers))
+        band-stats (band-stats-for answers)
+        vocab-estimate (weighted-vocab-estimate band-stats)
+        adjusted-estimate (adjusted-vocab-estimate vocab-estimate wrong)]
+    {:answered (count answers)
+     :total total
+     :correct correct
+     :dk dk
+     :wrong wrong
+     :accuracy-pct (js/Math.round (* 100 (/ correct total)))
+     :band-stats band-stats
+     :vocab-estimate vocab-estimate
+     :adjusted-estimate adjusted-estimate
+     :ceiling-band (ceiling-band band-stats)
+     :comparison (estimate-comparison adjusted-estimate)
+     :interpretation (level-interpretation band-stats)
+     :honesty-note (honesty-note wrong dk total)}))
 
 (defn feedback-for [choice question]
   (case (:result choice)
@@ -278,19 +406,69 @@
                   :on-click next-question}
          "Next"])]]))
 
+(defn band-result-row [results-data band-id]
+  (let [{:keys [answered correct pct]} (get-in results-data [:band-stats band-id])]
+    [:li {:class "grid gap-2 rounded-md border border-slate-200 p-3 text-sm sm:grid-cols-[5rem_1fr_6rem] sm:items-center"}
+     [:span {:class "font-bold text-emerald-800"} (band-labels band-id)]
+     [:div {:class "h-2 overflow-hidden rounded-full bg-slate-100"
+            :aria-hidden true}
+      [:div {:class "h-full rounded-full bg-emerald-700"
+             :style {:width (str pct "%")}}]]
+     [:span {:class "font-semibold text-slate-700"}
+      (str correct "/" answered " (" pct "%)")]]))
+
 (defn results-screen [{:keys [results-data]}]
   [:main {:class "min-h-screen bg-slate-50 px-4 py-8 text-slate-950 sm:px-6"}
    [:section {:aria-labelledby "results-heading"
-              :class "mx-auto grid w-full max-w-2xl gap-4 rounded-lg border border-slate-200 bg-white p-6 shadow-xl shadow-slate-950/10 sm:p-8"}
-    [:h1 {:id "results-heading"
-          :class "text-4xl font-bold leading-tight text-slate-950"}
-     "Results"]
-    [:p {:class "text-base text-slate-700"}
-     (str (:correct results-data) " of " (:total results-data) " correct")]
-    [:div {:class "grid gap-2 text-sm font-semibold text-slate-700"}
+              :class "mx-auto grid w-full max-w-3xl gap-6 rounded-lg border border-slate-200 bg-white p-6 shadow-xl shadow-slate-950/10 sm:p-8"}
+    [:div {:class "grid gap-2 text-center"}
+     [:h1 {:id "results-heading"
+           :class "text-4xl font-bold leading-tight text-slate-950"}
+      "Results"]
+     [:p {:class "text-6xl font-bold text-emerald-800"}
+      (str (:accuracy-pct results-data) "%")]
+     [:p {:class "text-base font-semibold text-slate-700"}
+      (str (:correct results-data) " of " (:total results-data) " correct")]]
+    [:div {:class "grid gap-2 text-sm font-semibold text-slate-700 sm:grid-cols-3"}
      [:p (str "Answered: " (:answered results-data))]
      [:p (str "Wrong: " (:wrong results-data))]
      [:p (str "Don't know: " (:dk results-data))]]
+    [:section {:aria-labelledby "band-results-heading"
+               :class "grid gap-3"}
+     [:h2 {:id "band-results-heading"
+           :class "text-lg font-bold text-slate-950"}
+      "Accuracy by frequency band"]
+     [:ul {:class "grid gap-2"}
+      (for [band-id ordered-band-ids]
+        ^{:key band-id}
+        [band-result-row results-data band-id])]]
+    [:section {:aria-labelledby "estimate-heading"
+               :class "grid gap-4 border-t border-slate-200 pt-6"}
+     [:div {:class "flex flex-wrap items-center justify-between gap-3"}
+      [:h2 {:id "estimate-heading"
+            :class "text-lg font-bold text-slate-950"}
+       "Vocabulary estimate"]
+      [:p {:class "rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800"}
+       (str "Ceiling: " (band-labels (:ceiling-band results-data)))]]
+     [:div {:class "grid gap-1 rounded-md bg-emerald-50 p-4"}
+      [:p {:class "text-xs font-bold uppercase text-slate-600"}
+       "Estimated passive vocabulary"]
+      [:p {:class "text-4xl font-bold text-emerald-900"}
+       (str "~" (:adjusted-estimate results-data) " words")]]
+     [:p {:class "text-base font-semibold text-slate-800"}
+      (:comparison results-data)]
+     [:p {:class "text-base leading-7 text-slate-700"}
+      (:interpretation results-data)]
+     (when (:honesty-note results-data)
+       [:p {:class "rounded-md bg-slate-100 p-3 text-sm font-semibold text-slate-800"}
+        (:honesty-note results-data)])
+     [:p {:class "rounded-md bg-slate-100 p-3 text-sm leading-6 text-slate-700"}
+      [:strong {:class "font-semibold text-slate-950"} "A note on Polish: "]
+      "This test shows words in their dictionary (nominative) form. Polish has 7 cases, so in real text these words appear with different endings (e.g. "
+      [:em "woda -> wode -> woda -> wodzie"]
+      "). Recognizing a word in its base form is easier than recognizing all its inflected forms, so your reading-comprehension vocabulary may feel smaller than this score suggests until the case system clicks."]
+     [:p {:class "rounded-md bg-slate-100 p-3 text-sm leading-6 text-slate-700"}
+      "Passive vocabulary (recognition) is typically 2-3x active vocabulary (production). This test measures recognition only."]]
     [:button {:type "button"
               :class button-class
               :on-click begin-test}
