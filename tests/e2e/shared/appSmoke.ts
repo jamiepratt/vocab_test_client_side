@@ -1,4 +1,40 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
+
+async function expectNoHorizontalOverflow(page: Page) {
+  const overflow = await page.evaluate(() => (
+    document.documentElement.scrollWidth - document.documentElement.clientWidth
+  ));
+
+  expect(overflow).toBeLessThanOrEqual(1);
+}
+
+async function expectComfortableButtons(page: Page) {
+  for (const button of await page.getByRole("button").all()) {
+    if (!(await button.isVisible())) {
+      continue;
+    }
+
+    const box = await button.boundingBox();
+    expect(box).not.toBeNull();
+
+    if (box) {
+      expect(box.height).toBeGreaterThanOrEqual(44);
+      expect(box.width).toBeLessThanOrEqual(390);
+    }
+  }
+}
+
+async function textColor(locator: Locator) {
+  return locator.evaluate((element) => getComputedStyle(element).color);
+}
+
+async function expectReferenceStyling(page: Page) {
+  await expect(page.locator("#app > main")).toHaveCSS("background-color", "rgb(250, 247, 240)");
+  await expect(page.locator("#app > main > section")).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  await expect(page.getByRole("button", { name: "Begin Test" })).toHaveCSS("background-color", "rgb(153, 27, 27)");
+  await expectNoHorizontalOverflow(page);
+  await expectComfortableButtons(page);
+}
 
 async function expectProgress(page: Page, current: number) {
   const total = 80;
@@ -49,6 +85,15 @@ async function expectBandBreakdown(page: Page) {
     const row = breakdown.getByRole("listitem").filter({ hasText: band });
     await expect(row).toContainText(score);
   }
+
+  const bandColors = await Promise.all(
+    expectedBands.map(([band]) => {
+      const label = breakdown.getByRole("listitem").filter({ hasText: band }).locator("span").first();
+      return textColor(label);
+    }),
+  );
+
+  expect(new Set(bandColors).size).toBe(expectedBands.length);
 }
 
 async function expectReviewList(page: Page) {
@@ -65,6 +110,7 @@ async function expectReviewList(page: Page) {
 }
 
 export async function runAppSmoke(page: Page) {
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/index.html");
 
   await expect(page.getByRole("heading", { level: 1, name: "Polish Vocabulary Test" })).toBeVisible();
@@ -77,6 +123,7 @@ export async function runAppSmoke(page: Page) {
   await expect(page.getByText("Band 4 - 1,000-2,000 - 16 words")).toBeVisible();
   await expect(page.getByText("Band 5 - 2,000-3,500 - 10 words")).toBeVisible();
   await expect(page.getByText("Band 6 - 3,500+ (ceiling) - 8 words")).toBeVisible();
+  await expectReferenceStyling(page);
 
   await page.getByRole("button", { name: "Begin Test" }).click();
 
@@ -88,6 +135,8 @@ export async function runAppSmoke(page: Page) {
     band: "0-250",
     choices: firstChoices,
   });
+  await expectNoHorizontalOverflow(page);
+  await expectComfortableButtons(page);
 
   await page.getByRole("button", { name: "water", exact: true }).click();
 
@@ -176,6 +225,7 @@ export async function runAppSmoke(page: Page) {
   await expect(page.getByText("Passive vocabulary (recognition) is typically 2-3x active vocabulary (production). This test measures recognition only.")).toBeVisible();
   await expectBandBreakdown(page);
   await expectReviewList(page);
+  await expectNoHorizontalOverflow(page);
 
   await expect(page.getByText("Select the correct meaning")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "don't know", exact: true })).toHaveCount(0);

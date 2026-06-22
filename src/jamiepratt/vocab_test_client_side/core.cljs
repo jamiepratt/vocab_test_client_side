@@ -26,6 +26,35 @@
 (def band-labels
   (into {} (map (juxt :id :label) bands)))
 
+(def band-styles
+  {:B1 {:bar "bg-[#b91c1c]"
+        :badge "bg-red-100 text-red-900 ring-red-200"
+        :panel "border-red-200 bg-red-50 text-red-950"
+        :text "text-red-800"}
+   :B2 {:bar "bg-[#c2410c]"
+        :badge "bg-orange-100 text-orange-900 ring-orange-200"
+        :panel "border-orange-200 bg-orange-50 text-orange-950"
+        :text "text-orange-800"}
+   :B3 {:bar "bg-[#a16207]"
+        :badge "bg-yellow-100 text-yellow-900 ring-yellow-200"
+        :panel "border-yellow-200 bg-yellow-50 text-yellow-950"
+        :text "text-yellow-800"}
+   :B4 {:bar "bg-[#0f766e]"
+        :badge "bg-teal-100 text-teal-900 ring-teal-200"
+        :panel "border-teal-200 bg-teal-50 text-teal-950"
+        :text "text-teal-800"}
+   :B5 {:bar "bg-[#0369a1]"
+        :badge "bg-sky-100 text-sky-900 ring-sky-200"
+        :panel "border-sky-200 bg-sky-50 text-sky-950"
+        :text "text-sky-800"}
+   :B6 {:bar "bg-[#6d28d9]"
+        :badge "bg-violet-100 text-violet-900 ring-violet-200"
+        :panel "border-violet-200 bg-violet-50 text-violet-950"
+        :text "text-violet-800"}})
+
+(defn band-style-class [band-id style-key]
+  (get-in band-styles [band-id style-key]))
+
 (def ordered-band-ids
   (mapv :id bands))
 
@@ -134,7 +163,7 @@
   (delay (rdom/create-root (.getElementById js/document "app"))))
 
 (def button-class
-  "inline-flex min-h-11 items-center justify-center rounded-md bg-emerald-700 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 disabled:cursor-not-allowed disabled:opacity-70")
+  "inline-flex min-h-11 w-full items-center justify-center rounded-md bg-[#991b1b] px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#7f1d1d] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#991b1b] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto")
 
 (defn begin-test []
   (reset! app-state (assoc (initial-state) :screen :quiz)))
@@ -320,27 +349,28 @@
                     :feedback nil)))))
 
 (defn start-screen []
-  [:main {:class "min-h-screen bg-slate-50 px-4 py-8 text-slate-950 sm:px-6"}
+  [:main {:class "min-h-screen bg-[#faf7f0] px-3 py-5 text-stone-950 sm:px-6 sm:py-8"}
    [:section {:aria-labelledby "start-heading"
-              :class "mx-auto grid w-full max-w-3xl gap-6 rounded-lg border border-slate-200 bg-white p-6 shadow-xl shadow-slate-950/10 sm:p-8"}
+              :class "mx-auto grid w-full max-w-2xl gap-5 rounded-lg border border-stone-200 bg-white p-5 shadow-lg shadow-stone-900/10 sm:gap-6 sm:p-7"}
     [:div {:class "grid gap-3"}
-     [:p {:class "text-sm font-semibold uppercase tracking-wide text-emerald-700"} "Polish to English"]
+     [:p {:class "text-sm font-semibold uppercase text-[#991b1b]"} "Polish to English"]
      [:h1 {:id "start-heading"
-           :class "text-4xl font-bold leading-tight text-slate-950 sm:text-5xl"}
+           :class "text-4xl font-bold leading-tight text-stone-950 sm:text-5xl"}
       "Polish Vocabulary Test"]
-     [:p {:class "max-w-2xl text-base leading-7 text-slate-600"}
+     [:p {:class "max-w-2xl text-base leading-7 text-stone-700"}
       "Anchored low, ranging wide."]]
-    [:div {:class "grid gap-4 rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-slate-700"}
-     [:p [:strong {:class "font-semibold text-slate-950"} "Format: "]
+    [:div {:class "grid gap-4 rounded-md border border-[#e7d8c4] bg-[#fff8ec] p-4 text-sm leading-6 text-stone-700"}
+     [:p [:strong {:class "font-semibold text-stone-950"} "Format: "]
       "You'll see a Polish word. Pick the correct English meaning from 4 choices."]
      [:p "You estimated ~500 words but suspect you know more, so this test ranges well past 500 to find where you actually top out."]
      [:div
-      [:p {:class "font-semibold text-slate-950"} "80 words across 6 bands:"]
+      [:p {:class "font-semibold text-stone-950"} "80 words across 6 bands:"]
       [:ul {:class "mt-2 grid gap-1"}
        (for [{:keys [id summary]} bands]
          ^{:key id}
-         [:li summary])]]
-     [:p [:strong {:class "font-semibold text-slate-950"} "Don't guess. "]
+         [:li {:class (str "rounded-md border px-3 py-2 " (band-style-class id :panel))}
+          summary])]]
+     [:p [:strong {:class "font-semibold text-stone-950"} "Don't guess. "]
       "Pick \"don't know\" if unsure; it makes the estimate accurate."]
      [:p "~12 minutes."]]
     [:button {:type "button"
@@ -352,7 +382,7 @@
   (let [correct-answer? (= (:label choice) (:correct question))
         selected-answer? (= (:label choice) (:selected feedback))
         selected-result (:kind feedback)
-        base-class "min-h-12 rounded-md border px-4 py-3 text-left text-sm font-semibold shadow-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+        base-class "min-h-12 rounded-md border px-4 py-3 text-left text-sm font-semibold break-words shadow-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
         state-class (cond
                       (and answer-locked? correct-answer?)
                       "border-emerald-600 bg-emerald-50 text-emerald-900"
@@ -361,7 +391,7 @@
                       "border-red-400 bg-red-50 text-red-900"
 
                       :else
-                      "border-slate-300 bg-white text-slate-950 hover:border-emerald-700 hover:bg-emerald-50 focus-visible:outline-emerald-700")]
+                      "border-stone-300 bg-white text-stone-950 hover:border-[#991b1b] hover:bg-red-50 focus-visible:outline-[#991b1b]")]
     [:button {:type "button"
               :class (str base-class " " state-class)
               :disabled answer-locked?
@@ -372,27 +402,27 @@
   (let [question (nth questions current-question-index)
         current-question-number (inc current-question-index)
         progress (* 100 (/ current-question-number (count questions)))]
-    [:main {:class "min-h-screen bg-slate-50 px-4 py-8 text-slate-950 sm:px-6"}
+    [:main {:class "min-h-screen bg-[#faf7f0] px-3 py-5 text-stone-950 sm:px-6 sm:py-8"}
      [:section {:aria-labelledby "question-word"
-                :class "mx-auto grid w-full max-w-2xl gap-6 rounded-lg border border-slate-200 bg-white p-6 shadow-xl shadow-slate-950/10 sm:p-8"}
-      [:div {:class "h-2 overflow-hidden rounded-full bg-slate-100"
+                :class "mx-auto grid w-full max-w-2xl gap-5 rounded-lg border border-stone-200 bg-white p-5 shadow-lg shadow-stone-900/10 sm:gap-6 sm:p-7"}
+      [:div {:class "h-2 overflow-hidden rounded-full bg-stone-100"
              :role "progressbar"
              :aria-valuemin 1
              :aria-valuemax (count questions)
              :aria-valuenow current-question-number}
-       [:div {:class "h-full rounded-full bg-emerald-700 transition-all"
+       [:div {:class "h-full rounded-full bg-[#991b1b] transition-all"
               :style {:width (str progress "%")}}]]
-      [:div {:class "flex flex-wrap items-center justify-between gap-3 text-sm font-semibold text-slate-600"}
+      [:div {:class "flex flex-wrap items-center justify-between gap-3 text-sm font-semibold text-stone-600"}
        [:span (str current-question-number " / " (count questions))]
-       [:span {:class "rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800"}
+       [:span {:class (str "rounded-full px-3 py-1 text-xs font-bold ring-1 " (band-style-class (:band question) :badge))}
         (band-labels (:band question))]]
       [:div {:class "grid gap-2 text-center"}
        [:h2 {:id "question-word"
-             :class "text-5xl font-bold leading-tight text-slate-950"}
+             :class "break-words text-4xl font-bold leading-tight text-stone-950 sm:text-5xl"}
         (:word question)]
-       [:p {:class "text-sm font-semibold uppercase tracking-wide text-slate-500"}
+       [:p {:class "text-sm font-semibold uppercase text-stone-500"}
         (:word-class question)]
-       [:p {:class "text-base text-slate-700"} "Select the correct meaning"]]
+       [:p {:class "text-base text-stone-700"} "Select the correct meaning"]]
       [:div {:class "grid gap-3"}
        (for [choice (choice-options question)]
          ^{:key (:label choice)}
@@ -404,26 +434,26 @@
          (:message feedback)])
       (when answer-locked?
         [:button {:type "button"
-                  :class (str button-class " justify-self-end")
+                  :class (str button-class " justify-self-stretch sm:justify-self-end")
                   :on-click next-question}
          "Next"])]]))
 
 (defn band-result-row [results-data band-id]
   (let [{:keys [answered correct pct]} (get-in results-data [:band-stats band-id])]
-    [:li {:class "grid gap-2 rounded-md border border-slate-200 p-3 text-sm sm:grid-cols-[5rem_1fr_6rem] sm:items-center"}
-     [:span {:class "font-bold text-emerald-800"} (band-labels band-id)]
-     [:div {:class "h-2 overflow-hidden rounded-full bg-slate-100"
+    [:li {:class "grid min-w-0 gap-2 rounded-md border border-stone-200 p-3 text-sm sm:grid-cols-[5rem_1fr_6rem] sm:items-center"}
+     [:span {:class (str "font-bold " (band-style-class band-id :text))} (band-labels band-id)]
+     [:div {:class "h-2 overflow-hidden rounded-full bg-stone-100"
             :aria-hidden true}
-      [:div {:class "h-full rounded-full bg-emerald-700"
+      [:div {:class (str "h-full rounded-full " (band-style-class band-id :bar))
              :style {:width (str pct "%")}}]]
-     [:span {:class "font-semibold text-slate-700"}
+     [:span {:class "font-semibold text-stone-700"}
       (str correct "/" answered " (" pct "%)")]]))
 
 (defn review-answer-row [{:keys [band word correct]}]
-  [:li {:class "grid gap-1 rounded-md border border-slate-200 p-3 text-sm sm:grid-cols-3 sm:items-center"}
-   [:span {:class "font-bold text-emerald-800"} (band-labels band)]
-   [:span {:class "font-semibold text-slate-950"} word]
-   [:span {:class "text-slate-700"} correct]])
+  [:li {:class "grid min-w-0 gap-1 rounded-md border border-stone-200 p-3 text-sm sm:grid-cols-3 sm:items-center"}
+   [:span {:class (str "font-bold " (band-style-class band :text))} (band-labels band)]
+   [:span {:class "break-words font-semibold text-stone-950"} word]
+   [:span {:class "break-words text-stone-700"} correct]])
 
 (defn review-section [review-answers]
   (when (seq review-answers)
@@ -431,7 +461,7 @@
       [:section {:aria-labelledby "review-heading"
                  :class "grid gap-3"}
        [:h2 {:id "review-heading"
-             :class "text-lg font-bold text-slate-950"}
+             :class "text-lg font-bold text-stone-950"}
         heading]
        [:ul {:class "grid gap-2"}
         (for [{:keys [question-index] :as answer} review-answers]
@@ -439,25 +469,25 @@
           [review-answer-row answer])]])))
 
 (defn results-screen [{:keys [results-data]}]
-  [:main {:class "min-h-screen bg-slate-50 px-4 py-8 text-slate-950 sm:px-6"}
+  [:main {:class "min-h-screen bg-[#faf7f0] px-3 py-5 text-stone-950 sm:px-6 sm:py-8"}
    [:section {:aria-labelledby "results-heading"
-              :class "mx-auto grid w-full max-w-3xl gap-6 rounded-lg border border-slate-200 bg-white p-6 shadow-xl shadow-slate-950/10 sm:p-8"}
+              :class "mx-auto grid w-full max-w-3xl gap-5 rounded-lg border border-stone-200 bg-white p-5 shadow-lg shadow-stone-900/10 sm:gap-6 sm:p-7"}
     [:div {:class "grid gap-2 text-center"}
      [:h1 {:id "results-heading"
-           :class "text-4xl font-bold leading-tight text-slate-950"}
+           :class "text-4xl font-bold leading-tight text-stone-950"}
       "Results"]
-     [:p {:class "text-6xl font-bold text-emerald-800"}
+     [:p {:class "text-6xl font-bold text-[#991b1b]"}
       (str (:accuracy-pct results-data) "%")]
-     [:p {:class "text-base font-semibold text-slate-700"}
+     [:p {:class "text-base font-semibold text-stone-700"}
       (str (:correct results-data) " of " (:total results-data) " correct")]]
-    [:div {:class "grid gap-2 text-sm font-semibold text-slate-700 sm:grid-cols-3"}
+    [:div {:class "grid gap-2 text-sm font-semibold text-stone-700 sm:grid-cols-3"}
      [:p (str "Answered: " (:answered results-data))]
      [:p (str "Wrong: " (:wrong results-data))]
      [:p (str "Don't know: " (:dk results-data))]]
     [:section {:aria-labelledby "band-results-heading"
                :class "grid gap-3"}
      [:h2 {:id "band-results-heading"
-           :class "text-lg font-bold text-slate-950"}
+           :class "text-lg font-bold text-stone-950"}
       "Accuracy by frequency band"]
      [:ul {:class "grid gap-2"}
       (for [band-id ordered-band-ids]
@@ -465,31 +495,31 @@
         [band-result-row results-data band-id])]]
     [review-section (:review-answers results-data)]
     [:section {:aria-labelledby "estimate-heading"
-               :class "grid gap-4 border-t border-slate-200 pt-6"}
+               :class "grid gap-4 border-t border-stone-200 pt-6"}
      [:div {:class "flex flex-wrap items-center justify-between gap-3"}
       [:h2 {:id "estimate-heading"
-            :class "text-lg font-bold text-slate-950"}
+            :class "text-lg font-bold text-stone-950"}
        "Vocabulary estimate"]
-      [:p {:class "rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800"}
+      [:p {:class (str "rounded-full px-3 py-1 text-xs font-bold ring-1 " (band-style-class (:ceiling-band results-data) :badge))}
        (str "Ceiling: " (band-labels (:ceiling-band results-data)))]]
-     [:div {:class "grid gap-1 rounded-md bg-emerald-50 p-4"}
-      [:p {:class "text-xs font-bold uppercase text-slate-600"}
+     [:div {:class "grid gap-1 rounded-md border border-red-200 bg-red-50 p-4"}
+      [:p {:class "text-xs font-bold uppercase text-stone-600"}
        "Estimated passive vocabulary"]
-      [:p {:class "text-4xl font-bold text-emerald-900"}
+      [:p {:class "break-words text-4xl font-bold text-[#7f1d1d]"}
        (str "~" (:adjusted-estimate results-data) " words")]]
-     [:p {:class "text-base font-semibold text-slate-800"}
+     [:p {:class "break-words text-base font-semibold text-stone-800"}
       (:comparison results-data)]
-     [:p {:class "text-base leading-7 text-slate-700"}
+     [:p {:class "break-words text-base leading-7 text-stone-700"}
       (:interpretation results-data)]
      (when (:honesty-note results-data)
-       [:p {:class "rounded-md bg-slate-100 p-3 text-sm font-semibold text-slate-800"}
+       [:p {:class "break-words rounded-md bg-stone-100 p-3 text-sm font-semibold text-stone-800"}
         (:honesty-note results-data)])
-     [:p {:class "rounded-md bg-slate-100 p-3 text-sm leading-6 text-slate-700"}
-      [:strong {:class "font-semibold text-slate-950"} "A note on Polish: "]
+     [:p {:class "break-words rounded-md bg-stone-100 p-3 text-sm leading-6 text-stone-700"}
+      [:strong {:class "font-semibold text-stone-950"} "A note on Polish: "]
       "This test shows words in their dictionary (nominative) form. Polish has 7 cases, so in real text these words appear with different endings (e.g. "
       [:em "woda -> wode -> woda -> wodzie"]
       "). Recognizing a word in its base form is easier than recognizing all its inflected forms, so your reading-comprehension vocabulary may feel smaller than this score suggests until the case system clicks."]
-     [:p {:class "rounded-md bg-slate-100 p-3 text-sm leading-6 text-slate-700"}
+     [:p {:class "break-words rounded-md bg-stone-100 p-3 text-sm leading-6 text-stone-700"}
       "Passive vocabulary (recognition) is typically 2-3x active vocabulary (production). This test measures recognition only."]]
     [:button {:type "button"
               :class button-class
