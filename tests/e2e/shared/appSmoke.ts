@@ -125,6 +125,7 @@ export async function runAppSmoke(page: Page) {
 
   await expect(page.getByRole("navigation", { name: "Main" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Test", exact: true })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("link", { name: "Features to implement" })).toHaveAttribute("href", "features-to-implement.html");
   await page.getByRole("link", { name: "Testing methodology" }).click();
   await expect(page).toHaveURL(/#\/methodology$/);
   await expect(page.getByRole("heading", { level: 1, name: "Progressive vocabulary test methodology" })).toBeVisible();

@@ -460,12 +460,13 @@
     <div class="header-inner">
       <p class="eyebrow">Implementation document</p>
       <h1>Vocabulary test features to implement</h1>
-      <p class="dek">Feature plan for a sentence-based vocabulary size test: yes/no recognition, selective meaning checks, lemma-based scoring, calibration emails, and a data path from an 80-item launch test to shorter calibrated tests.</p>
+      <p class="dek">Feature plan for the current Polish-to-English vocabulary test and backlog: 80-item multiple-choice baseline, frequency-band scoring, result review, methodology docs, calibration path, and progressive confidence with early finish.</p>
       <div class="chips" aria-label="Document tags">
         <span class="chip">Static HTML</span>
         <span class="chip">GitHub Pages ready</span>
-        <span class="chip">Sentence context</span>
-        <span class="chip">Lemma scoring</span>
+        <span class="chip">Multiple choice</span>
+        <span class="chip">Frequency bands</span>
+        <span class="chip">Vocabulary estimate</span>
         <span class="chip">Calibration</span>
       </div>
     </div>
@@ -473,9 +474,22 @@
 
   <div class="layout">
     <main>
+      <section id="current">
+        <h2>Current app snapshot</h2>
+        <ul>
+          <li>Reagent/Shadow app served by <code>public/index.html</code> with Test and Testing methodology routes.</li>
+          <li>Questions load from <code>/api/questions</code>, backed by structured EDN and optional configured API base URL.</li>
+          <li>Test uses 80 dictionary-form Polish words across six bands: 12, 16, 18, 16, 10, and 8 items.</li>
+          <li>Each quiz item shows Polish word, part of speech, band badge, progress bar, four English choices, and <code>don't know</code>.</li>
+          <li>Answering locks choices, shows immediate feedback, reveals the correct answer for misses, then enables Next.</li>
+          <li>Results show accuracy, answered/wrong/don't know counts, band breakdown, words to review, ceiling band, passive-vocabulary estimate, interpretation, honesty note, Polish case note, passive-vs-active note, and Retake.</li>
+          <li>Methodology page explains the staged path from frequency-ranked launch test to calibrated adaptive test.</li>
+        </ul>
+      </section>
+
       <section id="goal">
         <h2>Goal</h2>
-        <p>Build a receptive vocabulary test that estimates how many dictionary-form words a learner probably knows. The user sees full sentences, one highlighted word form, and answers whether they know that word in context.</p>
+        <p>Build from the current dictionary-form multiple-choice launch test toward a receptive vocabulary test that estimates how many target-language lemmas a learner probably knows. The current app tests isolated dictionary forms; later phases can add sentence context, inflected forms, meaning checks, telemetry, calibration, history, and email updates.</p>
         <div class="callout">
           <p><strong>Main product bet:</strong> start with frequency as the difficulty proxy, ask 80 items at launch to average out item-specific difficulty and gather calibration data, then use collected responses to learn real item difficulty and shorten future tests.</p>
         </div>
@@ -483,111 +497,111 @@
 
       <section id="experience">
         <h2>User experience</h2>
-        <div class="sample" aria-label="Vocabulary question mockup">
-          <p class="sentence">Wczoraj <mark>spotkaliśmy</mark> dawnego kolegę przed teatrem.</p>
-          <div class="button-row" aria-label="Recognition answer choices">
-            <span class="button primary">Yes, I know it</span>
-            <span class="button">No / not sure</span>
-          </div>
-          <p><span class="status warn">Occasional check</span> If selected for verification, ask what the highlighted word means.</p>
-          <div class="choices">
-            <span class="choice">We met</span>
-            <span class="choice">We waited</span>
-            <span class="choice">We carried</span>
-            <span class="choice">We watched</span>
+        <div class="sample" aria-label="Current vocabulary question mockup">
+          <p class="sentence"><mark>woda</mark></p>
+          <p><span class="status">noun</span> <span class="status ok">0-250</span></p>
+          <div class="choices" aria-label="Current answer choices">
+            <span class="choice">fire</span>
+            <span class="choice">air</span>
+            <span class="choice">earth</span>
+            <span class="choice">water</span>
+            <span class="choice">don't know</span>
           </div>
         </div>
         <ul>
-          <li>Show a complete sentence, not an isolated word.</li>
-          <li>Highlight exactly one tested word form inside the sentence.</li>
-          <li>The shown word may be inflected or otherwise not in dictionary form.</li>
-          <li>Primary response: simple recognition, yes or no.</li>
-          <li>For a sampled subset of yes answers, ask a multiple-choice meaning check.</li>
-          <li>Use visible progress, but avoid revealing exact scoring logic.</li>
-          <li>Ask for an email address before or after the result if the user wants calibration updates.</li>
-          <li>When calibration changes their estimate, email users who already completed the test with the updated vocabulary estimate.</li>
-          <li>When a returning user has multiple completed tests, show a vocabulary-over-time graph with a center estimate and upper and lower bounds.</li>
+          <li>Show visible progress as <code>current / 80</code> plus an accessible progress bar.</li>
+          <li>Show the current frequency band without exposing scoring internals.</li>
+          <li>Include <code>don't know</code> on every item and tell users not to guess.</li>
+          <li>Lock answer buttons after a choice.</li>
+          <li>Show immediate correct/incorrect feedback.</li>
+          <li>Show the correct English answer after wrong or <code>don't know</code>.</li>
+          <li>Let the user move forward only after the answer is locked.</li>
+          <li>End with a result page that supports review and retake.</li>
         </ul>
-        <div class="sample" aria-label="Vocabulary history graph mockup">
-          <p><span class="status ok">Repeat result</span> Returning users see vocabulary size over time with uncertainty bounds.</p>
-          <svg class="graph-preview" viewBox="0 0 640 300" role="img" aria-labelledby="history-graph-title history-graph-desc">
-            <title id="history-graph-title">Vocabulary estimate over time</title>
-            <desc id="history-graph-desc">Line chart with a center estimate and upper and lower bounds across four completed tests.</desc>
-            <rect x="0" y="0" width="640" height="300" fill="#fbfcfd"></rect>
-            <line x1="70" y1="38" x2="70" y2="245" stroke="#cfd8df"></line>
-            <line x1="70" y1="245" x2="590" y2="245" stroke="#cfd8df"></line>
-            <line x1="70" y1="192" x2="590" y2="192" stroke="#e5ebf0"></line>
-            <line x1="70" y1="139" x2="590" y2="139" stroke="#e5ebf0"></line>
-            <line x1="70" y1="86" x2="590" y2="86" stroke="#e5ebf0"></line>
-            <path d="M100 176 L240 151 L380 123 L540 102" fill="none" stroke="#176f73" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path>
-            <path d="M100 205 L240 181 L380 153 L540 132" fill="none" stroke="#8fbfc1" stroke-width="3" stroke-linecap="round" stroke-dasharray="7 7"></path>
-            <path d="M100 147 L240 121 L380 94 L540 72" fill="none" stroke="#8fbfc1" stroke-width="3" stroke-linecap="round" stroke-dasharray="7 7"></path>
-            <circle cx="100" cy="176" r="5" fill="#176f73"></circle>
-            <circle cx="240" cy="151" r="5" fill="#176f73"></circle>
-            <circle cx="380" cy="123" r="5" fill="#176f73"></circle>
-            <circle cx="540" cy="102" r="5" fill="#176f73"></circle>
-            <text x="72" y="31" class="graph-label">Vocabulary size</text>
-            <text x="94" y="268" class="graph-label">Test 1</text>
-            <text x="234" y="268" class="graph-label">Test 2</text>
-            <text x="374" y="268" class="graph-label">Test 3</text>
-            <text x="534" y="268" class="graph-label">Test 4</text>
-            <text x="452" y="95" class="graph-label">Center estimate</text>
-            <text x="433" y="64" class="graph-label">Upper bound</text>
-            <text x="433" y="152" class="graph-label">Lower bound</text>
-          </svg>
+        <div class="sample" aria-label="Future confidence and early finish mockup">
+          <p><span class="status warn">Mid-test estimate</span> 32 of 80 answered</p>
+          <p class="sentence">Estimated passive vocabulary: <mark>~850 words</mark></p>
+          <p>Confidence: Medium. Expected range: 550-1,250 words.</p>
+          <div class="button-row">
+            <span class="button primary">Continue for tighter estimate</span>
+            <span class="button">Show results now</span>
+          </div>
         </div>
+        <h3>Future UX requirements</h3>
+        <ul>
+          <li>Show complete sentence context with exactly one highlighted tested token.</li>
+          <li>Support inflected displayed forms while scoring the lemma.</li>
+          <li>Ask selective meaning checks after some claimed-known answers.</li>
+          <li>Ask for email opt-in before or after results if the user wants calibration updates.</li>
+          <li>Show a vocabulary-over-time graph for returning users with center, lower, and upper estimate lines.</li>
+          <li>While the quiz is in progress, show how confident the estimate is and allow finishing early once the learner is satisfied with that precision.</li>
+        </ul>
       </section>
 
       <section id="scoring">
         <h2>Scoring model</h2>
-        <p>Score vocabulary size by dictionary forms, not every observed surface form. If the sentence tests <code>spotkaliśmy</code>, the vocabulary item counted is the lemma <code>spotkać</code>.</p>
+        <p>Current scoring uses dictionary-form words grouped by frequency band. Correct answers count as known, wrong and <code>don't know</code> count as unknown. The estimate sums each band size times that band's hit rate, then applies a small guessing-bias penalty from wrong answers.</p>
         <table>
           <thead>
             <tr>
               <th>Concept</th>
-              <th>Stored value</th>
+              <th>Current stored value</th>
               <th>Why it matters</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td>Surface form</td>
-              <td><code>spotkaliśmy</code></td>
-              <td>User-visible tested token in the sentence.</td>
+              <td>Word</td>
+              <td><code>woda</code></td>
+              <td>User-visible tested dictionary form.</td>
             </tr>
             <tr>
-              <td>Lemma</td>
-              <td><code>spotkać</code></td>
-              <td>Vocabulary item counted in final estimate.</td>
+              <td>Word class</td>
+              <td><code>noun</code></td>
+              <td>Helps disambiguate translation choices.</td>
             </tr>
             <tr>
-              <td>Frequency rank</td>
-              <td><code>rank = 812</code></td>
-              <td>Initial difficulty proxy before calibration.</td>
+              <td>Band</td>
+              <td><code>B1</code></td>
+              <td>Frequency band used for weighting and result breakdown.</td>
             </tr>
             <tr>
-              <td>Observed difficulty</td>
-              <td><code>b_i</code></td>
-              <td>Learned later from response data.</td>
+              <td>Correct answer</td>
+              <td><code>water</code></td>
+              <td>Known item when selected.</td>
+            </tr>
+            <tr>
+              <td>Wrong answers</td>
+              <td><code>fire</code>, <code>air</code>, <code>earth</code></td>
+              <td>Plausible distractors.</td>
             </tr>
           </tbody>
         </table>
-        <p>A yes answer counts as known only when no verification is requested, or when the meaning check is answered correctly. Wrong meaning checks convert the item to unknown and contribute to a reliability flag.</p>
+        <p>Future sentence-based scoring should count lemmas, not every observed surface form. If the sentence tests <code>spotkaliśmy</code>, the vocabulary item counted is the lemma <code>spotkać</code>. Failed meaning checks convert that item to unknown and contribute to a reliability flag.</p>
       </section>
 
       <section id="features">
         <h2>Feature list</h2>
         <div class="grid">
           <article class="card">
+            <h3>Implemented baseline</h3>
+            <ul>
+              <li>80-item multiple-choice test.</li>
+              <li>Six frequency bands with visible labels.</li>
+              <li>Structured question data from the API.</li>
+              <li>Immediate feedback, review list, estimate, and methodology route.</li>
+            </ul>
+          </article>
+          <article class="card">
             <h3>Sentence item bank</h3>
             <ul>
-              <li>Store sentence text, tested token offsets, surface form, lemma, translation, frequency rank, and distractors.</li>
+              <li>Store sentence text, token offsets, surface form, lemma, rank, translation, and distractors.</li>
               <li>Support multiple sentence examples per lemma.</li>
               <li>Exclude ambiguous, proper-name, offensive, or unnatural examples.</li>
             </ul>
           </article>
           <article class="card">
-            <h3>Recognition question</h3>
+            <h3>Sentence recognition mode</h3>
             <ul>
               <li>Render sentence with one highlighted token.</li>
               <li>Capture yes, no, not sure, skipped, and response time.</li>
@@ -603,47 +617,45 @@
             </ul>
           </article>
           <article class="card">
-            <h3>Initial long test</h3>
+            <h3>Vocabulary estimate range</h3>
             <ul>
-              <li>Sample broadly across frequency bands.</li>
-              <li>Start with 80 test items: enough for a first estimate plus extra calibration coverage.</li>
-              <li>Include temporary extra items while the test is not fully calibrated.</li>
-              <li>Gradually reduce item count as observed item difficulty becomes reliable.</li>
-              <li>Average out cases where frequency differs from real learner difficulty.</li>
+              <li>Estimate known lemmas, not known word forms.</li>
+              <li>Show a center estimate plus lower and upper range.</li>
+              <li>Attach a confidence or reliability label from answer count, band coverage, checks, and timing.</li>
             </ul>
           </article>
           <article class="card">
-            <h3>Vocabulary estimate</h3>
+            <h3>Progressive confidence and early finish</h3>
             <ul>
-              <li>Estimate known lemmas, not known word forms.</li>
-              <li>Show a range, not just a single number.</li>
-              <li>Attach a confidence or reliability label from checks and timing.</li>
+              <li>Recompute provisional estimate and uncertainty after each locked answer.</li>
+              <li>Show confidence such as Low, Medium, High, or a precision score.</li>
+              <li>Enable <code>Show results now</code> after minimum item count and band coverage are met.</li>
+              <li>Record early-finished sessions with item count, confidence level, and wider range.</li>
             </ul>
           </article>
           <article class="card">
             <h3>Calibration data</h3>
             <ul>
-              <li>Collect enough responses per lemma to learn real difficulty.</li>
+              <li>Persist anonymized response events for calibration.</li>
+              <li>Collect enough responses per item or lemma to learn real difficulty.</li>
               <li>Compare observed difficulty against frequency rank.</li>
-              <li>Use learned difficulty to reduce item count over time.</li>
               <li>Track calibration version so older completed tests can be re-estimated.</li>
-              <li>Queue updated estimates for users who opted into email updates.</li>
             </ul>
           </article>
           <article class="card">
-            <h3>Result history</h3>
+            <h3>Result history and emails</h3>
             <ul>
-              <li>Store each completed estimate with timestamp, calibration version, center estimate, lower bound, and upper bound.</li>
-              <li>For repeat test-takers, chart vocabulary size over time.</li>
-              <li>Show the center line plus upper and lower uncertainty bounds.</li>
+              <li>Store each completed estimate with timestamp, calibration version, center, lower, and upper values.</li>
+              <li>Chart repeat results over time.</li>
+              <li>Email opted-in users when calibration materially changes their estimate.</li>
             </ul>
           </article>
           <article class="card">
-            <h3>Calibration emails</h3>
+            <h3>Short adaptive test</h3>
             <ul>
-              <li>Collect explicit opt-in before sending follow-up estimate emails.</li>
-              <li>Email users when a calibration round materially changes their vocabulary estimate.</li>
-              <li>Include the new estimate, range, calibration date, and a link back to their result history.</li>
+              <li>Select items using learned difficulty instead of frequency alone.</li>
+              <li>Stop when the confidence range is narrow enough for the product promise.</li>
+              <li>Keep calibration-tail items so the item bank keeps improving.</li>
             </ul>
           </article>
         </div>
@@ -655,48 +667,69 @@
           <thead>
             <tr>
               <th>Phase</th>
+              <th>Status</th>
               <th>Build</th>
               <th>Done when</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td><span class="status">1</span> Static prototype</td>
-              <td>Sentence card, highlighted token, yes/no response, optional multiple-choice check.</td>
-              <td>Browser flow works end to end with local sample items.</td>
+              <td>1. Multiple-choice launch test</td>
+              <td><span class="status ok">Done</span></td>
+              <td>80 questions, four choices, <code>don't know</code>, progress, feedback, retake.</td>
+              <td>Browser flow works end to end.</td>
             </tr>
             <tr>
-              <td><span class="status">2</span> Item bank</td>
-              <td>Data schema for sentence, surface form, lemma, rank, answer, distractors.</td>
-              <td>Questions can be generated from structured data, not hardcoded UI text.</td>
+              <td>2. Structured item loading</td>
+              <td><span class="status ok">Done</span></td>
+              <td>EDN question bank served through <code>/api/questions</code>.</td>
+              <td>App can load questions from local or configured API base URL.</td>
             </tr>
             <tr>
-              <td><span class="status">3</span> Initial scoring</td>
-              <td>Frequency-band sampling and lemma-based vocabulary estimate.</td>
-              <td>Result page reports estimate, range, and reliability warning.</td>
+              <td>3. Initial scoring and results</td>
+              <td><span class="status ok">Done</span></td>
+              <td>Band hit rates, weighted estimate, guessing penalty, review list, interpretation.</td>
+              <td>Result page reports estimate and band breakdown.</td>
             </tr>
             <tr>
-              <td><span class="status">4</span> Telemetry export</td>
+              <td>4. Telemetry export</td>
+              <td><span class="status warn">Next</span></td>
               <td>Persist anonymized response events for calibration.</td>
-              <td>Each event has item id, lemma id, response, check result, timing, and calibration version.</td>
+              <td>Each event has item id, response, timing, band, and scoring version.</td>
             </tr>
             <tr>
-              <td><span class="status">5</span> Result history</td>
-              <td>Store repeat results and render a vocabulary-over-time graph with center, lower, and upper estimate lines.</td>
+              <td>5. Estimate range</td>
+              <td><span class="status warn">Next</span></td>
+              <td>Add lower/center/upper estimate and reliability label.</td>
+              <td>Result page shows range, not only a single estimate.</td>
+            </tr>
+            <tr>
+              <td>6. Progressive confidence and early finish</td>
+              <td><span class="status warn">New</span></td>
+              <td>Show live estimate confidence during the quiz and allow finishing early.</td>
+              <td>User can stop after minimum evidence and results show early-stop confidence/range.</td>
+            </tr>
+            <tr>
+              <td>7. Sentence item bank and checks</td>
+              <td><span class="status">Future</span></td>
+              <td>Sentence context, highlighted token, lemma, meaning checks.</td>
+              <td>Scoring can validate claimed-known sentence items.</td>
+            </tr>
+            <tr>
+              <td>8. Result history</td>
+              <td><span class="status">Future</span></td>
+              <td>Store repeat results and render vocabulary-over-time graph.</td>
               <td>Returning users can see estimate movement across completed tests.</td>
             </tr>
             <tr>
-              <td><span class="status ok">6</span> Calibration</td>
-              <td>Fit observed difficulty per item and compare to frequency rank.</td>
-              <td>System can identify items easier or harder than frequency predicts.</td>
-            </tr>
-            <tr>
-              <td><span class="status ok">7</span> Calibration emails</td>
+              <td>9. Calibration emails</td>
+              <td><span class="status">Future</span></td>
               <td>Recompute previous estimates after calibration rounds and email opted-in users when estimates change.</td>
-              <td>Users who already completed the test can receive updated vocabulary estimates.</td>
+              <td>Users can receive updated vocabulary estimates.</td>
             </tr>
             <tr>
-              <td><span class="status ok">8</span> Short adaptive test</td>
+              <td>10. Short adaptive test</td>
+              <td><span class="status">Future</span></td>
               <td>Select items using learned difficulty instead of frequency alone.</td>
               <td>Test reaches similar confidence with fewer questions.</td>
             </tr>
@@ -706,6 +739,15 @@
 
       <section id="data">
         <h2>Data shape</h2>
+        <h3>Current question</h3>
+        <pre><code>{
+  "word": "woda",
+  "word_class": "noun",
+  "band": "B1",
+  "correct": "water",
+  "wrong": ["fire", "air", "earth"]
+}</code></pre>
+        <h3>Future sentence item</h3>
         <pre><code>{
   "item_id": "pl-spotkac-001",
   "language": "pl",
@@ -727,20 +769,35 @@
     "version": "2026-06-launch"
   }
 }</code></pre>
+        <h3>Future live progress estimate</h3>
+        <pre><code>{
+  "answered": 32,
+  "minimum_items_met": true,
+  "band_coverage_met": true,
+  "can_finish": true,
+  "estimate": {
+    "center": 850,
+    "lower": 550,
+    "upper": 1250,
+    "confidence_label": "Medium"
+  }
+}</code></pre>
+        <h3>Future saved result</h3>
         <pre><code>{
   "result_id": "result-123",
   "user_id": "user-456",
   "completed_at": "2026-06-24T12:30:00Z",
   "calibration_version": "2026-06-launch",
   "item_count": 80,
+  "stopped_early": false,
   "estimate": {
     "center": 4200,
     "lower": 3600,
-    "upper": 4900
+    "upper": 4900,
+    "confidence_label": "High"
   },
   "email_opt_in": true,
   "email": "learner@example.com"
-  }
 }</code></pre>
       </section>
 
@@ -749,19 +806,23 @@
         <p>Before calibration, assume word difficulty equals frequency difficulty. Compensate for that rough assumption by starting with 80 test items, including extra calibration items, and sampling across the frequency curve.</p>
         <ol>
           <li>Choose a broad set of frequency bands.</li>
-          <li>Sample several lemmas from each band.</li>
-          <li>Use one sentence item per lemma per session.</li>
+          <li>Sample several words or lemmas from each band.</li>
+          <li>Use one visible item per word or lemma per session.</li>
           <li>Randomize item order enough to reduce fatigue effects.</li>
-          <li>Reserve some yes answers for meaning checks.</li>
+          <li>Reserve some claimed-known answers for meaning checks once sentence mode exists.</li>
           <li>Keep extra calibration items in the test until item difficulty estimates stabilize.</li>
           <li>Reduce item count gradually after each calibration round while preserving estimate confidence.</li>
+          <li>Let users finish early after minimum coverage once they accept the current uncertainty range.</li>
         </ol>
-        <p>After many responses, compute which lemmas are easier or harder than frequency predicts. Then shift from broad long tests to shorter adaptive tests. Each calibration round should also re-estimate previous completed tests and queue email updates for opted-in users whose estimate changed.</p>
+        <p>After many responses, compute which items are easier or harder than frequency predicts. Then shift from broad long tests to shorter adaptive tests. Each calibration round should also re-estimate previous completed tests and queue email updates for opted-in users whose estimate changed.</p>
       </section>
 
       <section id="open-questions">
         <h2>Open questions</h2>
         <ul>
+          <li>What confidence labels and range widths are honest enough for early finish?</li>
+          <li>What minimum item count and band coverage are required before <code>Show results now</code> appears?</li>
+          <li>Should low confidence hide early finish or allow it with a stronger warning?</li>
           <li>What percentage of yes answers should receive meaning checks?</li>
           <li>Should a failed meaning check reduce trust globally or only score that item as unknown?</li>
           <li>What data store will hold response events before calibration tooling exists?</li>
@@ -781,6 +842,7 @@
     <aside class="toc" aria-label="Contents">
       <p class="toc-title">Contents</p>
       <nav class="toc-list">
+        <a href="#current">Current</a>
         <a href="#goal">Goal</a>
         <a href="#experience">Experience</a>
         <a href="#scoring">Scoring</a>

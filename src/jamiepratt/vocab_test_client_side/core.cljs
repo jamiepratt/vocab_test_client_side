@@ -366,7 +366,8 @@
      "Polish Vocabulary Test"]
     [:div {:class "flex flex-wrap items-center gap-2"}
      [nav-link current-route :test "Test" "#/"]
-     [nav-link current-route :methodology "Testing methodology" "#/methodology"]]]])
+     [nav-link current-route :methodology "Testing methodology" "#/methodology"]
+     [nav-link current-route :features "Features to implement" "features-to-implement.html"]]]])
 
 (defn methodology-section [id title & body]
   (into
