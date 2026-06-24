@@ -354,3 +354,35 @@ export async function runHighEstimateRegression(page: Page) {
   await expect(page.getByText("1,200-1,800", { exact: false })).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
 }
+
+export async function runApiQuestionLoading(page: Page) {
+  const questions = Array.from({ length: 80 }, (_, index) => ({
+    word: index === 0 ? "testowe" : `dummy-${index}`,
+    "word-class": index === 0 ? "adj" : "noun",
+    band: "B1",
+    correct: index === 0 ? "from the API" : `correct-${index}`,
+    wrong: [`wrong-a-${index}`, `wrong-b-${index}`, `wrong-c-${index}`],
+  }));
+
+  await page.route(/\/api\/questions$/, async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(questions),
+    });
+  });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => {
+    Math.random = () => 0;
+  });
+  await page.goto("/index.html");
+  await page.getByRole("button", { name: "Begin Test" }).click();
+
+  await expectQuestion(page, {
+    current: 1,
+    word: "testowe",
+    wordClass: "adj",
+    band: "0-250",
+    choices: ["wrong-a-0", "wrong-b-0", "wrong-c-0", "from the API", "don't know"],
+  });
+}

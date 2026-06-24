@@ -1,0 +1,400 @@
+[{:word "woda",
+  :word-class "noun",
+  :band :B1,
+  :correct "water",
+  :wrong ["fire" "air" "earth"]}
+ {:word "jeść",
+  :word-class "verb",
+  :band :B1,
+  :correct "to eat",
+  :wrong ["to drink" "to sleep" "to walk"]}
+ {:word "duży",
+  :word-class "adj",
+  :band :B1,
+  :correct "big / large",
+  :wrong ["small" "fast" "heavy"]}
+ {:word "dom",
+  :word-class "noun",
+  :band :B1,
+  :correct "house / home",
+  :wrong ["car" "road" "tree"]}
+ {:word "dobry",
+  :word-class "adj",
+  :band :B1,
+  :correct "good",
+  :wrong ["bad" "new" "old"]}
+ {:word "pies",
+  :word-class "noun",
+  :band :B1,
+  :correct "dog",
+  :wrong ["cat" "bird" "fish"]}
+ {:word "czytać",
+  :word-class "verb",
+  :band :B1,
+  :correct "to read",
+  :wrong ["to write" "to speak" "to listen"]}
+ {:word "dzień",
+  :word-class "noun",
+  :band :B1,
+  :correct "day",
+  :wrong ["night" "week" "month"]}
+ {:word "pić",
+  :word-class "verb",
+  :band :B1,
+  :correct "to drink",
+  :wrong ["to eat" "to cook" "to wash"]}
+ {:word "mały",
+  :word-class "adj",
+  :band :B1,
+  :correct "small / little",
+  :wrong ["big" "tall" "wide"]}
+ {:word "dziękuję",
+  :word-class "interj",
+  :band :B1,
+  :correct "thank you",
+  :wrong ["please" "sorry" "hello"]}
+ {:word "kobieta",
+  :word-class "noun",
+  :band :B1,
+  :correct "woman",
+  :wrong ["man" "child" "friend"]}
+ {:word "szybko",
+  :word-class "adverb",
+  :band :B2,
+  :correct "quickly / fast",
+  :wrong ["slowly" "quietly" "carefully"]}
+ {:word "kupować",
+  :word-class "verb",
+  :band :B2,
+  :correct "to buy",
+  :wrong ["to sell" "to give" "to pay"]}
+ {:word "miasto",
+  :word-class "noun",
+  :band :B2,
+  :correct "city / town",
+  :wrong ["village" "country" "street"]}
+ {:word "pieniądze",
+  :word-class "noun",
+  :band :B2,
+  :correct "money",
+  :wrong ["time" "work" "food"]}
+ {:word "szczęśliwy",
+  :word-class "adj",
+  :band :B2,
+  :correct "happy",
+  :wrong ["sad" "angry" "tired"]}
+ {:word "zawsze",
+  :word-class "adverb",
+  :band :B2,
+  :correct "always",
+  :wrong ["never" "sometimes" "often"]}
+ {:word "zamknąć",
+  :word-class "verb",
+  :band :B2,
+  :correct "to close / to shut",
+  :wrong ["to open" "to push" "to pull"]}
+ {:word "gorący",
+  :word-class "adj",
+  :band :B2,
+  :correct "hot",
+  :wrong ["cold" "warm" "wet"]}
+ {:word "trudny",
+  :word-class "adj",
+  :band :B2,
+  :correct "difficult / hard",
+  :wrong ["easy" "simple" "soft"]}
+ {:word "mówić",
+  :word-class "verb",
+  :band :B2,
+  :correct "to speak / to say",
+  :wrong ["to listen" "to read" "to think"]}
+ {:word "spać",
+  :word-class "verb",
+  :band :B2,
+  :correct "to sleep",
+  :wrong ["to wake" "to dream" "to rest"]}
+ {:word "jutro",
+  :word-class "adverb",
+  :band :B2,
+  :correct "tomorrow",
+  :wrong ["yesterday" "today" "now"]}
+ {:word "praca",
+  :word-class "noun",
+  :band :B2,
+  :correct "work / job",
+  :wrong ["play" "rest" "study"]}
+ {:word "zimny",
+  :word-class "adj",
+  :band :B2,
+  :correct "cold",
+  :wrong ["hot" "warm" "dry"]}
+ {:word "droga",
+  :word-class "noun/adj",
+  :band :B2,
+  :correct "road / way / expensive (fem.)",
+  :wrong ["bridge" "building" "cheap"]}
+ {:word "biec",
+  :word-class "verb",
+  :band :B2,
+  :correct "to run",
+  :wrong ["to walk" "to jump" "to sit"]}
+ {:word "pamiętać",
+  :word-class "verb",
+  :band :B3,
+  :correct "to remember",
+  :wrong ["to forget" "to learn" "to know"]}
+ {:word "zapomnieć",
+  :word-class "verb",
+  :band :B3,
+  :correct "to forget",
+  :wrong ["to remember" "to lose" "to leave"]}
+ {:word "wyjaśnić",
+  :word-class "verb",
+  :band :B3,
+  :correct "to explain",
+  :wrong ["to ask" "to answer" "to translate"]}
+ {:word "spotkać",
+  :word-class "verb",
+  :band :B3,
+  :correct "to meet",
+  :wrong ["to leave" "to find" "to call"]}
+ {:word "zdrowie",
+  :word-class "noun",
+  :band :B3,
+  :correct "health",
+  :wrong ["sickness" "strength" "life"]}
+ {:word "pogoda",
+  :word-class "noun",
+  :band :B3,
+  :correct "weather",
+  :wrong ["climate" "temperature" "season"]}
+ {:word "niebezpieczny",
+  :word-class "adj",
+  :band :B3,
+  :correct "dangerous",
+  :wrong ["safe" "careful" "scary"]}
+ {:word "prawie",
+  :word-class "adverb",
+  :band :B3,
+  :correct "almost / nearly",
+  :wrong ["exactly" "completely" "rarely"]}
+ {:word "zmęczony",
+  :word-class "adj",
+  :band :B3,
+  :correct "tired",
+  :wrong ["hungry" "bored" "sad"]}
+ {:word "wiedza",
+  :word-class "noun",
+  :band :B3,
+  :correct "knowledge",
+  :wrong ["power" "wisdom" "memory"]}
+ {:word "rynek",
+  :word-class "noun",
+  :band :B3,
+  :correct "market / town square",
+  :wrong ["shop" "mall" "bank"]}
+ {:word "oczywiście",
+  :word-class "adverb",
+  :band :B3,
+  :correct "of course / obviously",
+  :wrong ["maybe" "rarely" "secretly"]}
+ {:word "czysty",
+  :word-class "adj",
+  :band :B3,
+  :correct "clean / pure",
+  :wrong ["dirty" "wet" "empty"]}
+ {:word "silny",
+  :word-class "adj",
+  :band :B3,
+  :correct "strong",
+  :wrong ["weak" "tall" "fast"]}
+ {:word "martwić się",
+  :word-class "verb",
+  :band :B3,
+  :correct "to worry",
+  :wrong ["to relax" "to celebrate" "to hurry"]}
+ {:word "pomysł",
+  :word-class "noun",
+  :band :B3,
+  :correct "idea",
+  :wrong ["problem" "answer" "plan"]}
+ {:word "obowiązek",
+  :word-class "noun",
+  :band :B3,
+  :correct "duty / obligation",
+  :wrong ["right" "hobby" "reward"]}
+ {:word "uśmiechać się",
+  :word-class "verb",
+  :band :B3,
+  :correct "to smile",
+  :wrong ["to cry" "to laugh" "to frown"]}
+ {:word "doświadczenie",
+  :word-class "noun",
+  :band :B4,
+  :correct "experience",
+  :wrong ["experiment" "accident" "education"]}
+ {:word "wpływ",
+  :word-class "noun",
+  :band :B4,
+  :correct "influence / impact",
+  :wrong ["entrance" "income" "result"]}
+ {:word "unikać",
+  :word-class "verb",
+  :band :B4,
+  :correct "to avoid",
+  :wrong ["to confront" "to accept" "to seek"]}
+ {:word "wymagać",
+  :word-class "verb",
+  :band :B4,
+  :correct "to require / to demand",
+  :wrong ["to offer" "to suggest" "to refuse"]}
+ {:word "zarządzać",
+  :word-class "verb",
+  :band :B4,
+  :correct "to manage / to administer",
+  :wrong ["to obey" "to observe" "to abandon"]}
+ {:word "środowisko",
+  :word-class "noun",
+  :band :B4,
+  :correct "environment",
+  :wrong ["equipment" "entertainment" "experiment"]}
+ {:word "społeczeństwo",
+  :word-class "noun",
+  :band :B4,
+  :correct "society",
+  :wrong ["company" "community center" "relationship"]}
+ {:word "zniszczyć",
+  :word-class "verb",
+  :band :B4,
+  :correct "to destroy",
+  :wrong ["to build" "to repair" "to protect"]}
+ {:word "oszukać",
+  :word-class "verb",
+  :band :B4,
+  :correct "to deceive / to cheat",
+  :wrong ["to help" "to warn" "to forgive"]}
+ {:word "wydatki",
+  :word-class "noun",
+  :band :B4,
+  :correct "expenses / spending",
+  :wrong ["income" "savings" "profit"]}
+ {:word "sprzeciwiać się",
+  :word-class "verb",
+  :band :B4,
+  :correct "to oppose / to object",
+  :wrong ["to agree" "to support" "to suggest"]}
+ {:word "naprawić",
+  :word-class "verb",
+  :band :B4,
+  :correct "to repair / to fix",
+  :wrong ["to break" "to destroy" "to replace"]}
+ {:word "bezpieczeństwo",
+  :word-class "noun",
+  :band :B4,
+  :correct "safety / security",
+  :wrong ["danger" "emergency" "insurance"]}
+ {:word "zachowanie",
+  :word-class "noun",
+  :band :B4,
+  :correct "behavior / conduct",
+  :wrong ["appearance" "attitude" "achievement"]}
+ {:word "ostrożny",
+  :word-class "adj",
+  :band :B4,
+  :correct "careful / cautious",
+  :wrong ["reckless" "brave" "lazy"]}
+ {:word "przekonać",
+  :word-class "verb",
+  :band :B4,
+  :correct "to persuade / to convince",
+  :wrong ["to force" "to threaten" "to confuse"]}
+ {:word "nieuchronny",
+  :word-class "adj",
+  :band :B5,
+  :correct "inevitable / unavoidable",
+  :wrong ["impossible" "unexpected" "unimportant"]}
+ {:word "zawiły",
+  :word-class "adj",
+  :band :B5,
+  :correct "intricate / complicated",
+  :wrong ["simple" "obvious" "brief"]}
+ {:word "wytrwałość",
+  :word-class "noun",
+  :band :B5,
+  :correct "perseverance / persistence",
+  :wrong ["laziness" "weakness" "impatience"]}
+ {:word "ulga",
+  :word-class "noun",
+  :band :B5,
+  :correct "relief",
+  :wrong ["pain" "burden" "anxiety"]}
+ {:word "oszustwo",
+  :word-class "noun",
+  :band :B5,
+  :correct "fraud / scam / deception",
+  :wrong ["honesty" "gift" "agreement"]}
+ {:word "przeszkoda",
+  :word-class "noun",
+  :band :B5,
+  :correct "obstacle / barrier",
+  :wrong ["opportunity" "solution" "shortcut"]}
+ {:word "wzmocnić",
+  :word-class "verb",
+  :band :B5,
+  :correct "to strengthen / to reinforce",
+  :wrong ["to weaken" "to remove" "to soften"]}
+ {:word "skłonność",
+  :word-class "noun",
+  :band :B5,
+  :correct "tendency / inclination",
+  :wrong ["aversion" "ability" "obligation"]}
+ {:word "zniechęcać",
+  :word-class "verb",
+  :band :B5,
+  :correct "to discourage",
+  :wrong ["to encourage" "to inspire" "to reward"]}
+ {:word "pogłębić",
+  :word-class "verb",
+  :band :B5,
+  :correct "to deepen / to intensify",
+  :wrong ["to flatten" "to lighten" "to shorten"]}
+ {:word "znikomy",
+  :word-class "adj",
+  :band :B6,
+  :correct "negligible / minimal",
+  :wrong ["enormous" "sufficient" "obvious"]}
+ {:word "nikczemny",
+  :word-class "adj",
+  :band :B6,
+  :correct "vile / despicable",
+  :wrong ["noble / honorable" "ordinary" "generous"]}
+ {:word "żmudny",
+  :word-class "adj",
+  :band :B6,
+  :correct "tedious / laborious / painstaking",
+  :wrong ["effortless" "exciting" "quick"]}
+ {:word "oszczerstwo",
+  :word-class "noun",
+  :band :B6,
+  :correct "slander / defamation",
+  :wrong ["compliment" "confession" "agreement"]}
+ {:word "zuchwały",
+  :word-class "adj",
+  :band :B6,
+  :correct "audacious / insolent / bold",
+  :wrong ["timid / shy" "polite" "cautious"]}
+ {:word "przebiegły",
+  :word-class "adj",
+  :band :B6,
+  :correct "cunning / sly / crafty",
+  :wrong ["honest / naive" "clumsy" "generous"]}
+ {:word "ułuda",
+  :word-class "noun",
+  :band :B6,
+  :correct "illusion / delusion",
+  :wrong ["reality" "certainty" "truth"]}
+ {:word "niezłomny",
+  :word-class "adj",
+  :band :B6,
+  :correct "unyielding / steadfast / indomitable",
+  :wrong ["fragile / weak" "flexible" "hesitant"]}]

@@ -1,0 +1,12 @@
+.git
+.shadow-cljs
+.vercel
+.clj-kondo/.cache
+.cpcache
+.lsp/.cache
+node_modules
+playwright-report
+public/js
+target
+test-results
+npm-debug.log*

@@ -12,10 +12,18 @@ export default defineConfig({
     baseURL: "http://localhost:8000",
     trace: "on-first-retry",
   },
-  webServer: {
-    command: "npm run dev",
-    url: "http://localhost:8000/index.html",
-    reuseExistingServer: true,
-    timeout: 120_000,
-  },
+  webServer: [
+    {
+      command: "npm run api",
+      url: "http://localhost:8080/healthz",
+      reuseExistingServer: true,
+      timeout: 120_000,
+    },
+    {
+      command: "npm run dev:frontend",
+      url: "http://localhost:8000/index.html",
+      reuseExistingServer: true,
+      timeout: 120_000,
+    },
+  ],
 });
