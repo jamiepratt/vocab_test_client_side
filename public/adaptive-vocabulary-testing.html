@@ -368,7 +368,7 @@
     <div class="header-inner">
       <p class="eyebrow">Vocabulary measurement</p>
       <h1>Adaptive vocabulary size testing from a frequency list</h1>
-      <p class="dek">Short guide. Beginner version first. Advanced version for implementation details.</p>
+      <p class="dek">Staged method: start with a longer frequency-band test, learn real item difficulty, re-score old sessions, then move to a short adaptive test.</p>
       <div class="tabs" role="tablist" aria-label="Explanation level">
         <button class="tab" id="tab-beginner" type="button" role="tab" aria-controls="beginner-panel" aria-selected="true" data-tab="beginner">Beginner</button>
         <button class="tab" id="tab-advanced" type="button" role="tab" aria-controls="advanced-panel" aria-selected="false" data-tab="advanced">Advanced</button>
@@ -381,64 +381,80 @@
       <article class="panel" id="beginner-panel" role="tabpanel" aria-labelledby="tab-beginner">
         <section id="beginner-idea">
           <h2>Core idea</h2>
-          <h3>Question</h3>
-          <p>How many words does a learner probably know?</p>
-          <h3>Best answer</h3>
-          <p>Use an adaptive test. It starts with a rough guess, asks useful words, updates the guess, stops when confident enough.</p>
-          <h3>Adaptive test</h3>
-          <p>Adaptive means the next question depends on previous answers. If easy words are known, ask harder words. If hard words are missed, ask easier words.</p>
+          <p>Do not start with a short fully adaptive test. Start with a longer test that samples the whole frequency list. Use those answers to learn which words are actually easy or hard. Then shorten the test.</p>
+          <p>The system improves in stages:</p>
+          <ol>
+            <li>Launch with frequency as a rough difficulty guess.</li>
+            <li>Ask enough words across easy, middle, and rare bands.</li>
+            <li>Store every answer.</li>
+            <li>Calibrate real word difficulty from response data.</li>
+            <li>Re-score old tests with the better model.</li>
+            <li>Move to a shorter adaptive test once the word bank is stable.</li>
+          </ol>
+          <div class="callout">
+            <p>Frequency rank gets us started. User responses make the test accurate.</p>
+          </div>
         </section>
 
         <section id="beginner-terms">
           <h2>Terms</h2>
-          <h3>Frequency list</h3>
-          <p>A list of words sorted by commonness. Rank 1 is most common. Rank 20000 is much rarer.</p>
+          <h3>Frequency rank</h3>
+          <p>How common a word is. Rank 1 is most common. Rank 20000 is much rarer.</p>
           <h3>Item</h3>
-          <p>One test question. Usually one word plus yes/no or a meaning choice.</p>
-          <h3>Item difficulty</h3>
-          <p>How hard that word is for real learners. Not always same as frequency. Cognates can be easy. Abstract common words can be hard.</p>
-          <h3>Rasch model</h3>
-          <p>A simple math model. It says: user ability minus word difficulty gives chance the user knows the word.</p>
+          <p>One test question: a word, usually in a sentence, plus yes/no or a meaning check.</p>
           <h3>Calibration</h3>
-          <p>Learning real word difficulty from response data.</p>
+          <p>Learning real item difficulty from learner answers.</p>
+          <h3>Adaptive test</h3>
+          <p>A test where the next word depends on previous answers. Useful after calibration, risky before calibration.</p>
+          <h3>Quality checks</h3>
+          <p>Fake words, timing, and meaning checks used to detect guessing or low effort.</p>
         </section>
 
-        <section id="beginner-flow">
-          <h2>How the test works</h2>
-          <ol>
-            <li>Pick words from the frequency list.</li>
-            <li>Ask learners if they know them, or ask meaning questions.</li>
-            <li>Add fake words. Fake words catch guessing.</li>
-            <li>Use early answers to estimate level.</li>
-            <li>Choose next word near that level.</li>
-            <li>Stop after about 25-40 real words.</li>
-            <li>Return vocabulary estimate plus uncertainty.</li>
-          </ol>
-          <div class="callout">
-            <p>Do not trust raw frequency alone. Use it to start. Use real answers to improve.</p>
-          </div>
+        <section id="beginner-rollout">
+          <h2>Rollout</h2>
+          <h3>Stage 1: long launch test</h3>
+          <p>Ask about 60-80 real words plus checks. Sample across several frequency bands. This gives a decent first estimate and spreads response data across the item bank.</p>
+          <h3>Stage 2: calibration</h3>
+          <p>Use response data to estimate which words are easier or harder than frequency predicts. Drop bad items: ambiguous words, broken examples, misleading translations, or items that behave strangely.</p>
+          <h3>Stage 3: hybrid test</h3>
+          <p>Use calibrated items for the displayed score. Add a small tail of experimental items to keep improving the bank.</p>
+          <h3>Stage 4: short adaptive test</h3>
+          <p>Once enough items are calibrated, ask mostly adaptive scored items. Keep a few calibration items forever to monitor drift.</p>
         </section>
 
-        <section id="beginner-calibration">
-          <h2>Calibration</h2>
-          <h3>Why needed</h3>
-          <p>Some words are bad test items. Ambiguous, too easy, too hard, bad translation, common typo, obvious cognate. Calibration finds these.</p>
-          <h3>How to do it</h3>
-          <p>Run a pilot test. Do not make it fully adaptive yet. Give each user a balanced mix of easy, medium, and rare words.</p>
-          <h3>What to keep</h3>
-          <p>Keep words with enough answers, sensible difficulty, and good fit. Drop words that behave strangely.</p>
+        <section id="beginner-why-balanced">
+          <h2>Why not adaptive first</h2>
+          <p>A fully adaptive test keeps choosing words near the learner's current level. That is efficient for one learner, but bad for learning the whole bank.</p>
+          <p>Many words would get almost no answers. Then we could not tell whether those words are good items, bad items, too easy, too hard, or just under-tested.</p>
+          <p>During calibration, use balanced sampling: easy, middle, rare, and very rare words. Within each band, prefer words with fewer clean responses.</p>
         </section>
 
-        <section id="beginner-count">
-          <h2>From answers to word count</h2>
-          <p>After calibration, each word has two numbers: frequency rank and real difficulty.</p>
-          <p>Fit a curve between them. Then user ability can be turned into estimated word count.</p>
-          <p>Better scoring does not say "user knows every word up to rank X". Real knowledge is patchy. Better: add up the probability the user knows each word.</p>
+        <section id="beginner-scoring">
+          <h2>Scoring over time</h2>
+          <h3>Before calibration</h3>
+          <p>Estimate the known percentage in each frequency band, correct for fake-word false positives, then multiply by band size.</p>
+          <h3>After calibration</h3>
+          <p>Each word has learned difficulty. The test estimates learner ability, then converts that ability into expected known words.</p>
+          <h3>Old tests improve</h3>
+          <p>Because raw answers are stored, old sessions can be re-scored after calibration. The old result should remain saved, and the revised result should be added with a new model version.</p>
+        </section>
+
+        <section id="beginner-data">
+          <h2>Data to keep</h2>
+          <ul>
+            <li>User/session id.</li>
+            <li>Item id and item version.</li>
+            <li>Lemma, shown word form, and frequency rank.</li>
+            <li>Answer, meaning-check result, and response time.</li>
+            <li>Whether the item was scored, calibration-only, or quality-only.</li>
+            <li>Test design version and scoring model version.</li>
+          </ul>
+          <p>This is what makes later calibration and re-scoring possible.</p>
         </section>
 
         <section id="beginner-users">
           <h2>How many users</h2>
-          <p>Count responses per word, not just users.</p>
+          <p>Count clean responses per word, not just users.</p>
           <p><span class="formula">users needed = words * responses per word / real words per test</span></p>
           <table>
             <thead>
@@ -455,7 +471,7 @@
                 <td>About 834 users</td>
               </tr>
               <tr>
-                <td>Decent product</td>
+                <td>Useful product</td>
                 <td>250-400</td>
                 <td>About 2100-3400 users</td>
               </tr>
@@ -466,77 +482,171 @@
               </tr>
             </tbody>
           </table>
-          <p>Practical target: 500-1000 users for pilot, 2000-3000 for useful calibration, 5000+ for strong public scoring.</p>
+          <p>Practical target: 500-1000 users for first pilot, 2000-3000 for useful calibration, 5000+ for strong public scoring.</p>
         </section>
 
         <section id="beginner-result">
-          <h2>Result to show user</h2>
+          <h2>Result to show</h2>
           <ul>
-            <li>Estimated known words.</li>
-            <li>Range, like 7200-8400 words.</li>
-            <li>Trust flag from fake words and checks.</li>
-            <li>Short note: receptive vocabulary, not speaking ability.</li>
+            <li>Estimated receptive vocabulary size.</li>
+            <li>Range, not just one number.</li>
+            <li>Reliability flag from fake words, timing, and meaning checks.</li>
+            <li>Scoring model version.</li>
+            <li>Short note that this measures recognition, not speaking ability.</li>
           </ul>
-          <p>PVST, the Polish Vocabulary Size Test, is a useful example. It appears available at <a href="https://myvocab.info/pl">myvocab.info/pl</a>.</p>
+          <p>Detailed methodology: <a href="progressive-vocabulary-testing-methodology.md">progressive-vocabulary-testing-methodology.md</a>.</p>
         </section>
       </article>
 
       <article class="panel" id="advanced-panel" role="tabpanel" aria-labelledby="tab-advanced" hidden>
-        <section id="advanced-model">
-          <h2>Model</h2>
-          <p>Use Computerized Adaptive Testing with Item Response Theory. Simple baseline: Rasch.</p>
-          <p><span class="formula">P(x_i = 1 | theta, b_i) = logistic(theta - b_i)</span></p>
-          <p><code>theta</code> is user ability. <code>b_i</code> is item difficulty. Pick next item by maximum information, usually difficulty nearest current posterior mean or mode.</p>
-          <p>For multiple choice, score <code>1</code> only when the learner claims knowledge and chooses correctly. Pseudowords do not estimate ability. They estimate attention and false-positive behavior.</p>
+        <section id="advanced-method">
+          <h2>Method</h2>
+          <p>Use a staged measurement system, not a single fixed test design.</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Stage</th>
+                <th>Test shape</th>
+                <th>Score shown</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Launch</td>
+                <td>Long stratified test</td>
+                <td>Frequency-band estimate</td>
+              </tr>
+              <tr>
+                <td>First calibration</td>
+                <td>Long or semi-balanced test</td>
+                <td>First Rasch estimate, wider CI</td>
+              </tr>
+              <tr>
+                <td>Hybrid</td>
+                <td>Adaptive core plus calibration tail</td>
+                <td>Calibrated estimate</td>
+              </tr>
+              <tr>
+                <td>Mature</td>
+                <td>Mostly adaptive plus small trickle</td>
+                <td>Short CAT estimate with CI</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>Full adaptivity is the destination. It is not the launch design.</p>
         </section>
 
         <section id="advanced-bank">
           <h2>Item bank</h2>
-          <ul>
-            <li>Use lemmas or word families, not raw inflected forms.</li>
-            <li>Sample from log-frequency bands.</li>
-            <li>Keep item type: yes/no, meaning choice, pseudoword.</li>
-            <li>Track language-specific issues: cognates, homographs, proper names, register.</li>
-          </ul>
+          <p>Store item role separately from item type. Role controls whether an item affects the current score.</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Role</th>
+                <th>Scored now</th>
+                <th>Purpose</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Scored</td>
+                <td>Yes</td>
+                <td>Estimate current user ability.</td>
+              </tr>
+              <tr>
+                <td>Calibration</td>
+                <td>No until calibrated</td>
+                <td>Learn future item difficulty.</td>
+              </tr>
+              <tr>
+                <td>Quality</td>
+                <td>No</td>
+                <td>Detect false positives, guessing, bots, low effort.</td>
+              </tr>
+            </tbody>
+          </table>
           <pre><code>{
-  "word": "chien",
-  "rank": 814,
-  "type": "yes-no",
-  "difficulty": -1.22,
-  "fit": { "infit": 0.98, "outfit": 1.04 },
-  "responses": 427
+  "item_id": "pl-spotkac-001",
+  "lemma": "spotkać",
+  "surface": "spotkaliśmy",
+  "frequency_rank": 812,
+  "item_version": 1,
+  "item_type": "sentence_yes_no",
+  "item_role": "scored_and_calibration",
+  "difficulty": null,
+  "difficulty_se": null,
+  "fit": null,
+  "clean_responses": 0
 }</code></pre>
+        </section>
+
+        <section id="advanced-pilot">
+          <h2>Pilot scoring</h2>
+          <p>Before calibration, use frequency-band sampling and a longer test.</p>
+          <pre><code>for each band:
+  hit_rate = known_real_items / tested_real_items
+  false_alarm = fake_words_claimed_known / fake_words_seen
+  corrected = (hit_rate - false_alarm) / (1 - false_alarm)
+  p_band = clamp(corrected, 0, 1)
+
+vocab_size = sum(band_size * p_band)</code></pre>
+          <p>Use wide uncertainty. More items reduce sampling error, but only by the square root of item count. Doubling test length helps; it does not make frequency equal true difficulty.</p>
         </section>
 
         <section id="advanced-calibration">
           <h2>Calibration</h2>
-          <p>Do a balanced pilot before full adaptivity. Full adaptivity creates sparse, biased exposure. Each item needs enough response data.</p>
+          <p>Fit a Rasch model once there are enough clean binary responses.</p>
+          <p><span class="formula">P(x_i = 1 | theta, b_i) = logistic(theta - b_i)</span></p>
+          <p><code>theta</code> is user ability. <code>b_i</code> is item difficulty.</p>
           <ol>
-            <li>Collect user, item, response, item type, duration.</li>
-            <li>Filter sessions with high pseudoword false positives, very fast timing, or many claim-known meaning errors.</li>
-            <li>Fit Rasch with clean binary responses.</li>
-            <li>Remove bad items: low N, bad item-total correlation, poor infit/outfit, broken distractors, ambiguity.</li>
-            <li>Refit. Freeze calibrated bank for scoring.</li>
+            <li>Filter bad sessions: high fake-word false positives, very fast timing, failed meaning checks, incomplete runs.</li>
+            <li>Convert real-item responses to binary outcomes.</li>
+            <li>Fit Rasch.</li>
+            <li>Remove bad items: low N, poor fit, poor item-total relation, broken distractors, ambiguity.</li>
+            <li>Refit and version the calibrated bank.</li>
           </ol>
-          <p>Frequency rank is prior ordering only. After calibration, item selection should use <code>b_i</code>.</p>
+          <p>Use established calibration tooling first. R: <code>TAM</code>, <code>mirt</code>, <code>eRm</code>. Python: <code>py-irt</code> is possible, but diagnostics are thinner.</p>
+        </section>
+
+        <section id="advanced-rescoring">
+          <h2>Re-scoring</h2>
+          <p>Every calibration round should re-score previous sessions from raw response events.</p>
+          <p><span class="formula">posterior(theta) proportional to prior(theta) * product(P(response_i | theta, b_i))</span></p>
+          <p>Store revised scores as new records, not overwrites. Keep old score, new score, model versions, and confidence intervals.</p>
+          <pre><code>{
+  "session_id": "sess-123",
+  "old_scoring_model": "frequency-band-2026-06",
+  "new_scoring_model": "rasch-2026-09",
+  "estimate": {
+    "center": 4650,
+    "lower": 3900,
+    "upper": 5500
+  }
+}</code></pre>
+        </section>
+
+        <section id="advanced-hybrid">
+          <h2>Hybrid production</h2>
+          <p>Once the first bank is calibrated, split each test into scored items, calibration-tail items, and quality checks.</p>
+          <pre><code>25-35 calibrated scored items
+5-15 calibration items
+3-6 quality checks</code></pre>
+          <p>Only calibrated scored items affect the displayed score. Calibration-tail items improve future versions.</p>
+          <p>Choose tail items by response scarcity, difficulty uncertainty, weak band coverage, or suspected bad fit. Keep them tolerable: about 40% near level, 30% easier, 30% harder.</p>
         </section>
 
         <section id="advanced-mapping">
-          <h2>Rank to difficulty mapping</h2>
-          <p>Each calibrated item has frequency rank and Rasch difficulty. Fit monotone relationship:</p>
+          <h2>Word count</h2>
+          <p>Each calibrated item has frequency rank and Rasch difficulty. Fit a monotone rank-to-difficulty curve:</p>
           <p><span class="formula">difficulty = f(log(rank))</span></p>
-          <p>Simple first pass:</p>
-          <p><span class="formula">b_i = alpha + beta * log(rank_i)</span></p>
-          <p>Then invert:</p>
-          <p><span class="formula">rank(theta) = exp((theta - alpha) / beta)</span></p>
-          <p>Better: monotone spline or isotonic regression. Best scoring:</p>
+          <p>Then estimate expected known vocabulary:</p>
           <p><span class="formula">V(theta) = sum over ranks r of logistic(theta - f(log(r)))</span></p>
-          <p>This handles patchy knowledge better than a hard cutoff.</p>
+          <p>This handles patchy knowledge better than a hard cutoff rank.</p>
         </section>
 
         <section id="advanced-users">
-          <h2>Sample size</h2>
-          <p>Size by responses per item.</p>
+          <h2>Exit criteria</h2>
+          <p>Size by clean responses per item.</p>
           <p><span class="formula">users_needed = real_items * target_responses_per_item / real_items_per_user</span></p>
           <table>
             <thead>
@@ -548,40 +658,42 @@
             </thead>
             <tbody>
               <tr>
-                <td>MVP</td>
+                <td>Rough pilot</td>
                 <td>100</td>
                 <td>834 users</td>
               </tr>
               <tr>
-                <td>Product</td>
+                <td>Useful product</td>
                 <td>250-400</td>
                 <td>2100-3400 users</td>
               </tr>
               <tr>
-                <td>Strong</td>
+                <td>Strong public scoring</td>
                 <td>500-1000</td>
                 <td>4200-8400 users</td>
               </tr>
             </tbody>
           </table>
+          <p>Reduce heavy calibration when most production items have 250-400+ clean responses, difficulty SE below about 0.25 logits, acceptable fit, and stable estimates under resampling.</p>
         </section>
 
         <section id="advanced-loop">
           <h2>Adaptive loop</h2>
-          <pre><code>start posterior over theta
+          <pre><code>start prior over theta
 repeat:
-  choose unused item with max expected information
+  choose unused calibrated item with high expected information
   ask item
   score x_i as 0 or 1
-  update posterior
-  stop if item limit hit or vocab CI narrow enough
-return expected vocabulary size, CI, attention flag</code></pre>
-          <p>Use an established calibration package first. R: <code>TAM</code>, <code>mirt</code>, <code>eRm</code>. Python: <code>py-irt</code> or custom optimizer, but diagnostics are weaker.</p>
+  update posterior over theta
+  stop if item limit hit or vocabulary CI is narrow enough
+return expected vocabulary size, CI, reliability flags</code></pre>
+          <p>Mature test shape: 25-35 adaptive scored items, 2-5 calibration trickle items, 2-4 quality checks.</p>
         </section>
 
         <section id="advanced-sources">
           <h2>Sources</h2>
           <ul>
+            <li><a href="progressive-vocabulary-testing-methodology.md">Project methodology doc</a></li>
             <li><a href="https://arxiv.org/pdf/2507.19869">The Polish Vocabulary Size Test: A Novel Adaptive Test for Receptive Vocabulary Assessment</a></li>
             <li><a href="https://arxiv.org/abs/2412.07170">On the Consistency of Bayesian Adaptive Testing under the Rasch Model</a></li>
             <li><a href="https://arxiv.org/abs/1707.03012">Application and Simulation of Computerized Adaptive Tests Through the Package catsim</a></li>
@@ -596,18 +708,22 @@ return expected vocabulary size, CI, attention flag</code></pre>
       <nav class="toc-list" data-toc="beginner">
         <a href="#beginner-idea">Core idea</a>
         <a href="#beginner-terms">Terms</a>
-        <a href="#beginner-flow">Test flow</a>
-        <a href="#beginner-calibration">Calibration</a>
-        <a href="#beginner-count">Word count</a>
+        <a href="#beginner-rollout">Rollout</a>
+        <a href="#beginner-why-balanced">Balanced first</a>
+        <a href="#beginner-scoring">Scoring</a>
+        <a href="#beginner-data">Data</a>
         <a href="#beginner-users">Users</a>
         <a href="#beginner-result">Result</a>
       </nav>
       <nav class="toc-list" data-toc="advanced" hidden>
-        <a href="#advanced-model">Model</a>
+        <a href="#advanced-method">Method</a>
         <a href="#advanced-bank">Item bank</a>
+        <a href="#advanced-pilot">Pilot scoring</a>
         <a href="#advanced-calibration">Calibration</a>
-        <a href="#advanced-mapping">Mapping</a>
-        <a href="#advanced-users">Sample size</a>
+        <a href="#advanced-rescoring">Re-scoring</a>
+        <a href="#advanced-hybrid">Hybrid</a>
+        <a href="#advanced-mapping">Word count</a>
+        <a href="#advanced-users">Exit criteria</a>
         <a href="#advanced-loop">Loop</a>
         <a href="#advanced-sources">Sources</a>
       </nav>
