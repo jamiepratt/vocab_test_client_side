@@ -38,3 +38,4 @@
 /data/subtlex-pl/subtlex-pl.csv
 /data/subtlex-pl/subtlex-pl-lemmas-master.csv
 npm-debug.log*
+.vercel
