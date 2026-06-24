@@ -110,6 +110,12 @@ async function expectReviewList(page: Page) {
   await expect(review.getByRole("listitem").filter({ hasText: "niezłomny" })).toContainText("unyielding / steadfast / indomitable");
 }
 
+async function answerAndContinue(page: Page, answer: string) {
+  await page.getByRole("button", { name: answer, exact: true }).click();
+  await expect(page.getByRole("button", { name: "Next" })).toBeVisible();
+  await page.getByRole("button", { name: "Next" }).click();
+}
+
 export async function runAppSmoke(page: Page) {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.addInitScript(() => {
@@ -248,4 +254,103 @@ export async function runAppSmoke(page: Page) {
   await expect(page.getByText("Correct answer:", { exact: false })).toHaveCount(0);
   await expect(page.getByRole("heading", { level: 1, name: "Results" })).toHaveCount(0);
   await expect(page.getByRole("region", { name: "Words to review (79)" })).toHaveCount(0);
+}
+
+export async function runHighEstimateRegression(page: Page) {
+  const correctThroughBand5 = [
+    "water",
+    "to eat",
+    "big / large",
+    "house / home",
+    "good",
+    "dog",
+    "to read",
+    "day",
+    "to drink",
+    "small / little",
+    "thank you",
+    "woman",
+    "quickly / fast",
+    "to buy",
+    "city / town",
+    "money",
+    "happy",
+    "always",
+    "to close / to shut",
+    "hot",
+    "difficult / hard",
+    "to speak / to say",
+    "to sleep",
+    "tomorrow",
+    "work / job",
+    "cold",
+    "road / way / expensive (fem.)",
+    "to run",
+    "to remember",
+    "to forget",
+    "to explain",
+    "to meet",
+    "health",
+    "weather",
+    "dangerous",
+    "almost / nearly",
+    "tired",
+    "knowledge",
+    "market / town square",
+    "of course / obviously",
+    "clean / pure",
+    "strong",
+    "to worry",
+    "idea",
+    "duty / obligation",
+    "to smile",
+    "experience",
+    "influence / impact",
+    "to avoid",
+    "to require / to demand",
+    "to manage / to administer",
+    "environment",
+    "society",
+    "to destroy",
+    "to deceive / to cheat",
+    "expenses / spending",
+    "to oppose / to object",
+    "to repair / to fix",
+    "safety / security",
+    "behavior / conduct",
+    "careful / cautious",
+    "to persuade / to convince",
+    "inevitable / unavoidable",
+    "intricate / complicated",
+    "perseverance / persistence",
+    "relief",
+    "fraud / scam / deception",
+    "obstacle / barrier",
+    "to strengthen / to reinforce",
+    "tendency / inclination",
+    "to discourage",
+    "to deepen / to intensify",
+  ];
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => {
+    Math.random = () => 0;
+  });
+  await page.goto("/index.html");
+  await page.getByRole("button", { name: "Begin Test" }).click();
+
+  for (const answer of correctThroughBand5) {
+    await answerAndContinue(page, answer);
+  }
+
+  for (let index = 0; index < 8; index++) {
+    await answerAndContinue(page, "don't know");
+  }
+
+  await expect(page.getByRole("heading", { level: 1, name: "Results" })).toBeVisible();
+  await expect(page.getByText("~3500 words", { exact: true })).toBeVisible();
+  await expect(page.getByText("Ceiling: 2K-3.5K", { exact: true })).toBeVisible();
+  await expect(page.getByText("closer to ~3500 words than 500", { exact: false })).toBeVisible();
+  await expect(page.getByText("1,200-1,800", { exact: false })).toHaveCount(0);
+  await expectNoHorizontalOverflow(page);
 }

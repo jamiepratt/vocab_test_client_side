@@ -379,6 +379,20 @@
       color: var(--warn);
     }
 
+    .graph-preview {
+      width: min(100%, 640px);
+      height: auto;
+      margin-top: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcfd;
+    }
+
+    .graph-label {
+      fill: var(--muted);
+      font: 700 12px Inter, ui-sans-serif, system-ui, sans-serif;
+    }
+
     footer {
       padding: 24px 0 38px;
       color: var(--muted);
@@ -446,12 +460,13 @@
     <div class="header-inner">
       <p class="eyebrow">Implementation document</p>
       <h1>Vocabulary test features to implement</h1>
-      <p class="dek">Feature plan for a sentence-based vocabulary size test: yes/no recognition, selective meaning checks, lemma-based scoring, and a data path from broad early sampling to shorter calibrated tests.</p>
+      <p class="dek">Feature plan for a sentence-based vocabulary size test: yes/no recognition, selective meaning checks, lemma-based scoring, calibration emails, and a data path from an 80-item launch test to shorter calibrated tests.</p>
       <div class="chips" aria-label="Document tags">
         <span class="chip">Static HTML</span>
         <span class="chip">GitHub Pages ready</span>
         <span class="chip">Sentence context</span>
         <span class="chip">Lemma scoring</span>
+        <span class="chip">Calibration</span>
       </div>
     </div>
   </header>
@@ -462,7 +477,7 @@
         <h2>Goal</h2>
         <p>Build a receptive vocabulary test that estimates how many dictionary-form words a learner probably knows. The user sees full sentences, one highlighted word form, and answers whether they know that word in context.</p>
         <div class="callout">
-          <p><strong>Main product bet:</strong> start with frequency as the difficulty proxy, ask more items at first to average out item-specific difficulty, then use collected responses to learn real item difficulty and shorten future tests.</p>
+          <p><strong>Main product bet:</strong> start with frequency as the difficulty proxy, ask 80 items at launch to average out item-specific difficulty and gather calibration data, then use collected responses to learn real item difficulty and shorten future tests.</p>
         </div>
       </section>
 
@@ -489,7 +504,38 @@
           <li>Primary response: simple recognition, yes or no.</li>
           <li>For a sampled subset of yes answers, ask a multiple-choice meaning check.</li>
           <li>Use visible progress, but avoid revealing exact scoring logic.</li>
+          <li>Ask for an email address before or after the result if the user wants calibration updates.</li>
+          <li>When calibration changes their estimate, email users who already completed the test with the updated vocabulary estimate.</li>
+          <li>When a returning user has multiple completed tests, show a vocabulary-over-time graph with a center estimate and upper and lower bounds.</li>
         </ul>
+        <div class="sample" aria-label="Vocabulary history graph mockup">
+          <p><span class="status ok">Repeat result</span> Returning users see vocabulary size over time with uncertainty bounds.</p>
+          <svg class="graph-preview" viewBox="0 0 640 300" role="img" aria-labelledby="history-graph-title history-graph-desc">
+            <title id="history-graph-title">Vocabulary estimate over time</title>
+            <desc id="history-graph-desc">Line chart with a center estimate and upper and lower bounds across four completed tests.</desc>
+            <rect x="0" y="0" width="640" height="300" fill="#fbfcfd"></rect>
+            <line x1="70" y1="38" x2="70" y2="245" stroke="#cfd8df"></line>
+            <line x1="70" y1="245" x2="590" y2="245" stroke="#cfd8df"></line>
+            <line x1="70" y1="192" x2="590" y2="192" stroke="#e5ebf0"></line>
+            <line x1="70" y1="139" x2="590" y2="139" stroke="#e5ebf0"></line>
+            <line x1="70" y1="86" x2="590" y2="86" stroke="#e5ebf0"></line>
+            <path d="M100 176 L240 151 L380 123 L540 102" fill="none" stroke="#176f73" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M100 205 L240 181 L380 153 L540 132" fill="none" stroke="#8fbfc1" stroke-width="3" stroke-linecap="round" stroke-dasharray="7 7"></path>
+            <path d="M100 147 L240 121 L380 94 L540 72" fill="none" stroke="#8fbfc1" stroke-width="3" stroke-linecap="round" stroke-dasharray="7 7"></path>
+            <circle cx="100" cy="176" r="5" fill="#176f73"></circle>
+            <circle cx="240" cy="151" r="5" fill="#176f73"></circle>
+            <circle cx="380" cy="123" r="5" fill="#176f73"></circle>
+            <circle cx="540" cy="102" r="5" fill="#176f73"></circle>
+            <text x="72" y="31" class="graph-label">Vocabulary size</text>
+            <text x="94" y="268" class="graph-label">Test 1</text>
+            <text x="234" y="268" class="graph-label">Test 2</text>
+            <text x="374" y="268" class="graph-label">Test 3</text>
+            <text x="534" y="268" class="graph-label">Test 4</text>
+            <text x="452" y="95" class="graph-label">Center estimate</text>
+            <text x="433" y="64" class="graph-label">Upper bound</text>
+            <text x="433" y="152" class="graph-label">Lower bound</text>
+          </svg>
+        </div>
       </section>
 
       <section id="scoring">
@@ -560,7 +606,9 @@
             <h3>Initial long test</h3>
             <ul>
               <li>Sample broadly across frequency bands.</li>
-              <li>Ask more words than the final calibrated test will need.</li>
+              <li>Start with 80 test items: enough for a first estimate plus extra calibration coverage.</li>
+              <li>Include temporary extra items while the test is not fully calibrated.</li>
+              <li>Gradually reduce item count as observed item difficulty becomes reliable.</li>
               <li>Average out cases where frequency differs from real learner difficulty.</li>
             </ul>
           </article>
@@ -578,6 +626,24 @@
               <li>Collect enough responses per lemma to learn real difficulty.</li>
               <li>Compare observed difficulty against frequency rank.</li>
               <li>Use learned difficulty to reduce item count over time.</li>
+              <li>Track calibration version so older completed tests can be re-estimated.</li>
+              <li>Queue updated estimates for users who opted into email updates.</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>Result history</h3>
+            <ul>
+              <li>Store each completed estimate with timestamp, calibration version, center estimate, lower bound, and upper bound.</li>
+              <li>For repeat test-takers, chart vocabulary size over time.</li>
+              <li>Show the center line plus upper and lower uncertainty bounds.</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>Calibration emails</h3>
+            <ul>
+              <li>Collect explicit opt-in before sending follow-up estimate emails.</li>
+              <li>Email users when a calibration round materially changes their vocabulary estimate.</li>
+              <li>Include the new estimate, range, calibration date, and a link back to their result history.</li>
             </ul>
           </article>
         </div>
@@ -612,15 +678,25 @@
             <tr>
               <td><span class="status">4</span> Telemetry export</td>
               <td>Persist anonymized response events for calibration.</td>
-              <td>Each event has item id, lemma id, response, check result, and timing.</td>
+              <td>Each event has item id, lemma id, response, check result, timing, and calibration version.</td>
             </tr>
             <tr>
-              <td><span class="status ok">5</span> Calibration</td>
+              <td><span class="status">5</span> Result history</td>
+              <td>Store repeat results and render a vocabulary-over-time graph with center, lower, and upper estimate lines.</td>
+              <td>Returning users can see estimate movement across completed tests.</td>
+            </tr>
+            <tr>
+              <td><span class="status ok">6</span> Calibration</td>
               <td>Fit observed difficulty per item and compare to frequency rank.</td>
               <td>System can identify items easier or harder than frequency predicts.</td>
             </tr>
             <tr>
-              <td><span class="status ok">6</span> Short adaptive test</td>
+              <td><span class="status ok">7</span> Calibration emails</td>
+              <td>Recompute previous estimates after calibration rounds and email opted-in users when estimates change.</td>
+              <td>Users who already completed the test can receive updated vocabulary estimates.</td>
+            </tr>
+            <tr>
+              <td><span class="status ok">8</span> Short adaptive test</td>
               <td>Select items using learned difficulty instead of frequency alone.</td>
               <td>Test reaches similar confidence with fewer questions.</td>
             </tr>
@@ -647,31 +723,50 @@
   },
   "calibration": {
     "difficulty": null,
-    "responses": 0
+    "responses": 0,
+    "version": "2026-06-launch"
+  }
+}</code></pre>
+        <pre><code>{
+  "result_id": "result-123",
+  "user_id": "user-456",
+  "completed_at": "2026-06-24T12:30:00Z",
+  "calibration_version": "2026-06-launch",
+  "item_count": 80,
+  "estimate": {
+    "center": 4200,
+    "lower": 3600,
+    "upper": 4900
+  },
+  "email_opt_in": true,
+  "email": "learner@example.com"
   }
 }</code></pre>
       </section>
 
       <section id="sampling">
         <h2>Initial sampling rule</h2>
-        <p>Before calibration, assume word difficulty equals frequency difficulty. Compensate for that rough assumption by asking more items and sampling across the frequency curve.</p>
+        <p>Before calibration, assume word difficulty equals frequency difficulty. Compensate for that rough assumption by starting with 80 test items, including extra calibration items, and sampling across the frequency curve.</p>
         <ol>
           <li>Choose a broad set of frequency bands.</li>
           <li>Sample several lemmas from each band.</li>
           <li>Use one sentence item per lemma per session.</li>
           <li>Randomize item order enough to reduce fatigue effects.</li>
           <li>Reserve some yes answers for meaning checks.</li>
+          <li>Keep extra calibration items in the test until item difficulty estimates stabilize.</li>
+          <li>Reduce item count gradually after each calibration round while preserving estimate confidence.</li>
         </ol>
-        <p>After many responses, compute which lemmas are easier or harder than frequency predicts. Then shift from broad long tests to shorter adaptive tests.</p>
+        <p>After many responses, compute which lemmas are easier or harder than frequency predicts. Then shift from broad long tests to shorter adaptive tests. Each calibration round should also re-estimate previous completed tests and queue email updates for opted-in users whose estimate changed.</p>
       </section>
 
       <section id="open-questions">
         <h2>Open questions</h2>
         <ul>
-          <li>What initial test length is acceptable: 40, 60, or 80 real items?</li>
           <li>What percentage of yes answers should receive meaning checks?</li>
           <li>Should a failed meaning check reduce trust globally or only score that item as unknown?</li>
           <li>What data store will hold response events before calibration tooling exists?</li>
+          <li>What threshold counts as a material estimate change worth emailing?</li>
+          <li>What identity/session model should connect repeat tests into one result history?</li>
           <li>Which lemmatizer or source data will provide reliable Polish lemma mappings?</li>
         </ul>
       </section>

@@ -242,7 +242,7 @@
           :B1
           ordered-band-ids))
 
-(defn level-interpretation [band-stats]
+(defn level-interpretation [band-stats adjusted-estimate]
   (let [b1 (band-proportion band-stats :B1)
         b2 (band-proportion band-stats :B2)
         b3 (band-proportion band-stats :B3)
@@ -261,7 +261,9 @@
       "You know more than you thought. The 500-1,000 band is partially solid, putting you around 700-1,000 words - well above your 500 guess. This is solid A1, approaching A2. You're underselling yourself."
 
       (>= b4 0.45)
-      "You significantly underestimated. Your vocabulary extends well into the 1,000-2,000 range - you're probably around 1,200-1,800 words, not 500. This is solid A2 territory. Either you've absorbed more than you realized or you have strong cognate/Slavic-language support."
+      (str "You significantly underestimated. Your passive vocabulary is closer to ~"
+           adjusted-estimate
+           " words than 500. Your higher-frequency recognition is strong, with meaningful reach into the upper bands. Either you've absorbed more than you realized or you have strong cognate/Slavic-language support.")
 
       :else
       "Roughly in the 600-900 range - above your 500 estimate. A solid beginner foundation with the start of intermediate vocabulary.")))
@@ -308,7 +310,7 @@
      :adjusted-estimate adjusted-estimate
      :ceiling-band (ceiling-band band-stats)
      :comparison (estimate-comparison adjusted-estimate)
-     :interpretation (level-interpretation band-stats)
+     :interpretation (level-interpretation band-stats adjusted-estimate)
      :honesty-note (honesty-note wrong dk total)}))
 
 (defn feedback-for [choice question]
@@ -369,7 +371,7 @@
     [:div {:class "grid gap-4 rounded-md border border-[#e7d8c4] bg-[#fff8ec] p-4 text-sm leading-6 text-stone-700"}
      [:p [:strong {:class "font-semibold text-stone-950"} "Format: "]
       "You'll see a Polish word. Pick the correct English meaning from 4 choices."]
-     [:p "You estimated ~500 words but suspect you know more, so this test ranges well past 500 to find where you actually top out."]
+     [:p "Best for roughly 250-3,500+ passive Polish words. Below that it checks the basics; above that it mostly detects that you've hit this short test's ceiling."]
      [:div
       [:p {:class "font-semibold text-stone-950"} "80 words across 6 bands:"]
       [:ul {:class "mt-2 grid gap-1"}
