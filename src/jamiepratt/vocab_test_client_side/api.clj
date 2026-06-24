@@ -7,7 +7,9 @@
 (def default-allowed-origins
   #{"http://localhost:8000"
     "http://localhost:4173"
-    "https://vocab-test.vercel.app"})
+    "https://lexibench.com"
+    "https://www.lexibench.com"
+    "https://vocab-test-two.vercel.app"})
 
 (defn allowed-origins []
   (if-let [configured (not-empty (System/getenv "ALLOWED_ORIGINS"))]

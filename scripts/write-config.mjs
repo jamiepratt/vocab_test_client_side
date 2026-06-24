@@ -2,7 +2,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const outDir = process.argv[2] ?? "target/release/public";
-const apiBaseUrl = process.env.VOCAB_API_BASE_URL ?? "https://vocab-test.fly.dev";
+const apiBaseUrl = process.env.VOCAB_API_BASE_URL ?? "https://api.lexibench.com";
 
 await mkdir(outDir, { recursive: true });
 await writeFile(
