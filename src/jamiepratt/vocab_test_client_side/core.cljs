@@ -3,7 +3,8 @@
    [jamiepratt.vocab-test-client-side.data :as data]
    [jamiepratt.vocab-test-client-side.scoring :as scoring]
    [reagent.core :as r]
-   [reagent.dom.client :as rdom]))
+   [reagent.dom.client :as rdom]
+   [shadow.lazy :as lazy]))
 
 (def band-styles
   {:B1 {:bar "bg-[#b91c1c]"
@@ -49,13 +50,47 @@
 (defonce app-state
   (r/atom (initial-state)))
 
+(def routes
+  [{:id :test
+    :label "Test"
+    :href "#/"}
+   {:id :features
+    :label "Features"
+    :href "#/features"
+    :lazy? true}
+   {:id :adaptive-methodology
+    :label "Adaptive methodology"
+    :href "#/adaptive-methodology"
+    :lazy? true}
+   {:id :methodology
+    :label "Progressive methodology"
+    :href "#/methodology"}])
+
+(def route-by-hash
+  (into {} (map (juxt :href :id) routes)))
+
 (defn route-from-location []
-  (case (.-hash js/location)
-    "#/methodology" :methodology
-    :test))
+  (get route-by-hash (.-hash js/location) :test))
 
 (defonce current-route
   (r/atom (route-from-location)))
+
+(def lazy-pages
+  {:adaptive-methodology
+   #_{:clj-kondo/ignore [:unresolved-namespace]}
+   (lazy/loadable jamiepratt.vocab-test-client-side.pages.adaptive-methodology/page)
+   :features
+   #_{:clj-kondo/ignore [:unresolved-namespace]}
+   (lazy/loadable jamiepratt.vocab-test-client-side.pages.features/page)})
+
+(defonce lazy-page-components
+  (r/atom {}))
+
+(defonce lazy-page-loading
+  (atom #{}))
+
+(defonce lazy-page-errors
+  (r/atom {}))
 
 (defonce route-listener-registered?
   (atom false))
@@ -68,6 +103,21 @@
 
 (defonce questions-requested?
   (atom false))
+
+(defn load-lazy-page! [route]
+  (when-let [loadable (get lazy-pages route)]
+    (when-not (or (contains? @lazy-page-components route)
+                  (contains? @lazy-page-loading route))
+      (swap! lazy-page-loading conj route)
+      (lazy/load
+       loadable
+       (fn [component]
+         (swap! lazy-page-components assoc route component)
+         (swap! lazy-page-errors dissoc route)
+         (swap! lazy-page-loading disj route))
+       (fn [_]
+         (swap! lazy-page-errors assoc route "Could not load this page.")
+         (swap! lazy-page-loading disj route))))))
 
 (defn api-base-url []
   (let [config (aget js/window "VOCAB_CONFIG")]
@@ -351,23 +401,20 @@
 (defn nav-link [current-route route label href]
   [:a {:href href
        :aria-current (when (= current-route route) "page")
-       :class (str "inline-flex min-h-10 items-center rounded-md px-3 text-sm font-bold "
+       :class (str "inline-flex min-h-11 cursor-pointer items-center justify-center rounded-md border px-4 py-2 text-sm font-bold shadow-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#991b1b] "
                    (if (= current-route route)
-                     "bg-[#991b1b] text-white"
-                     "text-stone-700 hover:bg-stone-100 hover:text-stone-950"))}
+                     "border-[#991b1b] bg-[#991b1b] text-white"
+                     "border-stone-300 bg-white text-stone-800 hover:border-[#991b1b] hover:bg-red-50 hover:text-[#7f1d1d]"))}
    label])
 
 (defn top-menu [current-route]
   [:header {:class "border-b border-stone-200 bg-white text-stone-950"}
    [:nav {:aria-label "Main"
-          :class "mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-6"}
-    [:a {:href "#/"
-         :class "text-base font-extrabold text-stone-950"}
-     "Polish Vocabulary Test"]
-    [:div {:class "flex flex-wrap items-center gap-2"}
-     [nav-link current-route :test "Test" "#/"]
-     [nav-link current-route :methodology "Testing methodology" "#/methodology"]
-     [nav-link current-route :features "Features to implement" "features-to-implement.html"]]]])
+          :class "mx-auto flex w-full max-w-5xl px-3 py-3 sm:px-6"}
+    [:div {:class "flex w-full flex-wrap items-center gap-2"}
+     (for [{:keys [id label href]} routes]
+       ^{:key id}
+       [nav-link current-route id label href])]]])
 
 (defn methodology-section [id title & body]
   (into
@@ -447,13 +494,32 @@
           :class "font-bold text-[#991b1b] underline underline-offset-4"}
       "progressive-vocabulary-testing-methodology.md"]]]])
 
+(defn lazy-page-screen [route]
+  (if-let [component (get @lazy-page-components route)]
+    [component]
+    (do
+      (load-lazy-page! route)
+      [:main {:class "min-h-screen bg-[#faf7f0] px-3 py-5 text-stone-950 sm:px-6 sm:py-8"}
+       [:section {:class "mx-auto grid w-full max-w-2xl gap-3 rounded-lg border border-stone-200 bg-white p-5 shadow-lg shadow-stone-900/10 sm:p-7"}
+        (if-let [message (get @lazy-page-errors route)]
+          [:p {:role "alert"
+               :class "rounded-md bg-red-50 p-3 text-sm font-semibold text-red-800"}
+           message]
+          [:p {:class "text-sm font-semibold text-stone-700"}
+           "Loading..."])]])))
+
+(defn test-screen [state]
+  (case (:screen state)
+    :quiz [quiz-screen state]
+    :results [results-screen state]
+    [start-screen state]))
+
 (defn routed-screen [route state]
-  (if (= :methodology route)
-    [methodology-screen]
-    (case (:screen state)
-      :quiz [quiz-screen state]
-      :results [results-screen state]
-      [start-screen state])))
+  (case route
+    :methodology [methodology-screen]
+    :adaptive-methodology [lazy-page-screen route]
+    :features [lazy-page-screen route]
+    [test-screen state]))
 
 (defn app []
   (let [state @app-state

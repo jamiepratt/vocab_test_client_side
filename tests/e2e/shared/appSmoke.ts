@@ -116,6 +116,42 @@ async function answerAndContinue(page: Page, answer: string) {
   await page.getByRole("button", { name: "Next" }).click();
 }
 
+async function expectMainNav(page: Page, activeLink: string) {
+  const nav = page.getByRole("navigation", { name: "Main" });
+
+  await expect(nav).toBeVisible();
+  await expect(nav.getByRole("link", { name: "Polish Vocabulary Test" })).toHaveCount(0);
+
+  const links = [
+    ["Test", "#/"],
+    ["Features", "#/features"],
+    ["Adaptive methodology", "#/adaptive-methodology"],
+    ["Progressive methodology", "#/methodology"],
+  ] as const;
+
+  await expect(nav.getByRole("link")).toHaveText(links.map(([name]) => name));
+
+  for (const [name, href] of links) {
+    await expect(nav.getByRole("link", { name, exact: true })).toHaveAttribute("href", href);
+  }
+
+  await expect(nav.getByRole("link", { name: activeLink, exact: true })).toHaveAttribute("aria-current", "page");
+
+  const inactive = nav.getByRole("link", { name: links.find(([name]) => name !== activeLink)![0], exact: true });
+  const inactiveStyle = await inactive.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      borderWidth: Number.parseFloat(style.borderTopWidth),
+      boxShadow: style.boxShadow,
+      cursor: style.cursor,
+    };
+  });
+
+  expect(inactiveStyle.borderWidth).toBeGreaterThanOrEqual(1);
+  expect(inactiveStyle.boxShadow).not.toBe("none");
+  expect(inactiveStyle.cursor).toBe("pointer");
+}
+
 export async function runAppSmoke(page: Page) {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.addInitScript(() => {
@@ -123,14 +159,39 @@ export async function runAppSmoke(page: Page) {
   });
   await page.goto("/index.html");
 
-  await expect(page.getByRole("navigation", { name: "Main" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Test", exact: true })).toHaveAttribute("aria-current", "page");
-  await expect(page.getByRole("link", { name: "Features to implement" })).toHaveAttribute("href", "features-to-implement.html");
-  await page.getByRole("link", { name: "Testing methodology" }).click();
+  await expectMainNav(page, "Test");
+  await page.getByRole("link", { name: "Progressive methodology" }).click();
   await expect(page).toHaveURL(/#\/methodology$/);
   await expect(page.getByRole("heading", { level: 1, name: "Progressive vocabulary test methodology" })).toBeVisible();
   await expect(page.getByText("Frequency rank is good enough to launch.")).toBeVisible();
-  await expect(page.getByRole("link", { name: "Testing methodology" })).toHaveAttribute("aria-current", "page");
+  await expectMainNav(page, "Progressive methodology");
+
+  await page.getByRole("link", { name: "Adaptive methodology" }).click();
+  await expect(page).toHaveURL(/#\/adaptive-methodology$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Adaptive vocabulary size testing from a frequency list" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Beginner" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByText("Do not start with a short fully adaptive test.")).toBeVisible();
+  await page.getByRole("tab", { name: "Advanced" }).click();
+  await expect(page.getByRole("tab", { name: "Advanced" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("heading", { level: 2, name: "Method" })).toBeVisible();
+  await expectMainNav(page, "Adaptive methodology");
+
+  await page.getByRole("link", { name: "Features" }).click();
+  await expect(page).toHaveURL(/#\/features$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Vocabulary test features to implement" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "Current app snapshot" })).toBeVisible();
+  await expectMainNav(page, "Features");
+
+  await page.goto("/adaptive-vocabulary-testing.html");
+  await expect(page).toHaveURL(/index\.html#\/adaptive-methodology$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Adaptive vocabulary size testing from a frequency list" })).toBeVisible();
+  await expectMainNav(page, "Adaptive methodology");
+
+  await page.goto("/features-to-implement.html");
+  await expect(page).toHaveURL(/index\.html#\/features$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Vocabulary test features to implement" })).toBeVisible();
+  await expectMainNav(page, "Features");
+
   await page.getByRole("link", { name: "Test", exact: true }).click();
 
   await expect(page.getByRole("heading", { level: 1, name: "Polish Vocabulary Test" })).toBeVisible();

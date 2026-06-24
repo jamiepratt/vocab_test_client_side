@@ -7,11 +7,25 @@
   {:target :browser
    :output-dir "public/js"
    :asset-path "/js"
+   :module-loader true
    :modules
-   {:main {:init-fn jamiepratt.vocab-test-client-side.core/init}}}
+   {:main {:init-fn jamiepratt.vocab-test-client-side.core/init}
+    :adaptive-methodology
+    {:entries [jamiepratt.vocab-test-client-side.pages.adaptive-methodology]
+     :depends-on #{:main}}
+    :features
+    {:entries [jamiepratt.vocab-test-client-side.pages.features]
+     :depends-on #{:main}}}}
   :release
   {:target :browser
    :output-dir "target/release/public/js"
    :asset-path "/js"
+   :module-loader true
    :modules
-   {:main {:init-fn jamiepratt.vocab-test-client-side.core/init}}}}}
+   {:main {:init-fn jamiepratt.vocab-test-client-side.core/init}
+    :adaptive-methodology
+    {:entries [jamiepratt.vocab-test-client-side.pages.adaptive-methodology]
+     :depends-on #{:main}}
+    :features
+    {:entries [jamiepratt.vocab-test-client-side.pages.features]
+     :depends-on #{:main}}}}}}

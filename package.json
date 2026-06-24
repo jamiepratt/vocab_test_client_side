@@ -16,7 +16,7 @@
     "test:clj": "clojure -M:test",
     "test:e2e": "playwright test -c playwright.dev.config.ts",
     "test:e2e:headed": "playwright test -c playwright.dev.config.ts --headed",
-    "test:e2e:release": "VOCAB_API_BASE_URL=http://localhost:8080 npm run release && mkdir -p target/release/public && cp public/index.html target/release/public/index.html && playwright test -c playwright.release.config.ts",
+    "test:e2e:release": "VOCAB_API_BASE_URL=http://localhost:8080 npm run release && mkdir -p target/release/public && cp public/*.html target/release/public/ && playwright test -c playwright.release.config.ts",
     "verify": "npm run lint:clj && npm run test:clj && npm run compile && npm run test:e2e && npm run test:e2e:release"
   },
   "devDependencies": {
