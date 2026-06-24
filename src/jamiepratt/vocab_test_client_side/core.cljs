@@ -49,6 +49,17 @@
 (defonce app-state
   (r/atom (initial-state)))
 
+(defn route-from-location []
+  (case (.-hash js/location)
+    "#/methodology" :methodology
+    :test))
+
+(defonce current-route
+  (r/atom (route-from-location)))
+
+(defonce route-listener-registered?
+  (atom false))
+
 (defonce root
   (delay (rdom/create-root (.getElementById js/document "app"))))
 
@@ -337,14 +348,124 @@
               :on-click begin-test}
      "Retake"]]])
 
-(defn app []
-  (let [state @app-state]
+(defn nav-link [current-route route label href]
+  [:a {:href href
+       :aria-current (when (= current-route route) "page")
+       :class (str "inline-flex min-h-10 items-center rounded-md px-3 text-sm font-bold "
+                   (if (= current-route route)
+                     "bg-[#991b1b] text-white"
+                     "text-stone-700 hover:bg-stone-100 hover:text-stone-950"))}
+   label])
+
+(defn top-menu [current-route]
+  [:header {:class "border-b border-stone-200 bg-white text-stone-950"}
+   [:nav {:aria-label "Main"
+          :class "mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-6"}
+    [:a {:href "#/"
+         :class "text-base font-extrabold text-stone-950"}
+     "Polish Vocabulary Test"]
+    [:div {:class "flex flex-wrap items-center gap-2"}
+     [nav-link current-route :test "Test" "#/"]
+     [nav-link current-route :methodology "Testing methodology" "#/methodology"]]]])
+
+(defn methodology-section [id title & body]
+  (into
+   [:section {:id id
+              :aria-labelledby (str id "-heading")
+              :class "grid gap-3 border-t border-stone-200 pt-6 first:border-t-0 first:pt-0"}
+    [:h2 {:id (str id "-heading")
+          :class "text-2xl font-bold leading-tight text-stone-950"}
+     title]]
+   body))
+
+(defn methodology-screen []
+  [:main {:class "min-h-screen bg-[#faf7f0] px-3 py-5 text-stone-950 sm:px-6 sm:py-8"}
+   [:article {:aria-labelledby "methodology-heading"
+              :class "mx-auto grid w-full max-w-3xl gap-6 rounded-lg border border-stone-200 bg-white p-5 shadow-lg shadow-stone-900/10 sm:p-7"}
+    [:div {:class "grid gap-3"}
+     [:p {:class "text-sm font-semibold uppercase text-[#991b1b]"} "Testing methodology"]
+     [:h1 {:id "methodology-heading"
+           :class "text-4xl font-bold leading-tight text-stone-950 sm:text-5xl"}
+      "Progressive vocabulary test methodology"]
+     [:p {:class "max-w-2xl text-base leading-7 text-stone-700"}
+      "Launch from frequency-ranked words, learn real item difficulty from live responses, then move toward a shorter calibrated adaptive test."]]
+    [methodology-section
+     "core-bet"
+     "Core bet"
+     [:ol {:class "grid list-decimal gap-2 pl-5 text-sm leading-6 text-stone-700"}
+      [:li "Frequency rank is good enough to launch."]
+      [:li "It is not good enough to keep forever."]
+      [:li "Raw responses let us learn real item difficulty."]
+      [:li "Once item difficulty is known, old tests can be re-scored and future tests can get shorter."]]]
+    [methodology-section
+     "estimate"
+     "What we estimate"
+     [:p {:class "text-sm leading-6 text-stone-700"}
+      "The score estimates receptive vocabulary size: how many target-language lemmas the learner probably recognizes. It counts lemmas, not displayed word forms."]
+     [:ul {:class "grid list-disc gap-2 pl-5 text-sm leading-6 text-stone-700"}
+      [:li "Final scores should include a center estimate plus lower and upper range."]
+      [:li "Scores should retain the scoring model version."]
+      [:li "Reliability flags should come from checks, timing, and fake-word behavior."]]]
+    [methodology-section
+     "launch-test"
+     "Stage 1: long stratified launch test"
+     [:p {:class "text-sm leading-6 text-stone-700"}
+      "Before calibration exists, the test samples broadly across frequency bands rather than adapting too early."]
+     [:div {:class "grid gap-2 rounded-md border border-[#e7d8c4] bg-[#fff8ec] p-4 text-sm leading-6 text-stone-700"}
+      [:p "60-80 real words"]
+      [:p "5-10 quality checks"]
+      [:p "Several frequency bands"]
+      [:p "Randomized order"]
+      [:p "Occasional meaning checks after claimed-known answers"]]]
+    [methodology-section
+     "scoring"
+     "Stage 1 scoring"
+     [:p {:class "text-sm leading-6 text-stone-700"}
+      "Use frequency-band scoring: calculate hit rate per band, correct overclaiming with fake-word false alarms, clamp corrected hit rate to 0-1, then sum band size times corrected hit rate."]
+     [:p {:class "rounded-md bg-stone-100 p-3 text-sm leading-6 text-stone-700"}
+      "This score is provisional. It can be useful to the learner, but the uncertainty range should be wide."]]
+    [methodology-section
+     "calibration"
+     "Stage 2: calibration"
+     [:p {:class "text-sm leading-6 text-stone-700"}
+      "After enough clean response data, estimate real item difficulty with a Rasch model."]
+     [:pre {:class "overflow-x-auto rounded-md bg-stone-950 p-4 text-sm text-stone-50"}
+      "P(response_i = 1 | theta_user, b_item) = logistic(theta_user - b_item)"]
+     [:p {:class "text-sm leading-6 text-stone-700"}
+      "Bad sessions and poor-fit items are filtered before publishing a calibrated item-bank version."]]
+    [methodology-section
+     "production"
+     "Stages 3-4: re-score and shorten"
+     [:p {:class "text-sm leading-6 text-stone-700"}
+      "Each calibration round can add a new score record for old sessions without overwriting prior scores."]
+     [:p {:class "text-sm leading-6 text-stone-700"}
+      "Once enough items are calibrated, switch to a hybrid production test: calibrated scored items for the visible estimate, calibration-tail items for future item-bank quality, and quality checks for reliability."]]
+    [:p {:class "border-t border-stone-200 pt-5 text-sm leading-6 text-stone-700"}
+     "Full source document: "
+     [:a {:href "progressive-vocabulary-testing-methodology.md"
+          :class "font-bold text-[#991b1b] underline underline-offset-4"}
+      "progressive-vocabulary-testing-methodology.md"]]]])
+
+(defn routed-screen [route state]
+  (if (= :methodology route)
+    [methodology-screen]
     (case (:screen state)
       :quiz [quiz-screen state]
       :results [results-screen state]
       [start-screen state])))
 
+(defn app []
+  (let [state @app-state
+        route @current-route]
+    [:<>
+     [top-menu route]
+     [routed-screen route state]]))
+
 (defn ^:dev/after-load init []
+  (when-not @route-listener-registered?
+    (reset! route-listener-registered? true)
+    (.addEventListener js/window "hashchange" #(reset! current-route (route-from-location))))
+  (reset! current-route (route-from-location))
   (when-not @questions-requested?
     (reset! questions-requested? true)
     (load-questions!))
