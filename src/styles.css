@@ -426,6 +426,20 @@
     font-weight: 680;
   }
 
+  .doc-page .graph-preview {
+    width: min(100%, 640px);
+    height: auto;
+    margin-top: 14px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fbfcfd;
+  }
+
+  .doc-page .graph-label {
+    fill: var(--muted);
+    font: 700 12px Inter, ui-sans-serif, system-ui, sans-serif;
+  }
+
   .doc-page footer {
     padding: 24px 0 38px;
     color: var(--muted);

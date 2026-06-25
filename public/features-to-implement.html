@@ -521,6 +521,20 @@
           <li>Let the user move forward only after the answer is locked.</li>
           <li>End with a result page that supports review and retake.</li>
         </ul>
+        <div class="sample" aria-label="Future sentence quiz UI mockup">
+          <p class="sentence">Wczoraj <mark>spotkaliśmy</mark> dawnego kolegę przed teatrem.</p>
+          <div class="button-row" aria-label="Recognition answer choices">
+            <span class="button primary">Yes, I know it</span>
+            <span class="button">No / not sure</span>
+          </div>
+          <p><span class="status warn">Occasional check</span> If selected for verification, ask what the highlighted word means.</p>
+          <div class="choices">
+            <span class="choice">We met</span>
+            <span class="choice">We waited</span>
+            <span class="choice">We carried</span>
+            <span class="choice">We watched</span>
+          </div>
+        </div>
         <div class="sample" aria-label="Future confidence and early finish mockup">
           <p><span class="status warn">Mid-test estimate</span> 32 of 80 answered</p>
           <p class="sentence">Estimated passive vocabulary: <mark>~850 words</mark></p>
@@ -539,6 +553,34 @@
           <li>Show a vocabulary-over-time graph for returning users with center, lower, and upper estimate lines.</li>
           <li>While the quiz is in progress, show how confident the estimate is and allow finishing early once the learner is satisfied with that precision.</li>
         </ul>
+        <div class="sample" aria-label="Vocabulary history graph mockup">
+          <p><span class="status ok">Repeat result</span> Returning users see vocabulary size over time with uncertainty bounds.</p>
+          <svg class="graph-preview" viewBox="0 0 640 300" role="img" aria-labelledby="history-graph-title history-graph-desc">
+            <title id="history-graph-title">Vocabulary estimate over time</title>
+            <desc id="history-graph-desc">Line chart with a center estimate and upper and lower bounds across four completed tests.</desc>
+            <rect x="0" y="0" width="640" height="300" fill="#fbfcfd"></rect>
+            <line x1="70" y1="38" x2="70" y2="245" stroke="#cfd8df"></line>
+            <line x1="70" y1="245" x2="590" y2="245" stroke="#cfd8df"></line>
+            <line x1="70" y1="192" x2="590" y2="192" stroke="#e5ebf0"></line>
+            <line x1="70" y1="139" x2="590" y2="139" stroke="#e5ebf0"></line>
+            <line x1="70" y1="86" x2="590" y2="86" stroke="#e5ebf0"></line>
+            <path d="M100 176 L240 151 L380 123 L540 102" fill="none" stroke="#176f73" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M100 205 L240 181 L380 153 L540 132" fill="none" stroke="#8fbfc1" stroke-width="3" stroke-linecap="round" stroke-dasharray="7 7"></path>
+            <path d="M100 147 L240 121 L380 94 L540 72" fill="none" stroke="#8fbfc1" stroke-width="3" stroke-linecap="round" stroke-dasharray="7 7"></path>
+            <circle cx="100" cy="176" r="5" fill="#176f73"></circle>
+            <circle cx="240" cy="151" r="5" fill="#176f73"></circle>
+            <circle cx="380" cy="123" r="5" fill="#176f73"></circle>
+            <circle cx="540" cy="102" r="5" fill="#176f73"></circle>
+            <text x="72" y="31" class="graph-label">Vocabulary size</text>
+            <text x="94" y="268" class="graph-label">Test 1</text>
+            <text x="234" y="268" class="graph-label">Test 2</text>
+            <text x="374" y="268" class="graph-label">Test 3</text>
+            <text x="534" y="268" class="graph-label">Test 4</text>
+            <text x="452" y="95" class="graph-label">Center estimate</text>
+            <text x="433" y="64" class="graph-label">Upper bound</text>
+            <text x="433" y="152" class="graph-label">Lower bound</text>
+          </svg>
+        </div>
       </section>
 
       <section id="scoring">
