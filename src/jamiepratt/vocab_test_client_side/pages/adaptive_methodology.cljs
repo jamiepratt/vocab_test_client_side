@@ -5,6 +5,7 @@
   (:require-macros
    [jamiepratt.vocab-test-client-side.doc-assets :refer [adaptive-html]]))
 
+;; adaptive-vocabulary-testing.html is embedded at compile time.
 (def html (adaptive-html))
 
 (def modes

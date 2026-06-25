@@ -482,6 +482,25 @@
      [:p {:class "text-sm leading-6 text-stone-700"}
       "Bad sessions and poor-fit items are filtered before publishing a calibrated item-bank version."]]
     [methodology-section
+     "videos"
+     "Video explainers"
+     [:ul {:class "grid list-disc gap-2 pl-5 text-sm leading-6 text-stone-700"}
+      [:li
+       [:a {:href "https://www.youtube.com/watch?v=P8huS6PPxJA"
+            :class "font-bold text-[#991b1b] underline underline-offset-4"}
+        "What is Item Response Theory?"]
+       " - quick conceptual intro before the Rasch-specific parts."]
+      [:li
+       [:a {:href "https://www.youtube.com/watch?v=Qsk8PaDS9oM"
+            :class "font-bold text-[#991b1b] underline underline-offset-4"}
+        "What is the Rasch Model?"]
+       " - direct explanation of the calibration model used here."]
+      [:li
+       [:a {:href "https://www.youtube.com/watch?v=B-oLR7XRVCU"
+            :class "font-bold text-[#991b1b] underline underline-offset-4"}
+        "Understanding Item Response Theory: Key Concepts & Applications"]
+       " - longer seminar-style overview."]]]
+    [methodology-section
      "production"
      "Stages 3-4: re-score and shorten"
      [:p {:class "text-sm leading-6 text-stone-700"}

@@ -164,6 +164,10 @@ export async function runAppSmoke(page: Page) {
   await expect(page).toHaveURL(/#\/methodology$/);
   await expect(page.getByRole("heading", { level: 1, name: "Progressive vocabulary test methodology" })).toBeVisible();
   await expect(page.getByText("Frequency rank is good enough to launch.")).toBeVisible();
+  await expect(page.getByRole("link", { name: "What is Item Response Theory?" })).toHaveAttribute(
+    "href",
+    "https://www.youtube.com/watch?v=P8huS6PPxJA",
+  );
   await expectMainNav(page, "Progressive methodology");
 
   await page.getByRole("link", { name: "Adaptive methodology" }).click();
@@ -174,6 +178,10 @@ export async function runAppSmoke(page: Page) {
   await page.getByRole("tab", { name: "Advanced" }).click();
   await expect(page.getByRole("tab", { name: "Advanced" })).toHaveAttribute("aria-selected", "true");
   await expect(page.getByRole("heading", { level: 2, name: "Method" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Better Measurement with Item Response Theory" })).toHaveAttribute(
+    "href",
+    "https://www.youtube.com/watch?v=HoMVasu2tg8",
+  );
   await expectMainNav(page, "Adaptive methodology");
 
   await page.getByRole("link", { name: "Features" }).click();

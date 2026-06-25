@@ -159,6 +159,15 @@ Filter bad items after first fit:
 
 Then refit and publish a calibrated item-bank version.
 
+## Video explainers
+
+Useful background videos:
+
+- [What is Item Response Theory?](https://www.youtube.com/watch?v=P8huS6PPxJA) - quick conceptual intro before the Rasch-specific parts.
+- [What is the Rasch Model?](https://www.youtube.com/watch?v=Qsk8PaDS9oM) - direct explanation of the calibration model used here.
+- [Understanding Item Response Theory: Key Concepts & Applications](https://www.youtube.com/watch?v=B-oLR7XRVCU) - longer seminar-style overview.
+- [Better Measurement with Item Response Theory](https://www.youtube.com/watch?v=HoMVasu2tg8) - deeper lecture with more implementation context.
+
 ## Stage 3: re-score old sessions
 
 Every calibration round should revise old estimates.
