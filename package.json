@@ -10,13 +10,13 @@
     "dev:frontend": "sh -c 'npm run css:watch & css_pid=$!; trap \"kill $css_pid 2>/dev/null\" EXIT INT TERM; npm run shadow:watch'",
     "dev": "sh -c 'npm run api & api_pid=$!; npm run dev:frontend & frontend_pid=$!; trap \"kill $api_pid $frontend_pid 2>/dev/null\" EXIT INT TERM; wait $frontend_pid'",
     "compile": "npm run css:build && clojure -M:shadow compile dev",
-    "release": "npm run css:release && node scripts/write-config.mjs target/release/public && clojure -M:shadow release release",
+    "release": "npm run css:release && cp public/favicon.svg target/release/public/favicon.svg && node scripts/write-config.mjs target/release/public && clojure -M:shadow release release",
     "server": "clojure -M:shadow server",
     "lint:clj": "clj-kondo --lint src test resources deps.edn shadow-cljs.edn",
     "test:clj": "clojure -M:test",
     "test:e2e": "playwright test -c playwright.dev.config.ts",
     "test:e2e:headed": "playwright test -c playwright.dev.config.ts --headed",
-    "test:e2e:release": "VOCAB_API_BASE_URL=http://localhost:8080 npm run release && mkdir -p target/release/public && cp public/*.html target/release/public/ && playwright test -c playwright.release.config.ts",
+    "test:e2e:release": "VOCAB_API_BASE_URL=http://localhost:8080 npm run release && mkdir -p target/release/public && cp public/*.html public/favicon.svg target/release/public/ && playwright test -c playwright.release.config.ts",
     "verify": "npm run lint:clj && npm run test:clj && npm run compile && npm run test:e2e && npm run test:e2e:release"
   },
   "devDependencies": {
