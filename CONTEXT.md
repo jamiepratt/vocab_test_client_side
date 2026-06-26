@@ -1,4 +1,4 @@
-# Vocab Test Client Side Context
+# Polish Passive Vocabulary Size Test Context
 
 This file is the repo-level context for `grill-me-with-docs`. Treat it as the default source for development and testing decisions unless nearby code contradicts it.
 

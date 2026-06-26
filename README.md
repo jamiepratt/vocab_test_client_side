@@ -1,4 +1,4 @@
-# Vocab Test Client Side
+# Polish Passive Vocabulary Size Test
 
 Small ClojureScript starter using Shadow CLJS and Reagent.
 

@@ -221,7 +221,7 @@
      [:p {:class "text-sm font-semibold uppercase text-[#991b1b]"} "Polish to English"]
      [:h1 {:id "start-heading"
            :class "text-4xl font-bold leading-tight text-stone-950 sm:text-5xl"}
-      "Polish Vocabulary Test"]
+      "Polish Passive Vocabulary Size Test"]
      [:p {:class "max-w-2xl text-base leading-7 text-stone-700"}
       "Anchored low, ranging wide."]]
     [:div {:class "grid gap-4 rounded-md border border-[#e7d8c4] bg-[#fff8ec] p-4 text-sm leading-6 text-stone-700"}

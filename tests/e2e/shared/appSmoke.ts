@@ -120,7 +120,7 @@ async function expectMainNav(page: Page, activeLink: string) {
   const nav = page.getByRole("navigation", { name: "Main" });
 
   await expect(nav).toBeVisible();
-  await expect(nav.getByRole("link", { name: "Polish Vocabulary Test" })).toHaveCount(0);
+  await expect(nav.getByRole("link", { name: "Polish Passive Vocabulary Size Test" })).toHaveCount(0);
 
   const links = [
     ["Test", "#/"],
@@ -202,7 +202,8 @@ export async function runAppSmoke(page: Page) {
 
   await page.getByRole("link", { name: "Test", exact: true }).click();
 
-  await expect(page.getByRole("heading", { level: 1, name: "Polish Vocabulary Test" })).toBeVisible();
+  await expect(page).toHaveTitle("Polish Passive Vocabulary Size Test");
+  await expect(page.getByRole("heading", { level: 1, name: "Polish Passive Vocabulary Size Test" })).toBeVisible();
   await expect(page.getByText("Polish to English")).toBeVisible();
   await expect(page.getByText("You'll see a Polish word. Pick the correct English meaning from 4 choices.")).toBeVisible();
   await expect(page.getByText("80 words across 6 bands")).toBeVisible();

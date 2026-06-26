@@ -77,4 +77,4 @@
         {:class "toc-list"}
         (get html toc-key)]]]
      [:footer
-      [:p "Part of the Vocab Test Client Side project. Static HTML is copied into the Vercel artifact by the deploy workflow."]]]))
+      [:p "Part of the Polish Passive Vocabulary Size Test project. Static HTML is copied into the Vercel artifact by the deploy workflow."]]]))
