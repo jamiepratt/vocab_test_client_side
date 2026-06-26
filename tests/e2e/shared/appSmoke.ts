@@ -29,9 +29,10 @@ async function textColor(locator: Locator) {
 }
 
 async function expectReferenceStyling(page: Page) {
-  await expect(page.locator("#app > main")).toHaveCSS("background-color", "rgb(250, 247, 240)");
-  await expect(page.locator("#app > main > section")).toHaveCSS("background-color", "rgb(255, 255, 255)");
-  await expect(page.getByRole("button", { name: "Begin Test" })).toHaveCSS("background-color", "rgb(153, 27, 27)");
+  await expect(page.locator(".app-frame")).toHaveAttribute("data-theme", "light");
+  await expect(page.locator("#page-content > main")).toHaveCSS("background-color", "rgb(243, 247, 247)");
+  await expect(page.locator("#page-content > main > section")).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  await expect(page.getByRole("button", { name: "Begin Test" })).toHaveCSS("background-color", "rgb(16, 109, 104)");
   await expectNoHorizontalOverflow(page);
   await expectComfortableButtons(page);
 }
@@ -56,7 +57,7 @@ async function expectQuestion(page: Page, question: {
   await expect(page.getByRole("heading", { level: 2, name: question.word })).toBeVisible();
   await expect(page.getByText(question.wordClass, { exact: true })).toBeVisible();
   await expect(page.getByText("Select the correct meaning")).toBeVisible();
-  await expect(page.locator("main button")).toHaveText(question.choices);
+  await expect(page.locator("#page-content main button")).toHaveText(question.choices);
 
   for (const choice of question.choices) {
     await expect(page.getByRole("button", { name: choice, exact: true })).toBeVisible();
@@ -116,17 +117,36 @@ async function answerAndContinue(page: Page, answer: string) {
   await page.getByRole("button", { name: "Next" }).click();
 }
 
+async function openTheoryMenu(page: Page) {
+  const nav = page.getByRole("navigation", { name: "Main" });
+  const menu = nav.locator("details.app-theory-menu");
+  const isOpen = await menu.evaluate((element) => (element as HTMLDetailsElement).open);
+
+  if (!isOpen) {
+    await menu.locator("summary").click();
+  }
+
+  return menu;
+}
+
 async function expectMainNav(page: Page, activeLink: string) {
   const nav = page.getByRole("navigation", { name: "Main" });
+  const theoryActive = activeLink === "Progressive methodology" || activeLink === "Adaptive methodology";
+  const theorySummary = nav.locator("summary");
+  const theoryMenu = nav.locator("details.app-theory-menu");
+  const expectedTheoryLabel = theoryActive ? `Theory › ${activeLink}` : "Theory";
 
   await expect(nav).toBeVisible();
   await expect(nav.getByRole("link", { name: "Polish Passive Vocabulary Size Test" })).toHaveCount(0);
+  await expect(theorySummary).toHaveText(expectedTheoryLabel);
+  expect(await theoryMenu.evaluate((element) => (element as HTMLDetailsElement).open)).toBe(false);
+  await openTheoryMenu(page);
 
   const links = [
     ["Test", "#/"],
     ["Features", "#/features"],
-    ["Adaptive methodology", "#/adaptive-methodology"],
     ["Progressive methodology", "#/methodology"],
+    ["Adaptive methodology", "#/adaptive-methodology"],
   ] as const;
 
   await expect(nav.getByRole("link")).toHaveText(links.map(([name]) => name));
@@ -136,6 +156,12 @@ async function expectMainNav(page: Page, activeLink: string) {
   }
 
   await expect(nav.getByRole("link", { name: activeLink, exact: true })).toHaveAttribute("aria-current", "page");
+
+  if (theoryActive) {
+    await expect(theorySummary).toHaveAttribute("aria-current", "page");
+  } else {
+    await expect(theorySummary).not.toHaveAttribute("aria-current", "page");
+  }
 
   const inactive = nav.getByRole("link", { name: links.find(([name]) => name !== activeLink)![0], exact: true });
   const inactiveStyle = await inactive.evaluate((element) => {
@@ -152,14 +178,31 @@ async function expectMainNav(page: Page, activeLink: string) {
   expect(inactiveStyle.cursor).toBe("pointer");
 }
 
+async function expectThemeSwitcher(page: Page) {
+  const frame = page.locator(".app-frame");
+
+  await expect(frame).toHaveAttribute("data-theme", "light");
+  await expect(page.getByRole("button", { name: "Light" })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "Dark" }).click();
+  await expect(frame).toHaveAttribute("data-theme", "dark");
+  await expect(page.locator("#page-content > main")).toHaveCSS("background-color", "rgb(16, 20, 23)");
+  await expect(page.locator("#start-heading")).toHaveCSS("color", "rgb(241, 246, 245)");
+  await expect(page.getByRole("button", { name: "Dark" })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "Light" }).click();
+  await expect(frame).toHaveAttribute("data-theme", "light");
+}
+
 export async function runAppSmoke(page: Page) {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.addInitScript(() => {
     Math.random = () => 0;
+    localStorage.removeItem("vocab-theme");
+    localStorage.removeItem("vocab-design");
   });
   await page.goto("/index.html");
 
   await expectMainNav(page, "Test");
+  await expectThemeSwitcher(page);
   await page.getByRole("link", { name: "Progressive methodology" }).click();
   await expect(page).toHaveURL(/#\/methodology$/);
   await expect(page.getByRole("heading", { level: 1, name: "Progressive vocabulary test methodology" })).toBeVisible();
@@ -415,6 +458,8 @@ export async function runHighEstimateRegression(page: Page) {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.addInitScript(() => {
     Math.random = () => 0;
+    localStorage.removeItem("vocab-theme");
+    localStorage.removeItem("vocab-design");
   });
   await page.goto("/index.html");
   await page.getByRole("button", { name: "Begin Test" }).click();
@@ -454,6 +499,8 @@ export async function runApiQuestionLoading(page: Page) {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.addInitScript(() => {
     Math.random = () => 0;
+    localStorage.removeItem("vocab-theme");
+    localStorage.removeItem("vocab-design");
   });
   await page.goto("/index.html");
   await page.getByRole("button", { name: "Begin Test" }).click();
