@@ -39,6 +39,9 @@
   {:screen :start
    :selected-level :absolute-beginner
    :question-block nil
+   :adaptive-block nil
+   :completed-blocks []
+   :session-questions []
    :questions []
    :questions-loading? false
    :questions-error nil
@@ -47,6 +50,7 @@
    :answers []
    :answer-locked? false
    :feedback nil
+   :continuation-message nil
    :item-started-at-ms nil
    :results-data nil})
 
@@ -171,19 +175,19 @@
       (<= remaining items) band
       :else (recur (- remaining items) more))))
 
-(defn normalize-sentence-item [index item]
+(defn normalize-sentence-item [adaptive-block-id index item]
   (assoc item
+         :adaptive-block-id adaptive-block-id
          :band (block-index-band index)
          :question-number (inc index)))
 
-(defn selected-api-level [selected-level]
-  (get-in data/level-options-by-id [selected-level :api-level] "absolute-beginner"))
-
-(defn sentence-block-url [selected-level]
-  (str (api-base-url)
-       "/api/sentence-question-blocks?level="
-       (js/encodeURIComponent (selected-api-level selected-level))
-       "&block=0"))
+(defn sentence-block-url [{:keys [request]}]
+  (let [{:keys [level block]} request]
+    (str (api-base-url)
+         "/api/sentence-question-blocks?level="
+         (js/encodeURIComponent level)
+         "&block="
+         block)))
 
 (defn answer-options [question]
   (into [{:label (:correct-translation question)
@@ -200,32 +204,47 @@
 (defn choice-options [question]
   (vec (shuffle (answer-options question))))
 
-(defn load-question-block! []
-  (let [selected-level (:selected-level @app-state)]
-    (swap! app-state assoc
-           :questions-loading? true
-           :questions-error nil)
-    (-> (js/fetch (sentence-block-url selected-level))
+(defn load-question-block! [adaptive-block-id continuation-message reset-session?]
+  (let [selected-level (:selected-level @app-state)
+        adaptive-block (data/adaptive-block adaptive-block-id)]
+    (swap! app-state
+           (fn [state]
+             (assoc (if reset-session?
+                      (assoc (initial-state) :selected-level selected-level)
+                      state)
+                    :questions-loading? true
+                    :questions-error nil
+                    :continuation-message continuation-message)))
+    (-> (js/fetch (sentence-block-url adaptive-block))
         (.then (fn [response]
                  (if (.-ok response)
                    (.json response)
                    (throw (js/Error. "Could not load sentence questions")))))
         (.then (fn [body]
                  (let [block (js->clj body :keywordize-keys true)
-                       questions (mapv normalize-sentence-item
+                       question-block (assoc block
+                                             :adaptive-block-id adaptive-block-id
+                                             :adaptive-block adaptive-block)
+                       questions (mapv (partial normalize-sentence-item adaptive-block-id)
                                        (range)
                                        (:items block))]
                    (if (seq questions)
-                     (reset! app-state
-                             (assoc (initial-state)
-                                    :screen :quiz
-                                    :selected-level selected-level
-                                    :question-block block
-                                    :questions questions
-                                    :questions-loading? false
-                                    :questions-error nil
-                                    :question-choices (mapv choice-options questions)
-                                    :item-started-at-ms (now-ms)))
+                     (swap! app-state
+                            (fn [state]
+                              (assoc state
+                                     :screen :quiz
+                                     :selected-level selected-level
+                                     :question-block question-block
+                                     :adaptive-block adaptive-block
+                                     :questions questions
+                                     :session-questions (into (:session-questions state) questions)
+                                     :questions-loading? false
+                                     :questions-error nil
+                                     :current-question-index 0
+                                     :question-choices (mapv choice-options questions)
+                                     :answer-locked? false
+                                     :feedback nil
+                                     :item-started-at-ms (now-ms))))
                      (swap! app-state assoc
                             :questions-loading? false
                             :questions-error "Could not load sentence questions.")))))
@@ -235,7 +254,9 @@
                          :questions-error "Could not load sentence questions."))))))
 
 (defn begin-test []
-  (load-question-block!))
+  (let [selected-level (:selected-level @app-state)
+        starting-block (data/starting-block selected-level)]
+    (load-question-block! (:id starting-block) nil true)))
 
 (defn feedback-for [choice question]
   (case (:result choice)
@@ -251,8 +272,8 @@
 
 (defn record-answer [question choices choice]
   (swap! app-state
-         (fn [{:keys [answer-locked? current-question-index answers questions
-                      item-started-at-ms question-block] :as state}]
+         (fn [{:keys [answer-locked? current-question-index answers
+                      session-questions item-started-at-ms question-block] :as state}]
            (if answer-locked?
              state
              (let [answered-at-ms (now-ms)
@@ -282,7 +303,10 @@
                            :response-time-ms (when item-started-at-ms
                                                (- answered-at-ms item-started-at-ms))
                            :answered-at-ms answered-at-ms
-                           :test-block-id (:block question-block)
+                           :test-block-id (or (:adaptive-block-id question-block)
+                                              (:block question-block))
+                           :api-block (:block question-block)
+                           :adaptive-block-id (:adaptive-block-id question-block)
                            :requested-level (:requested-level question-block)
                            :level (:level question-block)
                            :band (:band question)
@@ -292,20 +316,41 @@
                       :answers next-answers
                       :answer-locked? true
                       :feedback (feedback-for choice question)
-                      :results-data (scoring/summarize-results questions next-answers)))))))
+                      :results-data (scoring/summarize-results session-questions next-answers)))))))
+
+(defn continuation-message [decision]
+  (case (:action decision)
+    :route-lower "The first block was too hard, so this test is continuing with easier sentence items."
+    :route-higher "The first block was too easy, so this test is continuing with harder sentence items."
+    nil))
+
+(defn finish-results! [decision]
+  (swap! app-state
+         (fn [{:keys [answers session-questions] :as state}]
+           (assoc state
+                  :screen :results
+                  :continuation-message nil
+                  :results-data (scoring/summarize-results session-questions answers decision)))))
+
+(defn complete-current-block! []
+  (let [{:keys [question-block answers]} @app-state
+        decision (scoring/adaptive-block-decision (:adaptive-block question-block) answers)
+        next-block-id (:next-block-id decision)]
+    (if next-block-id
+      (do
+        (swap! app-state update :completed-blocks conj decision)
+        (load-question-block! next-block-id (continuation-message decision) false))
+      (finish-results! decision))))
 
 (defn next-question []
-  (swap! app-state
-         (fn [{:keys [current-question-index answers questions] :as state}]
-           (if (= current-question-index (dec (count questions)))
-             (assoc state
-                    :screen :results
-                    :results-data (scoring/summarize-results questions answers))
-             (assoc state
-                    :current-question-index (inc current-question-index)
-                    :answer-locked? false
-                    :feedback nil
-                    :item-started-at-ms (now-ms))))))
+  (let [{:keys [current-question-index questions]} @app-state]
+    (if (= current-question-index (dec (count questions)))
+      (complete-current-block!)
+      (swap! app-state assoc
+             :current-question-index (inc current-question-index)
+             :answer-locked? false
+             :feedback nil
+             :item-started-at-ms (now-ms)))))
 
 (defn level-option [{:keys [selected-level]} {:keys [id label]}]
   [:label {:class "app-level-option"}
@@ -404,12 +449,14 @@
             :on-click #(record-answer question choices dont-know-choice)}
    (:label dont-know-choice)])
 
-(defn quiz-screen [{:keys [questions current-question-index question-choices answers answer-locked? feedback]}]
+(defn quiz-screen [{:keys [questions current-question-index question-choices answers answer-locked? feedback continuation-message]}]
   (let [question (nth questions current-question-index)
         choices (or (get question-choices current-question-index)
                     (choice-options question))
         current-question-number (inc current-question-index)
-        scored-count (count answers)
+        scored-count (count (filter #(= (:adaptive-block-id question)
+                                        (:adaptive-block-id %))
+                                    answers))
         total (count questions)
         progress (if (pos? total)
                    (* 100 (/ scored-count total))
@@ -424,6 +471,10 @@
              :aria-valuenow scored-count}
        [:div {:class "app-progress-fill h-full rounded-full transition-all"
               :style {:width (str progress "%")}}]]
+      (when continuation-message
+        [:p {:role "status"
+             :class "rounded-md app-subtle-bg p-3 text-sm font-semibold app-ink-soft"}
+         continuation-message])
       [:div {:class "flex flex-wrap items-center justify-between gap-3 text-sm font-semibold app-muted"}
        [:span (str scored-count " / " total " scored")]
        [:span (str "Item " current-question-number " of " total)]
@@ -481,7 +532,7 @@
         heading]
        [:ul {:class "grid gap-2"}
         (for [{:keys [question-index] :as answer} review-answers]
-          ^{:key question-index}
+          ^{:key (str (:adaptive-block-id answer) "-" question-index)}
           [review-answer-row answer])]])))
 
 (defn results-screen [{:keys [results-data]}]
@@ -522,7 +573,8 @@
       [:p {:class "text-xs font-bold uppercase app-muted"}
        "Estimated passive vocabulary"]
       [:p {:class "app-accent-text break-words text-4xl font-bold"}
-       (str "~" (:adjusted-estimate results-data) " words")]]
+       (or (:estimate-label results-data)
+           (str "~" (:adjusted-estimate results-data) " words"))]]
      [:p {:class "break-words text-base font-semibold app-ink-soft"}
       (:comparison results-data)]
      [:p {:class "break-words text-base leading-7 app-muted"}
