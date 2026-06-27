@@ -40,6 +40,15 @@ Default DB URL is set in `.env`: `postgresql://localhost:5432/vocab_test_client_
 
 The script creates the DB if missing, builds `target/local-polish-lexicon-bundle`, applies migrations, imports with `--replace`, then verifies row counts.
 
+To reset from the committed legacy handoff bundle, import at the pre-normalization commit, and migrate forward to the current normalized schema:
+
+```sh
+npm run db:local:staged-legacy
+npm run db:test:staged-legacy
+```
+
+This is destructive for the selected DB. See `docs/staged-legacy-db-import.md`.
+
 ## Production Database
 
 Use Neon Postgres in AWS Frankfurt (`eu-central-1`) with autosuspend enabled. Keep two URLs:
@@ -47,7 +56,7 @@ Use Neon Postgres in AWS Frankfurt (`eu-central-1`) with autosuspend enabled. Ke
 - pooled URL for Fly runtime: `fly secrets set DATABASE_URL='<pooled Neon URL>' -a vocab-test`
 - direct URL for migrations/admin: `DATABASE_URL='<direct Neon URL>' clojure -M:db migrate`
 
-Do not import lexicon data into production unless a valid import bundle has been intentionally selected.
+Do not import lexicon data into production directly. Use the protected `Sync Production DB` GitHub workflow with `NEON_DIRECT_DATABASE_URL` and the approved manifest SHA.
 
 ## Tooling
 

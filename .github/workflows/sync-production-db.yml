@@ -1,0 +1,58 @@
+name: Sync Production DB
+
+on:
+  workflow_dispatch:
+    inputs:
+      manifest_sha:
+        description: SHA-256 of db/import-bundles/polish-lexicon-import-v1/manifest.json
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-db-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      APPROVED_MANIFEST_SHA: aa11facf36e6b7eb232dfe6b0a9a900f05407cd607efa5802bfd0d726fd93965
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Check manifest input
+        run: test "${{ inputs.manifest_sha }}" = "$APPROVED_MANIFEST_SHA"
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Setup Clojure
+        uses: DeLaGuardo/setup-clojure@13
+        with:
+          cli: latest
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-client
+
+      - name: Staged legacy import and migration
+        run: node scripts/staged-legacy-db-sync.mjs --env NEON_DIRECT_DATABASE_URL --manifest-sha "${{ inputs.manifest_sha }}" --skip-create-db
+        env:
+          NEON_DIRECT_DATABASE_URL: ${{ secrets.NEON_DIRECT_DATABASE_URL }}

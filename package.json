@@ -9,6 +9,8 @@
     "api": "node scripts/run-with-env.mjs -- clojure -M:server",
     "db:local:bundle": "node scripts/build-local-db-bundle.mjs",
     "db:local:setup": "node scripts/run-with-env.mjs -- node scripts/setup-local-db.mjs",
+    "db:local:staged-legacy": "node scripts/run-with-env.mjs -- node scripts/staged-legacy-db-sync.mjs --env DATABASE_URL --create-db",
+    "db:test:staged-legacy": "node scripts/run-with-env.mjs -- node scripts/staged-legacy-db-sync.mjs --env TEST_DATABASE_URL --create-db",
     "dev:frontend": "sh -c 'npm run css:watch & css_pid=$!; trap \"kill $css_pid 2>/dev/null\" EXIT INT TERM; npm run shadow:watch'",
     "dev": "sh -c 'npm run api & api_pid=$!; npm run dev:frontend & frontend_pid=$!; trap \"kill $api_pid $frontend_pid 2>/dev/null\" EXIT INT TERM; wait $frontend_pid'",
     "compile": "npm run css:build && clojure -M:shadow compile dev",
