@@ -37,14 +37,17 @@
 
 (defn initial-state []
   {:screen :start
+   :selected-level :absolute-beginner
+   :question-block nil
    :questions []
-   :questions-loading? true
+   :questions-loading? false
    :questions-error nil
    :current-question-index 0
    :question-choices []
    :answers []
    :answer-locked? false
    :feedback nil
+   :item-started-at-ms nil
    :results-data nil})
 
 (defonce app-state
@@ -137,9 +140,6 @@
 (def button-class
   "app-primary-button sm:w-auto")
 
-(defonce questions-requested?
-  (atom false))
-
 (defn load-lazy-page! [route]
   (when-let [loadable (get lazy-pages route)]
     (when-not (or (contains? @lazy-page-components route)
@@ -160,50 +160,82 @@
     (or (some-> config (aget "apiBaseUrl"))
         "")))
 
-(defn normalize-question [question]
-  (update question :band keyword))
+(defn now-ms []
+  (.now js/Date))
 
-(defn load-questions! []
-  (-> (js/fetch (str (api-base-url) "/api/questions"))
-      (.then (fn [response]
-               (if (.-ok response)
-                 (.json response)
-                 (throw (js/Error. "Could not load questions")))))
-      (.then (fn [body]
-               (let [questions (mapv normalize-question
-                                     (js->clj body :keywordize-keys true))]
-                 (swap! app-state assoc
-                        :questions questions
-                        :questions-loading? false
-                        :questions-error nil))))
-      (.catch (fn [_]
-                (swap! app-state assoc
-                       :questions-loading? false
-                       :questions-error "Could not load questions.")))))
+(defn block-index-band [index]
+  (loop [remaining (inc index)
+         [{:keys [band items]} & more] data/block-band-profile]
+    (cond
+      (nil? band) (last data/ordered-band-ids)
+      (<= remaining items) band
+      :else (recur (- remaining items) more))))
+
+(defn normalize-sentence-item [index item]
+  (assoc item
+         :band (block-index-band index)
+         :question-number (inc index)))
+
+(defn selected-api-level [selected-level]
+  (get-in data/level-options-by-id [selected-level :api-level] "absolute-beginner"))
+
+(defn sentence-block-url [selected-level]
+  (str (api-base-url)
+       "/api/sentence-question-blocks?level="
+       (js/encodeURIComponent (selected-api-level selected-level))
+       "&block=0"))
 
 (defn answer-options [question]
-  (into [{:label (:correct question)
+  (into [{:label (:correct-translation question)
           :result :correct}]
-        (map (fn [wrong]
-               {:label wrong
+        (map (fn [distractor]
+               {:label distractor
                 :result :wrong})
-             (:wrong question))))
+             (:distractors question))))
+
+(def dont-know-choice
+  {:label "don't know"
+   :result :dk})
 
 (defn choice-options [question]
-  (conj (vec (shuffle (answer-options question)))
-        {:label "don't know"
-         :result :dk}))
+  (vec (shuffle (answer-options question))))
+
+(defn load-question-block! []
+  (let [selected-level (:selected-level @app-state)]
+    (swap! app-state assoc
+           :questions-loading? true
+           :questions-error nil)
+    (-> (js/fetch (sentence-block-url selected-level))
+        (.then (fn [response]
+                 (if (.-ok response)
+                   (.json response)
+                   (throw (js/Error. "Could not load sentence questions")))))
+        (.then (fn [body]
+                 (let [block (js->clj body :keywordize-keys true)
+                       questions (mapv normalize-sentence-item
+                                       (range)
+                                       (:items block))]
+                   (if (seq questions)
+                     (reset! app-state
+                             (assoc (initial-state)
+                                    :screen :quiz
+                                    :selected-level selected-level
+                                    :question-block block
+                                    :questions questions
+                                    :questions-loading? false
+                                    :questions-error nil
+                                    :question-choices (mapv choice-options questions)
+                                    :item-started-at-ms (now-ms)))
+                     (swap! app-state assoc
+                            :questions-loading? false
+                            :questions-error "Could not load sentence questions.")))))
+        (.catch (fn [_]
+                  (swap! app-state assoc
+                         :questions-loading? false
+                         :questions-error "Could not load sentence questions."))))))
 
 (defn begin-test []
-  (let [questions (:questions @app-state)]
-    (when (seq questions)
-      (reset! app-state
-              (assoc (initial-state)
-                     :screen :quiz
-                     :questions questions
-                     :questions-loading? false
-                     :questions-error nil
-                     :question-choices (mapv choice-options questions))))))
+  (load-question-block!))
 
 (defn feedback-for [choice question]
   (case (:result choice)
@@ -212,24 +244,49 @@
               :message "Correct"}
     :dk {:kind :wrong
          :selected (:label choice)
-         :message (str "Correct answer: " (:correct question))}
+         :message (str "Correct answer: " (:correct-translation question))}
     :wrong {:kind :wrong
             :selected (:label choice)
-            :message (str "Correct answer: " (:correct question))}))
+            :message (str "Correct answer: " (:correct-translation question))}))
 
 (defn record-answer [question choices choice]
   (swap! app-state
-         (fn [{:keys [answer-locked? current-question-index answers questions] :as state}]
+         (fn [{:keys [answer-locked? current-question-index answers questions
+                      item-started-at-ms question-block] :as state}]
            (if answer-locked?
              state
-             (let [answer {:question-index current-question-index
-                           :word (:word question)
-                           :word-class (:word-class question)
-                           :band (:band question)
+             (let [answered-at-ms (now-ms)
+                   result (:result choice)
+                   correct-answer (:correct-translation question)
+                   answer {:question-index current-question-index
+                           :item-id (:item-id question)
+                           :sentence (:sentence question)
+                           :target-surface (:target-surface question)
+                           :highlight-span (:highlight-span question)
+                           :lemma-id (:lemma-id question)
+                           :lemma-pos-id (:lemma-pos-id question)
+                           :candidate-rank (:surface-difficulty-rank question)
+                           :inventory-stratum (:fixed-stratum question)
+                           :lemma-rank (:lemma-inventory-rank question)
+                           :surface-difficulty-rank (:surface-difficulty-rank question)
+                           :item-type (:item-type question)
+                           :choice-count (:choice-count question)
+                           :guess-rate (:guess-rate question)
                            :choices (mapv :label choices)
+                           :selected-answer (:label choice)
                            :selected (:label choice)
-                           :correct (:correct question)
-                           :result (:result choice)}
+                           :correct-answer correct-answer
+                           :correct correct-answer
+                           :correct? (= :correct result)
+                           :result result
+                           :response-time-ms (when item-started-at-ms
+                                               (- answered-at-ms item-started-at-ms))
+                           :answered-at-ms answered-at-ms
+                           :test-block-id (:block question-block)
+                           :requested-level (:requested-level question-block)
+                           :level (:level question-block)
+                           :band (:band question)
+                           :word (:target-surface question)}
                    next-answers (conj answers answer)]
                (assoc state
                       :answers next-answers
@@ -247,14 +304,26 @@
              (assoc state
                     :current-question-index (inc current-question-index)
                     :answer-locked? false
-                    :feedback nil)))))
+                    :feedback nil
+                    :item-started-at-ms (now-ms))))))
 
-(defn start-screen [{:keys [questions questions-loading? questions-error]}]
+(defn level-option [{:keys [selected-level]} {:keys [id label]}]
+  [:label {:class "app-level-option"}
+   [:input {:type "radio"
+            :name "starting-level"
+            :value (name id)
+            :checked (= selected-level id)
+            :on-change #(swap! app-state assoc
+                               :selected-level id
+                               :questions-error nil)}]
+   [:span label]])
+
+(defn start-screen [{:keys [selected-level questions-loading? questions-error]}]
   [:main {:class "app-page"}
    [:section {:aria-labelledby "start-heading"
               :class "app-card grid gap-5 p-5 sm:gap-6 sm:p-7"}
     [:div {:class "grid gap-3"}
-     [:p {:class "app-eyebrow"} "Polish to English"]
+     [:p {:class "app-eyebrow"} "Polish sentence context"]
      [:h1 {:id "start-heading"
            :class "text-4xl font-bold leading-tight app-ink sm:text-5xl"}
       "Polish Passive Vocabulary Size Test"]
@@ -262,30 +331,33 @@
       "Anchored low, ranging wide."]]
     [:div {:class "app-soft-panel grid gap-4 rounded-md border p-4 text-sm leading-6"}
      [:p [:strong {:class "font-semibold app-ink"} "Format: "]
-      "You'll see a Polish word. Pick the correct English meaning from 4 choices."]
-     [:p "Best for roughly 250-3,500+ passive Polish words. Below that it checks the basics; above that it mostly detects that you've hit this short test's ceiling."]
-     [:div
-      [:p {:class "font-semibold app-ink"} "80 words across 6 bands:"]
-      [:ul {:class "mt-2 grid gap-1"}
-       (for [{:keys [id summary]} data/bands]
-         ^{:key id}
-         [:li {:class (str "rounded-md border px-3 py-2 " (band-style-class id :panel))}
-          summary])]]
+      "You'll see a Polish sentence. Choose the highlighted word's English meaning."]
+     [:p "Pick a starting point; the level is only a prior for the first sentence block."]
+     [:fieldset {:class "grid gap-3"
+                 :role "radiogroup"
+                 :aria-label "Starting level"}
+      [:legend {:class "font-semibold app-ink"} "Starting level"]
+      [:div {:class "grid gap-2 sm:grid-cols-2"}
+       (for [option data/level-options]
+         ^{:key (:id option)}
+         [level-option {:selected-level selected-level} option])]]
      [:p [:strong {:class "font-semibold app-ink"} "Don't guess. "]
       "Pick \"don't know\" if unsure; it makes the estimate accurate."]
-     [:p "~12 minutes."]]
+     [:p (str data/sentence-block-size " sentence-context items. ~12 minutes.")]]
     (when questions-error
       [:p {:role "alert"
            :class "app-feedback-error rounded-md p-3 text-sm font-semibold"}
        questions-error])
     [:button {:type "button"
               :class button-class
-              :disabled (or questions-loading? questions-error (empty? questions))
+              :disabled questions-loading?
               :on-click begin-test}
-     "Begin Test"]]])
+     (if questions-loading?
+       "Loading sentence questions..."
+       "Begin Test")]]])
 
 (defn choice-button [question choices answer-locked? feedback choice]
-  (let [correct-answer? (= (:label choice) (:correct question))
+  (let [correct-answer? (= (:label choice) (:correct-translation question))
         selected-answer? (= (:label choice) (:selected feedback))
         selected-result (:kind feedback)
         base-class "min-h-12 rounded-md border px-4 py-3 text-left text-sm font-semibold break-words shadow-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
@@ -304,37 +376,73 @@
               :on-click #(record-answer question choices choice)}
      (:label choice)]))
 
-(defn quiz-screen [{:keys [questions current-question-index question-choices answer-locked? feedback]}]
+(defn highlighted-sentence [{:keys [sentence target-surface highlight-span]}]
+  (let [sentence (or sentence "")
+        {:keys [start end]} highlight-span]
+    (if (and (number? start)
+             (number? end)
+             (<= 0 start end (count sentence)))
+      [:p {:role "group"
+           :aria-label "Polish sentence"
+           :class "app-sentence-text"}
+       (subs sentence 0 start)
+       [:mark {:role "term"
+               :class "app-target-mark"}
+        (subs sentence start end)]
+       (subs sentence end)]
+      [:p {:role "group"
+           :aria-label "Polish sentence"
+           :class "app-sentence-text"}
+       target-surface
+       " "
+       sentence])))
+
+(defn dont-know-button [question choices answer-locked?]
+  [:button {:type "button"
+            :class "min-h-12 rounded-md border px-4 py-3 text-left text-sm font-semibold break-words shadow-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 app-choice-button"
+            :disabled answer-locked?
+            :on-click #(record-answer question choices dont-know-choice)}
+   (:label dont-know-choice)])
+
+(defn quiz-screen [{:keys [questions current-question-index question-choices answers answer-locked? feedback]}]
   (let [question (nth questions current-question-index)
         choices (or (get question-choices current-question-index)
                     (choice-options question))
         current-question-number (inc current-question-index)
-        progress (* 100 (/ current-question-number (count questions)))]
+        scored-count (count answers)
+        total (count questions)
+        progress (if (pos? total)
+                   (* 100 (/ scored-count total))
+                   0)]
     [:main {:class "app-page"}
-     [:section {:aria-labelledby "question-word"
+     [:section {:aria-labelledby "question-heading"
                 :class "app-card grid gap-5 p-5 sm:gap-6 sm:p-7"}
       [:div {:class "h-2 overflow-hidden rounded-full app-subtle-bg"
              :role "progressbar"
-             :aria-valuemin 1
-             :aria-valuemax (count questions)
-             :aria-valuenow current-question-number}
+             :aria-valuemin 0
+             :aria-valuemax total
+             :aria-valuenow scored-count}
        [:div {:class "app-progress-fill h-full rounded-full transition-all"
               :style {:width (str progress "%")}}]]
       [:div {:class "flex flex-wrap items-center justify-between gap-3 text-sm font-semibold app-muted"}
-       [:span (str current-question-number " / " (count questions))]
+       [:span (str scored-count " / " total " scored")]
+       [:span (str "Item " current-question-number " of " total)]
        [:span {:class (str "rounded-full px-3 py-1 text-xs font-bold ring-1 " (band-style-class (:band question) :badge))}
         (data/band-labels (:band question))]]
-      [:div {:class "grid gap-2 text-center"}
-       [:h2 {:id "question-word"
-             :class "break-words text-4xl font-bold leading-tight app-ink sm:text-5xl"}
-        (:word question)]
-       [:p {:class "text-sm font-semibold uppercase app-muted"}
-        (:word-class question)]
-       [:p {:class "text-base app-muted"} "Select the correct meaning"]]
-      [:div {:class "grid gap-3"}
+      [:div {:class "grid gap-4 text-center"}
+       [:h2 {:id "question-heading"
+             :class "text-2xl font-bold leading-tight app-ink sm:text-3xl"}
+        "What does the highlighted word mean?"]
+       [highlighted-sentence question]
+       [:p {:class "text-base app-muted"} "Select the best English meaning"]]
+      [:div {:class "grid gap-3"
+             :role "group"
+             :aria-label "Answer choices"}
        (for [choice choices]
          ^{:key (:label choice)}
          [choice-button question choices answer-locked? feedback choice])]
+      [:div {:class "grid gap-2 border-t app-border pt-4"}
+       [dont-know-button question choices answer-locked?]]
       (when feedback
         [:p {:class (if (= :correct (:kind feedback))
                       "app-feedback-success rounded-md p-3 text-sm font-semibold"
@@ -424,9 +532,7 @@
         (:honesty-note results-data)])
      [:p {:class "break-words rounded-md app-subtle-bg p-3 text-sm leading-6 app-muted"}
       [:strong {:class "font-semibold app-ink"} "A note on Polish: "]
-      "This test shows words in their dictionary (nominative) form. Polish has 7 cases, so in real text these words appear with different endings (e.g. "
-      [:em "woda -> wode -> woda -> wodzie"]
-      "). Recognizing a word in its base form is easier than recognizing all its inflected forms, so your reading-comprehension vocabulary may feel smaller than this score suggests until the case system clicks."]
+      "This test scores recognition of lemmas in sentence context."]
      [:p {:class "break-words rounded-md app-subtle-bg p-3 text-sm leading-6 app-muted"}
       "Passive vocabulary (recognition) is typically 2-3x active vocabulary (production). This test measures recognition only."]]
     [:button {:type "button"
@@ -641,7 +747,4 @@
                                                  (close-theory-menu!)
                                                  (reset! current-route (route-from-location)))))
   (reset! current-route (route-from-location))
-  (when-not @questions-requested?
-    (reset! questions-requested? true)
-    (load-questions!))
   (rdom/render @root [app]))
