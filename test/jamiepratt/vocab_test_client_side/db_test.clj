@@ -26,6 +26,17 @@
 (defn- data-row-count [content]
   (max 0 (dec (count (str/split-lines content)))))
 
+(defn- migration-statements [relative-path]
+  (->> (slurp (io/file relative-path) :encoding "UTF-8")
+       (#(str/split % #"(?m)^--;;\s*$"))
+       (map str/trim)
+       (remove str/blank?)))
+
+(defn- run-migration-file! [conn relative-path]
+  (jdbc/with-transaction [tx conn]
+    (doseq [statement (migration-statements relative-path)]
+      (jdbc/execute! tx [statement]))))
+
 (defn- write-bundle! [tables]
   (let [root (temp-dir)
         table-entries (mapv (fn [{:keys [table header rows]}]
@@ -110,10 +121,26 @@
      :rows ["1\t1\tcat"]}
     {:table "example_sentences"
      :header ["example_sentence_id" "sentence" "sentence_translation" "surface_form_id"
-              "lemma_id" "word_translation" "distractor_1_translation"
-              "distractor_2_translation" "distractor_3_translation"
-              "distractor_4_translation"]
-     :rows ["1\tKot pije wodę.\tThe cat drinks water.\t1\t1\tcat\tdog\tbird\tfish\ttree"]}
+              "lemma_id" "lemma_subtlex_pos_id" "word_translation"]
+     :rows ["1\tKot pije wodę.\tThe cat drinks water.\t1\t1\t1\tcat"
+            "2\tKot śpi.\tThe cat sleeps.\t1\t1\t1\tcat"]}
+    {:table "lemma_pos_distractors"
+     :header ["lemma_pos_distractor_id" "lemma_subtlex_pos_id"
+              "distractor_translation" "is_default" "import_order"]
+     :rows ["1\t1\tdog\ttrue\t1"
+            "2\t1\tbird\ttrue\t2"
+            "3\t1\tfish\ttrue\t3"
+            "4\t1\ttree\ttrue\t4"
+            "5\t1\tcar\tfalse\t5"
+            "6\t1\tchair\tfalse\t6"
+            "7\t1\tcup\tfalse\t7"
+            "8\t1\troad\tfalse\t8"]}
+    {:table "example_sentence_distractor_assignments"
+     :header ["example_sentence_id" "lemma_pos_distractor_id"]
+     :rows ["2\t5"
+            "2\t6"
+            "2\t7"
+            "2\t8"]}
     {:table "rejected_lemmas"
      :header ["rejected_lemma_id" "lemma" "subtlex_pos" "spelling" "reason_code"
               "subtlex_frequency" "contextual_diversity_count" "contextual_diversity"
@@ -187,6 +214,145 @@
                           #"SHA-256 mismatch"
                           (db/validate-bundle! bundle)))))
 
+(deftest rejects-legacy-example-sentence-distractor-columns
+  (let [bundle (write-bundle!
+                [{:table "example_sentences"
+                  :header ["example_sentence_id" "sentence" "sentence_translation" "surface_form_id"
+                           "lemma_id" "word_translation" "distractor_1_translation"
+                           "distractor_2_translation" "distractor_3_translation"
+                           "distractor_4_translation"]
+                  :rows []}])]
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                          #"legacy distractor columns"
+                          (db/validate-bundle! bundle)))))
+
+(deftest rejects-case-insensitive-lemma-pos-distractor-duplicates
+  (let [bundle (write-bundle!
+                [{:table "lemma_pos_distractors"
+                  :header ["lemma_pos_distractor_id" "lemma_subtlex_pos_id"
+                           "distractor_translation" "is_default" "import_order"]
+                  :rows ["1\t1\tDog\ttrue\t1"
+                         "2\t1\tdog\ttrue\t2"]}])]
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                          #"Duplicate lemma/POS distractor translation"
+                          (db/validate-bundle! bundle)))))
+
+(deftest rejects-assignments-that-duplicate-default-distractors
+  (let [bundle (write-bundle!
+                [{:table "example_sentences"
+                  :header ["example_sentence_id" "sentence" "sentence_translation" "surface_form_id"
+                           "lemma_id" "lemma_subtlex_pos_id" "word_translation"]
+                  :rows ["1\tKot pije wodę.\tThe cat drinks water.\t1\t1\t1\tcat"]}
+                 {:table "lemma_pos_distractors"
+                  :header ["lemma_pos_distractor_id" "lemma_subtlex_pos_id"
+                           "distractor_translation" "is_default" "import_order"]
+                  :rows ["1\t1\tdog\ttrue\t1"
+                         "2\t1\tbird\ttrue\t2"
+                         "3\t1\tfish\ttrue\t3"
+                         "4\t1\ttree\ttrue\t4"]}
+                 {:table "example_sentence_distractor_assignments"
+                  :header ["example_sentence_id" "lemma_pos_distractor_id"]
+                  :rows ["1\t1"
+                         "1\t2"
+                         "1\t3"
+                         "1\t4"]}])]
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                          #"duplicate the lemma/POS default distractors"
+                          (db/validate-bundle! bundle)))))
+
+(deftest rejects-ambiguous-target-surface-fallback
+  (let [bundle (write-bundle!
+                [{:table "surface_forms"
+                  :header ["surface_form_id" "surface_form"]
+                  :rows ["1\tkot"]}
+                 {:table "example_sentences"
+                  :header ["example_sentence_id" "sentence" "sentence_translation" "surface_form_id"
+                           "lemma_id" "lemma_subtlex_pos_id" "word_translation"]
+                  :rows ["1\tKot widzi kot.\tThe cat sees a cat.\t1\t1\t1\tcat"]}
+                 {:table "lemma_pos_distractors"
+                  :header ["lemma_pos_distractor_id" "lemma_subtlex_pos_id"
+                           "distractor_translation" "is_default" "import_order"]
+                  :rows ["1\t1\tdog\ttrue\t1"
+                         "2\t1\tbird\ttrue\t2"
+                         "3\t1\tfish\ttrue\t3"
+                         "4\t1\ttree\ttrue\t4"]}
+                 {:table "example_sentence_distractor_assignments"
+                  :header ["example_sentence_id" "lemma_pos_distractor_id"]
+                  :rows []}])]
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                          #"target surface does not occur exactly once"
+                          (db/validate-bundle! bundle)))))
+
+(deftest validates-normalized-example-distractor-bundle
+  (let [manifest (db/validate-bundle! (small-bundle!))
+        tables (into {} (map (juxt :table identity)) (:tables manifest))]
+    (is (= ["example_sentence_id" "sentence" "sentence_translation" "surface_form_id"
+            "lemma_id" "lemma_subtlex_pos_id" "word_translation"]
+           (get-in tables ["example_sentences" :header])))
+    (is (= 8 (get-in tables ["lemma_pos_distractors" :rows])))
+    (is (= 4 (get-in tables ["example_sentence_distractor_assignments" :rows])))))
+
+(deftest normalizes-legacy-example-distractors-without-changing-effective-set
+  (when-let [database-url (not-empty (System/getenv "TEST_DATABASE_URL"))]
+    (let [jdbc-url (db/database-url->jdbc-url database-url)]
+      (try
+        (with-open [conn (jdbc/get-connection {:connection-uri jdbc-url})]
+          (jdbc/execute! conn ["DROP SCHEMA IF EXISTS polish_lexicon CASCADE"])
+          (jdbc/execute! conn ["DROP TABLE IF EXISTS schema_migrations"])
+          (run-migration-file! conn "resources/migrations/202606260001-polish-lexicon-schema.up.sql")
+          (jdbc/execute! conn ["INSERT INTO polish_lexicon.lemmas
+                                (lemma_id, lemma, total_frequency_sn_sum, total_frequency_sn_sum_rank,
+                                 total_subtlex_frequency, lemma_subtlex_pos_count, surface_form_count,
+                                 nkjp_frequency, nkjp_frequency_rank)
+                                VALUES (1, 'kot', 10.0, 1, 10, 1, 1, NULL, NULL)"])
+          (jdbc/execute! conn ["INSERT INTO polish_lexicon.lemma_subtlex_pos
+                                (lemma_subtlex_pos_id, lemma_id, lemma, subtlex_pos,
+                                 subtlex_frequency, contextual_diversity_count, contextual_diversity)
+                                VALUES (1, 1, 'kot', 'subst', 10, 10, 1.0)"])
+          (jdbc/execute! conn ["INSERT INTO polish_lexicon.surface_forms
+                                (surface_form_id, surface_form)
+                                VALUES (1, 'kot')"])
+          (jdbc/execute! conn ["INSERT INTO polish_lexicon.surface_form_lemma_links
+                                (surface_form_lemma_link_id, surface_form_id, lemma_id, lemma_subtlex_pos_id)
+                                VALUES (1, 1, 1, 1)"])
+          (jdbc/execute! conn ["INSERT INTO polish_lexicon.example_sentences
+                                (example_sentence_id, sentence, sentence_translation, surface_form_id,
+                                 lemma_id, word_translation, distractor_1_translation,
+                                 distractor_2_translation, distractor_3_translation,
+                                 distractor_4_translation)
+                                VALUES (1, 'Kot pije wodę.', 'The cat drinks water.', 1,
+                                        1, 'cat', 'dog', 'bird', 'fish', 'tree')"])
+          (run-migration-file! conn "resources/migrations/202606270001-normalize-example-sentence-distractors.up.sql")
+          (testing "legacy fixed columns are removed"
+            (is (zero?
+                 (:c (jdbc/execute-one!
+                      conn
+                      ["SELECT count(*) AS c
+                        FROM information_schema.columns
+                        WHERE table_schema = 'polish_lexicon'
+                          AND table_name = 'example_sentences'
+                          AND column_name LIKE 'distractor_%_translation'"])))))
+          (testing "effective normalized defaults match the old unordered set"
+            (is (= "bird,dog,fish,tree"
+                   (:distractors
+                    (jdbc/execute-one!
+                     conn
+                     ["SELECT string_agg(d.distractor_translation, ',' ORDER BY lower(d.distractor_translation), d.distractor_translation) AS distractors
+                       FROM polish_lexicon.example_sentences e
+                       JOIN polish_lexicon.lemma_pos_distractors d
+                         ON d.lemma_subtlex_pos_id = e.lemma_subtlex_pos_id
+                        AND d.is_default
+                       WHERE e.example_sentence_id = 1"])))))
+          (is (zero?
+               (:c (jdbc/execute-one!
+                    conn
+                    ["SELECT count(*) AS c
+                      FROM polish_lexicon.example_sentence_distractor_assignments"])))))
+        (finally
+          (with-open [conn (jdbc/get-connection {:connection-uri jdbc-url})]
+            (jdbc/execute! conn ["DROP SCHEMA IF EXISTS polish_lexicon CASCADE"])
+            (jdbc/execute! conn ["DROP TABLE IF EXISTS schema_migrations"])))))))
+
 (deftest imports-and-verifies-against-test-database
   (when-let [database-url (not-empty (System/getenv "TEST_DATABASE_URL"))]
     (let [jdbc-url (db/database-url->jdbc-url database-url)
@@ -199,8 +365,11 @@
         (let [import-result (db/import-bundle! database-url bundle {:replace? true})
               verify-result (db/verify-bundle! database-url bundle)]
           (testing "import summary"
-            (is (= 18 (:tables import-result)))
-            (is (= 1 (get-in import-result [:row-counts "lemmas"]))))
+            (is (= 20 (:tables import-result)))
+            (is (= 1 (get-in import-result [:row-counts "lemmas"])))
+            (is (= 2 (get-in import-result [:row-counts "example_sentences"])))
+            (is (= 8 (get-in import-result [:row-counts "lemma_pos_distractors"])))
+            (is (= 4 (get-in import-result [:row-counts "example_sentence_distractor_assignments"]))))
           (testing "verify sees the same manifest"
             (is (= (:manifest-sha256 import-result)
                    (:manifest-sha256 verify-result)))))
