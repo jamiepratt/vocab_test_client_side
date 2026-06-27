@@ -97,7 +97,7 @@ function sentenceItem(index: number, overrides: {
     "lemma-pos-id": 1000 + index,
     "lemma-inventory-rank": index + 1,
     "surface-difficulty-rank": index + 1,
-    "fixed-stratum": Math.floor(index / 10) + 1,
+    "fixed-stratum": Math.floor(index / 1000) + 1,
     "correct-translation": correct,
     distractors,
     "item-type": "sentence-context-lemma",
@@ -403,6 +403,7 @@ export async function runAppSmoke(page: Page) {
   await expect(page.getByRole("heading", { level: 2, name: "Kot" })).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
   await expectComfortableButtons(page);
+  await expect(page.getByLabel("Live estimate")).toContainText("Still calibrating");
 
   await page.getByRole("button", { name: "cat", exact: true }).click();
 
@@ -451,8 +452,15 @@ export async function runAppSmoke(page: Page) {
 
   for (let item = 4; item <= 79; item++) {
     await expectProgress(page, item - 1);
+    if (item === 30) {
+      await expect(page.getByLabel("Live estimate")).toContainText("Still calibrating");
+    }
     await page.getByRole("button", { name: "don't know", exact: true }).click();
     await expectProgress(page, item);
+    if (item === 30) {
+      await expect(page.getByLabel("Live estimate")).toContainText("Current estimate: ");
+      await expect(page.getByLabel("Live estimate")).toContainText("Likely range: ");
+    }
     await expect(page.getByRole("button", { name: "Next" })).toBeVisible();
     await page.getByRole("button", { name: "Next" }).click();
   }
@@ -485,14 +493,13 @@ export async function runAppSmoke(page: Page) {
   await expect(page.getByText("1 of 80 correct", { exact: true })).toBeVisible();
   await expect(page.getByText("Wrong: 1", { exact: true })).toBeVisible();
   await expect(page.getByText("Don't know: 78", { exact: true })).toBeVisible();
-  await expect(page.getByText("Estimated passive vocabulary", { exact: true })).toBeVisible();
+  await expect(page.getByText("Estimated recognized Polish lemmas", { exact: true })).toBeVisible();
   await expect(page.getByText("under 200", { exact: true })).toBeVisible();
-  await expect(page.getByText("Ceiling: 0-250", { exact: true })).toBeVisible();
-  await expect(page.getByText("Slightly below your estimate. Your vocabulary appears ~500 words under your 500 guess - but this is well within normal range.")).toBeVisible();
-  await expect(page.getByText("Even the top 250 words are shaky, which puts the vocabulary under 250. This is very early - the focus should be on drilling the most frequent words until they're automatic.")).toBeVisible();
-  await expect(page.getByText("You used \"don't know\" honestly. This estimate is probably accurate or slightly conservative.")).toBeVisible();
-  await expect(page.getByText("This test scores recognition of lemmas in sentence context.", { exact: false })).toBeVisible();
-  await expect(page.getByText("Passive vocabulary (recognition) is typically 2-3x active vocabulary (production). This test measures recognition only.")).toBeVisible();
+  await expect(page.getByText("Likely range: 0-200", { exact: true })).toBeVisible();
+  await expect(page.getByText("Approximate level band: Absolute beginner / pre-A1", { exact: true })).toBeVisible();
+  await expect(page.getByText("Estimated passive vocabulary", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("within +/-150 words", { exact: false })).toHaveCount(0);
+  await expect(page.getByText("This test scores recognition of Polish lemmas in sentence context.", { exact: false })).toBeVisible();
   await expectBandBreakdown(page);
   await expectReviewList(page);
   await expectNoHorizontalOverflow(page);

@@ -6,12 +6,16 @@
   #?(:clj (long (Math/round (double n)))
      :cljs (js/Math.round n)))
 
-(defn abs-value [n]
-  #?(:clj (abs n)
-     :cljs (js/Math.abs n)))
+(defn log-value [n]
+  #?(:clj (Math/log (double n))
+     :cljs (js/Math.log n)))
 
-(defn round-nearest-50 [n]
-  (* 50 (round-value (/ n 50))))
+(defn exp-value [n]
+  #?(:clj (Math/exp (double n))
+     :cljs (js/Math.exp n)))
+
+(defn clamp [lower upper n]
+  (min upper (max lower n)))
 
 (defn empty-band-stats []
   (into {} (map (fn [band-id]
@@ -24,9 +28,11 @@
                 data/ordered-band-ids)))
 
 (defn add-band-answer [stats {:keys [band result]}]
-  (-> stats
-      (update-in [band :answered] inc)
-      (update-in [band result] inc)))
+  (if (contains? stats band)
+    (-> stats
+        (update-in [band :answered] inc)
+        (update-in [band result] inc))
+    stats))
 
 (def real-item-types
   #{nil
@@ -39,6 +45,193 @@
 
 (defn real-vocabulary-answers [answers]
   (filterv real-vocabulary-answer? answers))
+
+(def posterior-grid-size 401)
+
+(def theta-grid
+  (mapv (fn [index]
+          (/ (+ index 0.5) posterior-grid-size))
+        (range posterior-grid-size)))
+
+(def legacy-band-strata
+  {:B1 1
+   :B2 1
+   :B3 1
+   :B4 2
+   :B5 3
+   :B6 4})
+
+(defn answer-stratum-id [{:keys [inventory-stratum fixed-stratum lemma-rank
+                                 lemma-inventory-rank band]}]
+  (or inventory-stratum
+      fixed-stratum
+      (data/lemma-inventory-stratum-id lemma-rank)
+      (data/lemma-inventory-stratum-id lemma-inventory-rank)
+      (legacy-band-strata band)))
+
+(defn guess-rate [{:keys [guess-rate choice-count result]}]
+  (if (= :dk result)
+    0
+    (let [raw (or guess-rate
+                  (when (and (number? choice-count)
+                             (> choice-count 1))
+                    (/ 1 choice-count))
+                  0)]
+      (clamp 0 0.95 raw))))
+
+(defn answer-log-likelihood [theta {:keys [result correct?] :as answer}]
+  (let [g (guess-rate answer)
+        not-g (- 1 g)
+        unknown (- 1 theta)
+        p (cond
+            (or (= :correct result) (= true correct?))
+            (+ g (* not-g theta))
+
+            (= :wrong result)
+            (* not-g unknown)
+
+            (= :dk result)
+            unknown
+
+            :else
+            unknown)]
+    (log-value (max 1.0E-300 p))))
+
+(defn prior-log-density [theta]
+  (+ (* -0.5 (log-value theta))
+     (* -0.5 (log-value (- 1 theta)))))
+
+(defn stratum-log-weights [answers]
+  (mapv (fn [theta]
+          (reduce + (prior-log-density theta)
+                  (map (partial answer-log-likelihood theta) answers)))
+        theta-grid))
+
+(defn normalized-weights [log-weights]
+  (let [max-log (reduce max log-weights)
+        weights (mapv #(exp-value (- % max-log)) log-weights)
+        total (reduce + weights)]
+    (if (pos? total)
+      (mapv #(/ % total) weights)
+      (repeat posterior-grid-size (/ 1 posterior-grid-size)))))
+
+(defn weighted-mean [weights]
+  (reduce + (map * theta-grid weights)))
+
+(defn weighted-quantile [weights q]
+  (let [target (clamp 0 1 q)]
+    (loop [cumulative 0
+           [[theta weight] & more] (map vector theta-grid weights)]
+      (let [next-cumulative (+ cumulative weight)]
+        (cond
+          (nil? theta) (last theta-grid)
+          (>= next-cumulative target) theta
+          :else (recur next-cumulative more))))))
+
+(defn stratum-posterior [answers]
+  (let [weights (normalized-weights (stratum-log-weights answers))]
+    {:mean (weighted-mean weights)
+     :lower (weighted-quantile weights 0.025)
+     :upper (weighted-quantile weights 0.975)}))
+
+(defn observed-stratum-ids [answers]
+  (->> answers
+       (keep answer-stratum-id)
+       distinct
+       sort
+       vec))
+
+(defn reported-stratum-ids [answers]
+  (if-let [highest (last (observed-stratum-ids answers))]
+    (vec (range 1 (inc highest)))
+    [1]))
+
+(defn round-lemma-count [n]
+  (long (clamp 0 data/lemma-inventory-size (round-value n))))
+
+(defn format-count [n]
+  #?(:clj (format "%,d" (long n))
+     :cljs (.toLocaleString n "en-US")))
+
+(defn format-range [{:keys [lower upper]}]
+  (str (format-count lower) "-" (format-count upper)))
+
+(defn posterior-summary [answers adaptive-decision]
+  (let [answers-by-stratum (group-by answer-stratum-id answers)
+        floor-result? (= :report-floor (:action adaptive-decision))
+        stratum-summaries (mapv
+                           (fn [stratum-id]
+                             (let [{:keys [width]} (data/lemma-inventory-strata-by-id stratum-id)
+                                   posterior (stratum-posterior
+                                              (get answers-by-stratum stratum-id []))]
+                               (assoc posterior
+                                      :id stratum-id
+                                      :width width)))
+                           (reported-stratum-ids answers))
+        estimate (round-lemma-count
+                  (reduce + (map #(* (:width %) (:mean %))
+                                 stratum-summaries)))
+        lower (round-lemma-count
+               (reduce + (map #(* (:width %) (:lower %))
+                              stratum-summaries)))
+        upper (round-lemma-count
+               (reduce + (map #(* (:width %) (:upper %))
+                              stratum-summaries)))]
+    (if floor-result?
+      {:lemma-estimate (min 199 estimate)
+       :likely-range {:lower 0
+                      :upper 200}
+       :estimate-label "under 200"
+       :estimate-unit "recognized Polish lemmas"
+       :posterior-strata stratum-summaries}
+      {:lemma-estimate estimate
+       :likely-range {:lower lower
+                      :upper (max lower upper)}
+       :estimate-label nil
+       :estimate-unit "recognized Polish lemmas"
+       :posterior-strata stratum-summaries})))
+
+(defn level-band-for-count [lemma-count]
+  (or (some (fn [{:keys [lower upper] :as band}]
+              (when (and (>= lemma-count lower)
+                         (< lemma-count upper))
+                band))
+            data/level-bands)
+      (last data/level-bands)))
+
+(defn crossed-level-boundary? [{:keys [lower upper]} boundary]
+  (and (< lower boundary)
+       (> upper boundary)))
+
+(defn level-band-label [lemma-estimate likely-range]
+  (let [lower-band (level-band-for-count (:lower likely-range))
+        upper-band (level-band-for-count (:upper likely-range))
+        boundaries (map :lower (rest data/level-bands))
+        borderline? (some (partial crossed-level-boundary? likely-range)
+                          boundaries)]
+    (if (and borderline?
+             (not= (:id lower-band) (:id upper-band)))
+      (str "borderline: " (:label lower-band) " to " (:label upper-band))
+      (:label (level-band-for-count lemma-estimate)))))
+
+(defn with-level-band [summary]
+  (assoc summary :level-band (level-band-label (:lemma-estimate summary)
+                                               (:likely-range summary))))
+
+(defn estimate-display [{:keys [estimate-label lemma-estimate]}]
+  (or estimate-label
+      (str "about " (format-count lemma-estimate) " recognized Polish lemmas")))
+
+(defn live-estimate [summary]
+  (if (< (:total summary) data/live-estimate-min-real-answers)
+    {:ready? false
+     :label "Still calibrating"}
+    {:ready? true
+     :label (str "Current estimate: " (estimate-display summary))
+     :range-label (str "Likely range: " (format-range (:likely-range summary)))}))
+
+(defn with-live-estimate [summary]
+  (assoc summary :live-estimate (live-estimate summary)))
 
 (defn adaptive-block-decision [{:keys [id lower-block-id higher-block-id floor?] :as block} answers]
   (let [block-answers (filterv #(and (real-vocabulary-answer? %)
@@ -86,77 +279,6 @@
   (with-band-proportions
     (reduce add-band-answer (empty-band-stats) answers)))
 
-(defn band-proportion [band-stats band-id]
-  (get-in band-stats [band-id :proportion] 0))
-
-(defn weighted-vocab-estimate [band-stats]
-  (round-nearest-50
-   (reduce +
-           (map (fn [band-id]
-                  (* (band-proportion band-stats band-id)
-                     (data/band-sizes band-id)))
-                data/ordered-band-ids))))
-
-(defn adjusted-vocab-estimate [vocab-estimate wrong-count]
-  (let [guessing-bias (* wrong-count 0.25 35)
-        rounded-bias (round-nearest-50 guessing-bias)]
-    (max 0 (- vocab-estimate rounded-bias))))
-
-(defn ceiling-band [band-stats]
-  (reduce (fn [highest band-id]
-            (if (>= (band-proportion band-stats band-id) 0.5)
-              band-id
-              highest))
-          :B1
-          data/ordered-band-ids))
-
-(defn level-interpretation [band-stats adjusted-estimate]
-  (let [b1 (band-proportion band-stats :B1)
-        b2 (band-proportion band-stats :B2)
-        b3 (band-proportion band-stats :B3)
-        b4 (band-proportion band-stats :B4)]
-    (cond
-      (< b1 0.7)
-      "Even the top 250 words are shaky, which puts the vocabulary under 250. This is very early - the focus should be on drilling the most frequent words until they're automatic."
-
-      (< b2 0.5)
-      "The top 250 are solid but the 250-500 band is patchy. Real vocabulary is probably 300-450 - close to the 500 estimate, perhaps a touch under. Solid beginner foundation."
-
-      (< b3 0.4)
-      "The 500 estimate was accurate, maybe even a little low. The top 500 are solid and a few 500-1,000 words are sticking. This is a real A1 foundation - enough for basic survival Polish."
-
-      (and (>= b3 0.4) (< b4 0.35))
-      "You know more than you thought. The 500-1,000 band is partially solid, putting you around 700-1,000 words - well above your 500 guess. This is solid A1, approaching A2. You're underselling yourself."
-
-      (>= b4 0.45)
-      (str "You significantly underestimated. Your passive vocabulary is closer to ~"
-           adjusted-estimate
-           " words than 500. Your higher-frequency recognition is strong, with meaningful reach into the upper bands. Either you've absorbed more than you realized or you have strong cognate/Slavic-language support.")
-
-      :else
-      "Roughly in the 600-900 range - above your 500 estimate. A solid beginner foundation with the start of intermediate vocabulary.")))
-
-(defn estimate-comparison [adjusted-estimate]
-  (let [diff (- adjusted-estimate 500)
-        abs-diff (abs-value diff)]
-    (cond
-      (< abs-diff 150)
-      "Your ~500 estimate was accurate. Results are within +/-150 words."
-
-      (pos? diff)
-      (str "You knew more than you thought. Your vocabulary appears ~" abs-diff " words above your 500 guess.")
-
-      :else
-      (str "Slightly below your estimate. Your vocabulary appears ~" abs-diff " words under your 500 guess - but this is well within normal range."))))
-
-(defn honesty-note [wrong-count dk-count total]
-  (cond
-    (and (pos? total) (> (/ wrong-count total) 0.15))
-    "Your wrong-guess rate is notable. Some correct answers may be lucky hits (1/4 odds). The real vocabulary could be 50-150 words below the estimate."
-
-    (> dk-count (* wrong-count 2))
-    "You used \"don't know\" honestly. This estimate is probably accurate or slightly conservative."))
-
 (defn summarize-results
   ([questions answers]
    (summarize-results questions answers nil))
@@ -168,23 +290,20 @@
          wrong (count (filter #(= :wrong (:result %)) evidence-answers))
          review-answers (filterv #(not= :correct (:result %)) evidence-answers)
          band-stats (band-stats-for evidence-answers)
-         vocab-estimate (weighted-vocab-estimate band-stats)
-         adjusted-estimate (adjusted-vocab-estimate vocab-estimate wrong)]
-     {:answered total
-      :total total
-      :correct correct
-      :dk dk
-      :wrong wrong
-      :accuracy-pct (if (pos? total)
-                      (round-value (* 100 (/ correct total)))
-                      0)
-      :band-stats band-stats
-      :review-answers review-answers
-      :vocab-estimate vocab-estimate
-      :adjusted-estimate adjusted-estimate
-      :estimate-label (:estimate-label adaptive-decision)
-      :adaptive-decision adaptive-decision
-      :ceiling-band (ceiling-band band-stats)
-      :comparison (estimate-comparison adjusted-estimate)
-      :interpretation (level-interpretation band-stats adjusted-estimate)
-      :honesty-note (honesty-note wrong dk total)})))
+         posterior (with-level-band
+                     (posterior-summary evidence-answers adaptive-decision))]
+     (with-live-estimate
+       (merge posterior
+              {:answered total
+               :total total
+               :correct correct
+               :dk dk
+               :wrong wrong
+               :accuracy-pct (if (pos? total)
+                               (round-value (* 100 (/ correct total)))
+                               0)
+               :band-stats band-stats
+               :review-answers review-answers
+               :estimate-label (or (:estimate-label posterior)
+                                   (:estimate-label adaptive-decision))
+               :adaptive-decision adaptive-decision})))))
