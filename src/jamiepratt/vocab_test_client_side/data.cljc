@@ -1,5 +1,33 @@
 (ns jamiepratt.vocab-test-client-side.data)
 
+(def sentence-block-size 80)
+
+(def level-options
+  [{:id :absolute-beginner
+    :api-level "absolute-beginner"
+    :label "Absolute beginner / pre-A1"}
+   {:id :a1
+    :api-level "a1"
+    :label "A1"}
+   {:id :a2
+    :api-level "a2"
+    :label "A2"}
+   {:id :b1
+    :api-level "b1"
+    :label "B1"}
+   {:id :b2
+    :api-level "b2"
+    :label "B2"}
+   {:id :c1
+    :api-level "c1"
+    :label "C1"}
+   {:id :c2
+    :api-level "c2"
+    :label "C2"}])
+
+(def level-options-by-id
+  (into {} (map (juxt :id identity) level-options)))
+
 (def bands
   [{:id :B1
     :label "0-250"
@@ -25,6 +53,20 @@
 
 (def ordered-band-ids
   (mapv :id bands))
+
+(def block-band-profile
+  [{:band :B1
+    :items 12}
+   {:band :B2
+    :items 16}
+   {:band :B3
+    :items 18}
+   {:band :B4
+    :items 16}
+   {:band :B5
+    :items 10}
+   {:band :B6
+    :items 8}])
 
 (def band-sizes
   {:B1 250

@@ -28,6 +28,119 @@ async function textColor(locator: Locator) {
   return locator.evaluate((element) => getComputedStyle(element).color);
 }
 
+type SentenceItem = {
+  "item-id": string;
+  sentence: string;
+  "target-surface": string;
+  "highlight-span": { start: number; end: number };
+  "lemma-id": number;
+  "lemma-pos-id": number;
+  "lemma-inventory-rank": number;
+  "surface-difficulty-rank": number;
+  "fixed-stratum": number;
+  "correct-translation": string;
+  distractors: string[];
+  "item-type": string;
+  "choice-count": number;
+  "guess-rate": number;
+};
+
+const starterItems = [
+  {
+    sentence: "Kot pije wodę.",
+    target: "Kot",
+    correct: "cat",
+    distractors: ["dog", "bird", "fish", "tree"],
+  },
+  {
+    sentence: "Codziennie piję wodę po treningu.",
+    target: "piję",
+    correct: "I drink",
+    distractors: ["I sleep", "I walk", "I read", "I wait"],
+  },
+  {
+    sentence: "Duży dom stoi przy rzece.",
+    target: "Duży",
+    correct: "big / large",
+    distractors: ["small", "fast", "heavy", "quiet"],
+  },
+];
+
+function targetSpan(sentence: string, target: string) {
+  const start = sentence.indexOf(target);
+  return { start, end: start + target.length };
+}
+
+function sentenceItem(index: number, overrides: {
+  sentence?: string;
+  target?: string;
+  correct?: string;
+  distractors?: string[];
+} = {}): SentenceItem {
+  const starter = starterItems[index];
+  const target = overrides.target ?? starter?.target ?? `słowo${index + 1}`;
+  const sentence = overrides.sentence ?? starter?.sentence ?? `To jest ${target} w krótkim zdaniu.`;
+  const correct = overrides.correct ?? starter?.correct ?? `meaning-${index + 1}`;
+  const distractors = overrides.distractors ?? starter?.distractors ?? [
+    `wrong-a-${index + 1}`,
+    `wrong-b-${index + 1}`,
+    `wrong-c-${index + 1}`,
+    `wrong-d-${index + 1}`,
+  ];
+
+  return {
+    "item-id": `example-sentence:${index + 1}`,
+    sentence,
+    "target-surface": target,
+    "highlight-span": targetSpan(sentence, target),
+    "lemma-id": index + 1,
+    "lemma-pos-id": 1000 + index,
+    "lemma-inventory-rank": index + 1,
+    "surface-difficulty-rank": index + 1,
+    "fixed-stratum": Math.floor(index / 10) + 1,
+    "correct-translation": correct,
+    distractors,
+    "item-type": "sentence-context-lemma",
+    "choice-count": distractors.length + 1,
+    "guess-rate": 1 / (distractors.length + 1),
+  };
+}
+
+function sentenceBlockFixture() {
+  return {
+    level: "pre-a1",
+    "requested-level": "absolute-beginner",
+    "level-role": "starting-prior",
+    "measurement-unit": "lemma",
+    block: 0,
+    "block-size": 80,
+    "surface-rank-start": 1,
+    "surface-rank-end": 80,
+    items: Array.from({ length: 80 }, (_, index) => {
+      if (index === 79) {
+        return sentenceItem(index, {
+          sentence: "Niezłomny duch pomaga jej dalej pracować.",
+          target: "Niezłomny",
+          correct: "unyielding / steadfast / indomitable",
+          distractors: ["fragile / weak", "flexible", "hesitant", "temporary"],
+        });
+      }
+
+      return sentenceItem(index);
+    }),
+    "invalid-items": [],
+  };
+}
+
+async function routeSentenceBlock(page: Page, block = sentenceBlockFixture()) {
+  await page.route(/\/api\/sentence-question-blocks(\?.*)?$/, async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(block),
+    });
+  });
+}
+
 async function expectReferenceStyling(page: Page) {
   await expect(page.locator(".app-frame")).toHaveAttribute("data-theme", "light");
   await expect(page.locator("#page-content > main")).toHaveCSS("background-color", "rgb(243, 247, 247)");
@@ -37,37 +150,47 @@ async function expectReferenceStyling(page: Page) {
   await expectComfortableButtons(page);
 }
 
-async function expectProgress(page: Page, current: number) {
+async function expectProgress(page: Page, scored: number) {
   const total = 80;
 
-  await expect(page.getByText(`${current} / ${total}`)).toBeVisible();
-  await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", String(current));
+  await expect(page.getByText(`${scored} / ${total} scored`)).toBeVisible();
+  await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", String(scored));
   await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuemax", String(total));
 }
 
-async function expectQuestion(page: Page, question: {
-  current: number;
-  word: string;
-  wordClass: string;
-  band: string;
+async function expectSentenceQuestion(page: Page, question: {
+  scored: number;
+  item: number;
+  sentence: string;
+  target: string;
   choices: string[];
 }) {
-  await expectProgress(page, question.current);
-  await expect(page.getByText(question.band, { exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { level: 2, name: question.word })).toBeVisible();
-  await expect(page.getByText(question.wordClass, { exact: true })).toBeVisible();
-  await expect(page.getByText("Select the correct meaning")).toBeVisible();
-  await expect(page.locator("#page-content main button")).toHaveText(question.choices);
+  const sentence = page.getByRole("group", { name: "Polish sentence" });
+  const answers = page.getByRole("group", { name: "Answer choices" });
+  const target = page.getByRole("term");
+
+  await expectProgress(page, question.scored);
+  await expect(page.getByText(`Item ${question.item} of 80`, { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "What does the highlighted word mean?" })).toBeVisible();
+  await expect(sentence).toContainText(question.sentence);
+  await expect(target).toHaveCount(1);
+  await expect(target).toHaveText(question.target);
+  await expect(page.getByText("Select the best English meaning")).toBeVisible();
+  await expect(answers.getByRole("button")).toHaveText(question.choices);
 
   for (const choice of question.choices) {
     await expect(page.getByRole("button", { name: choice, exact: true })).toBeVisible();
   }
+
+  await expect(page.getByRole("button", { name: "don't know", exact: true })).toBeVisible();
 }
 
 async function expectChoicesLocked(page: Page, choices: string[]) {
   for (const choice of choices) {
     await expect(page.getByRole("button", { name: choice, exact: true })).toBeDisabled();
   }
+
+  await expect(page.getByRole("button", { name: "don't know", exact: true })).toBeDisabled();
 }
 
 async function expectBandBreakdown(page: Page) {
@@ -103,12 +226,12 @@ async function expectReviewList(page: Page) {
 
   await expect(review).toBeVisible();
   await expect(review.getByRole("listitem")).toHaveCount(79);
-  await expect(review.getByRole("listitem").filter({ hasText: "jeść" })).toContainText("0-250");
-  await expect(review.getByRole("listitem").filter({ hasText: "jeść" })).toContainText("to eat");
-  await expect(review.getByRole("listitem").filter({ hasText: "duży" })).toContainText("big / large");
-  await expect(review.getByRole("listitem").filter({ hasText: "szybko" })).toContainText("quickly / fast");
-  await expect(review.getByRole("listitem").filter({ hasText: "niezłomny" })).toContainText("3.5K+");
-  await expect(review.getByRole("listitem").filter({ hasText: "niezłomny" })).toContainText("unyielding / steadfast / indomitable");
+  await expect(review.getByRole("listitem").filter({ hasText: "piję" })).toContainText("0-250");
+  await expect(review.getByRole("listitem").filter({ hasText: "piję" })).toContainText("I drink");
+  await expect(review.getByRole("listitem").filter({ hasText: "Duży" })).toContainText("big / large");
+  await expect(review.getByRole("listitem").filter({ hasText: "słowo13" })).toContainText("250-500");
+  await expect(review.getByRole("listitem").filter({ hasText: "Niezłomny" })).toContainText("3.5K+");
+  await expect(review.getByRole("listitem").filter({ hasText: "Niezłomny" })).toContainText("unyielding / steadfast / indomitable");
 }
 
 async function answerAndContinue(page: Page, answer: string) {
@@ -194,6 +317,7 @@ async function expectThemeSwitcher(page: Page) {
 
 export async function runAppSmoke(page: Page) {
   await page.setViewportSize({ width: 390, height: 844 });
+  await routeSentenceBlock(page);
   await page.addInitScript(() => {
     Math.random = () => 0;
     localStorage.removeItem("vocab-theme");
@@ -247,75 +371,81 @@ export async function runAppSmoke(page: Page) {
 
   await expect(page).toHaveTitle("Polish Passive Vocabulary Size Test");
   await expect(page.getByRole("heading", { level: 1, name: "Polish Passive Vocabulary Size Test" })).toBeVisible();
-  await expect(page.getByText("Polish to English")).toBeVisible();
-  await expect(page.getByText("You'll see a Polish word. Pick the correct English meaning from 4 choices.")).toBeVisible();
-  await expect(page.getByText("80 words across 6 bands")).toBeVisible();
-  await expect(page.getByText("Band 1 - top 250 (sanity) - 12 words")).toBeVisible();
-  await expect(page.getByText("Band 2 - 250-500 (your estimate) - 16 words")).toBeVisible();
-  await expect(page.getByText("Band 3 - 500-1,000 - 18 words")).toBeVisible();
-  await expect(page.getByText("Band 4 - 1,000-2,000 - 16 words")).toBeVisible();
-  await expect(page.getByText("Band 5 - 2,000-3,500 - 10 words")).toBeVisible();
-  await expect(page.getByText("Band 6 - 3,500+ (ceiling) - 8 words")).toBeVisible();
+  await expect(page.getByText("Polish sentence context")).toBeVisible();
+  await expect(page.getByText("You'll see a Polish sentence. Choose the highlighted word's English meaning.")).toBeVisible();
+  await expect(page.getByRole("radio", { name: "Absolute beginner / pre-A1" })).toBeChecked();
+  await expect(page.getByRole("radio", { name: "A1", exact: true })).toBeVisible();
+  await expect(page.getByRole("radio", { name: "A2", exact: true })).toBeVisible();
+  await expect(page.getByRole("radio", { name: "B1", exact: true })).toBeVisible();
+  await expect(page.getByRole("radio", { name: "B2", exact: true })).toBeVisible();
+  await expect(page.getByRole("radio", { name: "C1", exact: true })).toBeVisible();
+  await expect(page.getByRole("radio", { name: "C2", exact: true })).toBeVisible();
+  await expect(page.getByRole("radio", { name: "A3", exact: true })).toHaveCount(0);
   await expectReferenceStyling(page);
 
   await page.getByRole("button", { name: "Begin Test" }).click();
 
-  const firstChoices = ["fire", "air", "earth", "water", "don't know"];
-  await expectQuestion(page, {
-    current: 1,
-    word: "woda",
-    wordClass: "noun",
-    band: "0-250",
+  const firstChoices = ["dog", "bird", "fish", "tree", "cat"];
+  await expectSentenceQuestion(page, {
+    scored: 0,
+    item: 1,
+    sentence: "Kot pije wodę.",
+    target: "Kot",
     choices: firstChoices,
   });
+  await expect(page.getByRole("heading", { level: 2, name: "Kot" })).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
   await expectComfortableButtons(page);
 
-  await page.getByRole("button", { name: "water", exact: true }).click();
+  await page.getByRole("button", { name: "cat", exact: true }).click();
 
   await expect(page.getByText("Correct", { exact: true })).toBeVisible();
+  await expectProgress(page, 1);
   await expectChoicesLocked(page, firstChoices);
   await expect(page.getByRole("button", { name: "Next" })).toBeVisible();
 
   await page.getByRole("button", { name: "Next" }).click();
 
-  const secondChoices = ["to drink", "to sleep", "to walk", "to eat", "don't know"];
-  await expectQuestion(page, {
-    current: 2,
-    word: "jeść",
-    wordClass: "verb",
-    band: "0-250",
+  const secondChoices = ["I sleep", "I walk", "I read", "I wait", "I drink"];
+  await expectSentenceQuestion(page, {
+    scored: 1,
+    item: 2,
+    sentence: "Codziennie piję wodę po treningu.",
+    target: "piję",
     choices: secondChoices,
   });
 
-  await page.getByRole("button", { name: "to drink", exact: true }).click();
+  await page.getByRole("button", { name: "I sleep", exact: true }).click();
 
-  await expect(page.getByText("Correct answer: to eat", { exact: true })).toBeVisible();
+  await expect(page.getByText("Correct answer: I drink", { exact: true })).toBeVisible();
+  await expectProgress(page, 2);
   await expectChoicesLocked(page, secondChoices);
   await expect(page.getByRole("button", { name: "Next" })).toBeVisible();
 
   await page.getByRole("button", { name: "Next" }).click();
 
-  const thirdChoices = ["small", "fast", "heavy", "big / large", "don't know"];
-  await expectQuestion(page, {
-    current: 3,
-    word: "duży",
-    wordClass: "adj",
-    band: "0-250",
+  const thirdChoices = ["small", "fast", "heavy", "quiet", "big / large"];
+  await expectSentenceQuestion(page, {
+    scored: 2,
+    item: 3,
+    sentence: "Duży dom stoi przy rzece.",
+    target: "Duży",
     choices: thirdChoices,
   });
 
   await page.getByRole("button", { name: "don't know", exact: true }).click();
 
   await expect(page.getByText("Correct answer: big / large", { exact: true })).toBeVisible();
+  await expectProgress(page, 3);
   await expectChoicesLocked(page, thirdChoices);
   await expect(page.getByRole("button", { name: "Next" })).toBeVisible();
 
   await page.getByRole("button", { name: "Next" }).click();
 
-  for (let current = 4; current <= 79; current++) {
-    await expectProgress(page, current);
+  for (let item = 4; item <= 79; item++) {
+    await expectProgress(page, item - 1);
     await page.getByRole("button", { name: "don't know", exact: true }).click();
+    await expectProgress(page, item);
     await expect(page.getByRole("button", { name: "Next" })).toBeVisible();
     await page.getByRole("button", { name: "Next" }).click();
   }
@@ -324,20 +454,21 @@ export async function runAppSmoke(page: Page) {
     "fragile / weak",
     "flexible",
     "hesitant",
+    "temporary",
     "unyielding / steadfast / indomitable",
-    "don't know",
   ];
-  await expectQuestion(page, {
-    current: 80,
-    word: "niezłomny",
-    wordClass: "adj",
-    band: "3.5K+",
+  await expectSentenceQuestion(page, {
+    scored: 79,
+    item: 80,
+    sentence: "Niezłomny duch pomaga jej dalej pracować.",
+    target: "Niezłomny",
     choices: lastChoices,
   });
 
   await page.getByRole("button", { name: "don't know", exact: true }).click();
 
   await expect(page.getByText("Correct answer: unyielding / steadfast / indomitable", { exact: true })).toBeVisible();
+  await expectProgress(page, 80);
   await expectChoicesLocked(page, lastChoices);
 
   await page.getByRole("button", { name: "Next" }).click();
@@ -353,24 +484,23 @@ export async function runAppSmoke(page: Page) {
   await expect(page.getByText("Slightly below your estimate. Your vocabulary appears ~500 words under your 500 guess - but this is well within normal range.")).toBeVisible();
   await expect(page.getByText("Even the top 250 words are shaky, which puts the vocabulary under 250. This is very early - the focus should be on drilling the most frequent words until they're automatic.")).toBeVisible();
   await expect(page.getByText("You used \"don't know\" honestly. This estimate is probably accurate or slightly conservative.")).toBeVisible();
-  await expect(page.getByText("This test shows words in their dictionary (nominative) form. Polish has 7 cases")).toBeVisible();
-  await expect(page.getByText("woda -> wode -> woda -> wodzie")).toBeVisible();
+  await expect(page.getByText("This test scores recognition of lemmas in sentence context.", { exact: false })).toBeVisible();
   await expect(page.getByText("Passive vocabulary (recognition) is typically 2-3x active vocabulary (production). This test measures recognition only.")).toBeVisible();
   await expectBandBreakdown(page);
   await expectReviewList(page);
   await expectNoHorizontalOverflow(page);
 
-  await expect(page.getByText("Select the correct meaning")).toHaveCount(0);
+  await expect(page.getByText("Select the best English meaning")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "don't know", exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Retake" })).toBeVisible();
 
   await page.getByRole("button", { name: "Retake" }).click();
 
-  await expectQuestion(page, {
-    current: 1,
-    word: "woda",
-    wordClass: "noun",
-    band: "0-250",
+  await expectSentenceQuestion(page, {
+    scored: 0,
+    item: 1,
+    sentence: "Kot pije wodę.",
+    target: "Kot",
     choices: firstChoices,
   });
   await expect(page.getByText("Correct", { exact: true })).toHaveCount(0);
@@ -380,82 +510,11 @@ export async function runAppSmoke(page: Page) {
 }
 
 export async function runHighEstimateRegression(page: Page) {
-  const correctThroughBand5 = [
-    "water",
-    "to eat",
-    "big / large",
-    "house / home",
-    "good",
-    "dog",
-    "to read",
-    "day",
-    "to drink",
-    "small / little",
-    "thank you",
-    "woman",
-    "quickly / fast",
-    "to buy",
-    "city / town",
-    "money",
-    "happy",
-    "always",
-    "to close / to shut",
-    "hot",
-    "difficult / hard",
-    "to speak / to say",
-    "to sleep",
-    "tomorrow",
-    "work / job",
-    "cold",
-    "road / way / expensive (fem.)",
-    "to run",
-    "to remember",
-    "to forget",
-    "to explain",
-    "to meet",
-    "health",
-    "weather",
-    "dangerous",
-    "almost / nearly",
-    "tired",
-    "knowledge",
-    "market / town square",
-    "of course / obviously",
-    "clean / pure",
-    "strong",
-    "to worry",
-    "idea",
-    "duty / obligation",
-    "to smile",
-    "experience",
-    "influence / impact",
-    "to avoid",
-    "to require / to demand",
-    "to manage / to administer",
-    "environment",
-    "society",
-    "to destroy",
-    "to deceive / to cheat",
-    "expenses / spending",
-    "to oppose / to object",
-    "to repair / to fix",
-    "safety / security",
-    "behavior / conduct",
-    "careful / cautious",
-    "to persuade / to convince",
-    "inevitable / unavoidable",
-    "intricate / complicated",
-    "perseverance / persistence",
-    "relief",
-    "fraud / scam / deception",
-    "obstacle / barrier",
-    "to strengthen / to reinforce",
-    "tendency / inclination",
-    "to discourage",
-    "to deepen / to intensify",
-  ];
+  const block = sentenceBlockFixture();
+  const correctThroughBand5 = block.items.slice(0, 72).map((item) => item["correct-translation"]);
 
   await page.setViewportSize({ width: 390, height: 844 });
+  await routeSentenceBlock(page, block);
   await page.addInitScript(() => {
     Math.random = () => 0;
     localStorage.removeItem("vocab-theme");
@@ -481,18 +540,20 @@ export async function runHighEstimateRegression(page: Page) {
 }
 
 export async function runApiQuestionLoading(page: Page) {
-  const questions = Array.from({ length: 80 }, (_, index) => ({
-    word: index === 0 ? "testowe" : `dummy-${index}`,
-    "word-class": index === 0 ? "adj" : "noun",
-    band: "B1",
-    correct: index === 0 ? "from the API" : `correct-${index}`,
-    wrong: [`wrong-a-${index}`, `wrong-b-${index}`, `wrong-c-${index}`],
-  }));
+  let requestedUrl = "";
+  const block = sentenceBlockFixture();
+  block.items[0] = sentenceItem(0, {
+    sentence: "To testowe zdanie ładuje się z API.",
+    target: "testowe",
+    correct: "from the API",
+    distractors: ["wrong-a", "wrong-b", "wrong-c", "wrong-d"],
+  });
 
-  await page.route(/\/api\/questions$/, async (route) => {
+  await page.route(/\/api\/sentence-question-blocks(\?.*)?$/, async (route) => {
+    requestedUrl = route.request().url();
     await route.fulfill({
       contentType: "application/json",
-      body: JSON.stringify(questions),
+      body: JSON.stringify(block),
     });
   });
 
@@ -503,13 +564,16 @@ export async function runApiQuestionLoading(page: Page) {
     localStorage.removeItem("vocab-design");
   });
   await page.goto("/index.html");
+  await page.getByRole("radio", { name: "A1", exact: true }).click();
   await page.getByRole("button", { name: "Begin Test" }).click();
 
-  await expectQuestion(page, {
-    current: 1,
-    word: "testowe",
-    wordClass: "adj",
-    band: "0-250",
-    choices: ["wrong-a-0", "wrong-b-0", "wrong-c-0", "from the API", "don't know"],
+  await expectSentenceQuestion(page, {
+    scored: 0,
+    item: 1,
+    sentence: "To testowe zdanie ładuje się z API.",
+    target: "testowe",
+    choices: ["wrong-a", "wrong-b", "wrong-c", "wrong-d", "from the API"],
   });
+  expect(requestedUrl).toContain("/api/sentence-question-blocks");
+  expect(requestedUrl).toContain("level=a1");
 }
