@@ -45,3 +45,7 @@ npm run verify
 `npm run verify` runs Clojure/CLJS/EDN linting, dev compile, dev E2E tests, and release E2E smoke tests.
 
 Run `npm run dev` once and keep it running during browser-test development. The app is served at <http://localhost:8000/index.html>; Shadow nREPL uses port `7888`.
+
+## Local SUBTLEX Notes
+
+- When working in `data/subtlex-pl`, also read `data/subtlex-pl/AGENTS.local.md` if it exists. It is local-only and ignored by Git.

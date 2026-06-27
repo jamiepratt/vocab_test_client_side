@@ -1,0 +1,1 @@
+DROP SCHEMA IF EXISTS polish_lexicon CASCADE;

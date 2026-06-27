@@ -201,6 +201,9 @@
   .grid {
     display: grid;
   }
+  .table {
+    display: table;
+  }
   .h-2 {
     height: calc(var(--spacing) * 2);
   }
@@ -367,6 +370,9 @@
   }
   .text-stone-50 {
     color: var(--color-stone-50);
+  }
+  .lowercase {
+    text-transform: lowercase;
   }
   .uppercase {
     text-transform: uppercase;

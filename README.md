@@ -28,6 +28,27 @@ Compile once:
 npm run compile
 ```
 
+## Local Database
+
+Start local PostgreSQL, then build/import the SUBTLEX bundle:
+
+```sh
+npm run db:local:setup
+```
+
+Default DB URL is set in `.env`: `postgresql://localhost:5432/vocab_test_client_side`. Copy `.env.example` if `.env` is missing. Shell env vars override `.env`, so one-off overrides still work: `DATABASE_URL=... npm run db:local:setup`.
+
+The script creates the DB if missing, builds `target/local-polish-lexicon-bundle`, applies migrations, imports with `--replace`, then verifies row counts.
+
+## Production Database
+
+Use Neon Postgres in AWS Frankfurt (`eu-central-1`) with autosuspend enabled. Keep two URLs:
+
+- pooled URL for Fly runtime: `fly secrets set DATABASE_URL='<pooled Neon URL>' -a vocab-test`
+- direct URL for migrations/admin: `DATABASE_URL='<direct Neon URL>' clojure -M:db migrate`
+
+Do not import lexicon data into production unless a valid import bundle has been intentionally selected.
+
 ## Tooling
 
 Required for normal development: Java, the Clojure CLI (`clojure`), Node.js, and npm. On macOS, prefer the official/Homebrew installs:

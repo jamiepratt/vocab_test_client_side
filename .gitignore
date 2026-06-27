@@ -15,6 +15,9 @@
 .lsp/sqlite.db
 .nrepl-history
 .nrepl-port
+.env
+.env.*
+!.env.example
 .portal/vs-code.edn
 .project
 .rebel_readline_history
@@ -37,5 +40,6 @@
 /data/subtlex-pl/subtlex-pl.zip
 /data/subtlex-pl/subtlex-pl.csv
 /data/subtlex-pl/subtlex-pl-lemmas-master.csv
+/data/subtlex-pl/AGENTS.local.md
 npm-debug.log*
 .vercel
