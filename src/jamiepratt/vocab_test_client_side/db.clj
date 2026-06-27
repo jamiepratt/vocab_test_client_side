@@ -12,6 +12,7 @@
    [java.nio.charset StandardCharsets]
    [java.security MessageDigest]
    [java.sql Connection]
+   [java.util.regex Pattern]
    [org.postgresql.copy CopyManager]
    [org.postgresql.core BaseConnection]))
 
@@ -144,6 +145,53 @@
           {:table (:table entry) :sha256 (:sha256 entry)}))
   entry)
 
+(def legacy-example-distractor-columns
+  #{"distractor_1_translation"
+    "distractor_2_translation"
+    "distractor_3_translation"
+    "distractor_4_translation"})
+
+(def normalized-table-headers
+  {"example_sentences"
+   ["example_sentence_id"
+    "sentence"
+    "sentence_translation"
+    "surface_form_id"
+    "lemma_id"
+    "lemma_subtlex_pos_id"
+    "word_translation"]
+   "lemma_pos_distractors"
+   ["lemma_pos_distractor_id"
+    "lemma_subtlex_pos_id"
+    "distractor_translation"
+    "is_default"
+    "import_order"]
+   "example_sentence_distractor_assignments"
+   ["example_sentence_id"
+    "lemma_pos_distractor_id"]})
+
+(def normalized-distractor-table-names
+  (set (keys normalized-table-headers)))
+
+(def required-distractor-count 4)
+
+(defn- validate-example-sentence-header! [{:keys [table header]}]
+  (when (= "example_sentences" table)
+    (let [header-set (set header)
+          legacy-columns (seq (filter header-set legacy-example-distractor-columns))]
+      (when legacy-columns
+        (fail "Manifest example_sentences uses legacy distractor columns."
+              {:columns (vec legacy-columns)}))
+      (when-not (contains? header-set "lemma_subtlex_pos_id")
+        (fail "Manifest example_sentences is missing lemma_subtlex_pos_id."
+              {:table table})))))
+
+(defn- validate-normalized-table-header! [{:keys [table header]}]
+  (when-let [expected (get normalized-table-headers table)]
+    (when-not (= expected header)
+      (fail "Manifest normalized table header is not the target schema."
+            {:table table :expected expected :actual header}))))
+
 (defn- validate-manifest-shape! [manifest]
   (when-not (= schema-name (:schema_name manifest))
     (fail "Manifest schema_name is not polish_lexicon."
@@ -159,7 +207,10 @@
   (when-not (seq (:tables manifest))
     (fail "Manifest tables must not be empty." {}))
   (doseq [entry (:tables manifest)]
-    (validate-table-entry! entry))
+    (validate-table-entry! entry)
+    (validate-example-sentence-header! entry))
+  (doseq [entry (:tables manifest)]
+    (validate-normalized-table-header! entry))
   manifest)
 
 (defn- tsv-header [file]
@@ -167,6 +218,55 @@
     (if-let [line (.readLine reader)]
       (str/split line #"\t" -1)
       (fail "TSV file is empty." {:file (str file)}))))
+
+(defn- parse-tsv-row [line]
+  (let [length (count line)]
+    (loop [index 0
+           field []
+           fields []
+           quoted? false]
+      (if (= index length)
+        (conj fields (apply str field))
+        (let [ch (.charAt line index)]
+          (cond
+            (and quoted? (= ch \") (< (inc index) length) (= (.charAt line (inc index)) \"))
+            (recur (+ index 2) (conj field \") fields true)
+
+            (and quoted? (= ch \"))
+            (recur (inc index) field fields false)
+
+            quoted?
+            (recur (inc index) (conj field ch) fields true)
+
+            (= ch \")
+            (recur (inc index) field fields true)
+
+            (= ch \tab)
+            (recur (inc index) [] (conj fields (apply str field)) false)
+
+            :else
+            (recur (inc index) (conj field ch) fields false)))))))
+
+(defn- table-rows [bundle-dir {:keys [file header]}]
+  (with-open [reader (io/reader (bundle-file bundle-dir file) :encoding "UTF-8")]
+    (.readLine reader)
+    (doall
+     (map #(zipmap header (parse-tsv-row %))
+          (line-seq reader)))))
+
+(defn- canonical-translation [value]
+  (some-> value str/trim str/lower-case))
+
+(defn- truthy? [value]
+  (= "true" (some-> value str/trim str/lower-case)))
+
+(defn- target-surface-count [sentence surface-form]
+  (if (or (str/blank? sentence) (str/blank? surface-form))
+    0
+    (let [pattern (re-pattern (str "(?iu)(?<!\\p{L})"
+                                   (Pattern/quote surface-form)
+                                   "(?!\\p{L})"))]
+      (count (re-seq pattern sentence)))))
 
 (defn- validate-file-hash! [bundle-dir {:keys [file sha256]}]
   (let [actual-file (bundle-file bundle-dir file)]
@@ -185,12 +285,129 @@
              :expected (:header entry)
              :actual actual-header}))))
 
+(defn- validate-lemma-pos-distractor-rows! [bundle-dir {:keys [table] :as entry}]
+  (when (= "lemma_pos_distractors" table)
+    (loop [seen #{}
+           rows (table-rows bundle-dir entry)]
+      (when-let [row (first rows)]
+        (let [key [(get row "lemma_subtlex_pos_id")
+                   (canonical-translation (get row "distractor_translation"))]]
+          (when (contains? seen key)
+            (fail "Duplicate lemma/POS distractor translation."
+                  {:lemma-subtlex-pos-id (first key)
+                   :distractor-translation (second key)}))
+          (recur (conj seen key) (rest rows)))))))
+
+(defn- validate-table-data! [bundle-dir entry]
+  (validate-lemma-pos-distractor-rows! bundle-dir entry))
+
+(defn- table-entry [manifest table]
+  (some #(when (= table (:table %)) %) (:tables manifest)))
+
+(defn- require-table-entry! [manifest table]
+  (or (table-entry manifest table)
+      (fail "Manifest is missing normalized distractor table." {:table table})))
+
+(defn- validate-assignment-row! [examples-by-id distractors-by-id row]
+  (let [example-id (get row "example_sentence_id")
+        distractor-id (get row "lemma_pos_distractor_id")
+        example (get examples-by-id example-id)
+        distractor (get distractors-by-id distractor-id)]
+    (when-not example
+      (fail "Distractor assignment references a missing example sentence."
+            {:example-sentence-id example-id}))
+    (when-not distractor
+      (fail "Distractor assignment references a missing lemma/POS distractor."
+            {:lemma-pos-distractor-id distractor-id}))
+    (when-not (= (get example "lemma_subtlex_pos_id")
+                 (get distractor "lemma_subtlex_pos_id"))
+      (fail "Distractor assignment does not match the example lemma/POS."
+            {:example-sentence-id example-id
+             :lemma-pos-distractor-id distractor-id}))))
+
+(defn- validate-example-effective-distractors! [defaults-by-lemma-pos
+                                                assignments-by-example
+                                                distractors-by-id
+                                                example]
+  (let [example-id (get example "example_sentence_id")
+        lemma-pos-id (get example "lemma_subtlex_pos_id")
+        default-set (get defaults-by-lemma-pos lemma-pos-id #{})
+        assigned-ids (get assignments-by-example example-id)
+        assigned-set (set (map #(canonical-translation
+                                 (get (distractors-by-id %) "distractor_translation"))
+                               assigned-ids))
+        effective-set (if (seq assigned-ids) assigned-set default-set)
+        correct (canonical-translation (get example "word_translation"))]
+    (when (< (count default-set) required-distractor-count)
+      (fail "Example sentence lemma/POS has fewer than four default distractors."
+            {:example-sentence-id example-id
+             :lemma-subtlex-pos-id lemma-pos-id
+             :default-distractors (count default-set)}))
+    (when (and (seq assigned-ids) (= assigned-set default-set))
+      (fail "Example sentence assignments duplicate the lemma/POS default distractors."
+            {:example-sentence-id example-id}))
+    (when (< (count effective-set) required-distractor-count)
+      (fail "Example sentence has fewer than four effective distractors."
+            {:example-sentence-id example-id
+             :effective-distractors (count effective-set)}))
+    (when (contains? effective-set correct)
+      (fail "Example sentence effective distractors include the correct translation."
+            {:example-sentence-id example-id
+             :word-translation correct}))))
+
+(defn- validate-example-target-surface! [surface-forms-by-id example]
+  (when-let [surface-form (get-in surface-forms-by-id
+                                  [(get example "surface_form_id") "surface_form"])]
+    (let [occurrences (target-surface-count (get example "sentence") surface-form)]
+      (when-not (= 1 occurrences)
+        (fail "Example sentence target surface does not occur exactly once."
+              {:example-sentence-id (get example "example_sentence_id")
+               :surface-form surface-form
+               :occurrences occurrences})))))
+
+(defn- validate-normalized-distractor-data! [bundle-dir manifest]
+  (when (some #(table-entry manifest %) normalized-distractor-table-names)
+    (let [examples (table-rows bundle-dir (require-table-entry! manifest "example_sentences"))
+          distractors (table-rows bundle-dir (require-table-entry! manifest "lemma_pos_distractors"))
+          assignments (table-rows bundle-dir (require-table-entry! manifest "example_sentence_distractor_assignments"))
+          surface-forms-by-id (some->> (table-entry manifest "surface_forms")
+                                       (table-rows bundle-dir)
+                                       (into {} (map (juxt #(get % "surface_form_id") identity))))
+          examples-by-id (into {} (map (juxt #(get % "example_sentence_id") identity)) examples)
+          distractors-by-id (into {} (map (juxt #(get % "lemma_pos_distractor_id") identity)) distractors)
+          defaults-by-lemma-pos (reduce (fn [defaults row]
+                                          (if (truthy? (get row "is_default"))
+                                            (update defaults
+                                                    (get row "lemma_subtlex_pos_id")
+                                                    (fnil conj #{})
+                                                    (canonical-translation (get row "distractor_translation")))
+                                            defaults))
+                                        {}
+                                        distractors)
+          assignments-by-example (reduce (fn [by-example row]
+                                           (update by-example
+                                                   (get row "example_sentence_id")
+                                                   (fnil conj [])
+                                                   (get row "lemma_pos_distractor_id")))
+                                         {}
+                                         assignments)]
+      (doseq [row assignments]
+        (validate-assignment-row! examples-by-id distractors-by-id row))
+      (doseq [example examples]
+        (validate-example-target-surface! surface-forms-by-id example)
+        (validate-example-effective-distractors! defaults-by-lemma-pos
+                                                 assignments-by-example
+                                                 distractors-by-id
+                                                 example)))))
+
 (defn validate-bundle! [bundle-dir]
   (let [root (canonical-file bundle-dir)
         manifest-file (bundle-file root "manifest.json")
         manifest (validate-manifest-shape! (read-manifest root))]
     (doseq [entry (:tables manifest)]
-      (validate-table-file! root entry))
+      (validate-table-file! root entry)
+      (validate-table-data! root entry))
+    (validate-normalized-distractor-data! root manifest)
     (doseq [entry (:support_files manifest)]
       (validate-file-hash! root entry))
     (assoc manifest
@@ -253,13 +470,145 @@
                                "WHERE NOT EXISTS ("
                                "SELECT 1 FROM " (qtable "surface_form_lemma_links") " l "
                                "WHERE l.surface_form_id = e.surface_form_id "
-                               "AND l.lemma_id = e.lemma_id)"))]
+                               "AND l.lemma_id = e.lemma_id)"))
+        missing-lemma-pos-refs (scalar-long
+                                conn
+                                (str "SELECT count(*) AS c "
+                                     "FROM " (qtable "example_sentences") " e "
+                                     "LEFT JOIN " (qtable "lemma_subtlex_pos") " p "
+                                     "ON p.lemma_subtlex_pos_id = e.lemma_subtlex_pos_id "
+                                     "AND p.lemma_id = e.lemma_id "
+                                     "WHERE p.lemma_subtlex_pos_id IS NULL"))
+        unlinked-target-lemma-pos (scalar-long
+                                   conn
+                                   (str "SELECT count(*) AS c "
+                                        "FROM " (qtable "example_sentences") " e "
+                                        "WHERE NOT EXISTS ("
+                                        "SELECT 1 FROM " (qtable "surface_form_lemma_links") " l "
+                                        "WHERE l.surface_form_id = e.surface_form_id "
+                                        "AND l.lemma_id = e.lemma_id "
+                                        "AND l.lemma_subtlex_pos_id = e.lemma_subtlex_pos_id)"))
+        mismatched-assignments (scalar-long
+                                conn
+                                (str "SELECT count(*) AS c "
+                                     "FROM " (qtable "example_sentence_distractor_assignments") " a "
+                                     "JOIN " (qtable "example_sentences") " e "
+                                     "ON e.example_sentence_id = a.example_sentence_id "
+                                     "JOIN " (qtable "lemma_pos_distractors") " d "
+                                     "ON d.lemma_pos_distractor_id = a.lemma_pos_distractor_id "
+                                     "WHERE d.lemma_subtlex_pos_id <> e.lemma_subtlex_pos_id"))
+        examples-with-insufficient-defaults (scalar-long
+                                             conn
+                                             (str "WITH default_counts AS ("
+                                                  "SELECT lemma_subtlex_pos_id, count(*) AS c "
+                                                  "FROM " (qtable "lemma_pos_distractors") " "
+                                                  "WHERE is_default "
+                                                  "GROUP BY lemma_subtlex_pos_id) "
+                                                  "SELECT count(*) AS c "
+                                                  "FROM " (qtable "example_sentences") " e "
+                                                  "LEFT JOIN default_counts d "
+                                                  "ON d.lemma_subtlex_pos_id = e.lemma_subtlex_pos_id "
+                                                  "WHERE coalesce(d.c, 0) < " required-distractor-count))
+        examples-with-insufficient-effective-distractors
+        (scalar-long
+         conn
+         (str "WITH assignment_counts AS ("
+              "SELECT example_sentence_id, count(*) AS c "
+              "FROM " (qtable "example_sentence_distractor_assignments") " "
+              "GROUP BY example_sentence_id), "
+              "default_counts AS ("
+              "SELECT lemma_subtlex_pos_id, count(*) AS c "
+              "FROM " (qtable "lemma_pos_distractors") " "
+              "WHERE is_default "
+              "GROUP BY lemma_subtlex_pos_id) "
+              "SELECT count(*) AS c "
+              "FROM " (qtable "example_sentences") " e "
+              "LEFT JOIN assignment_counts a "
+              "ON a.example_sentence_id = e.example_sentence_id "
+              "LEFT JOIN default_counts d "
+              "ON d.lemma_subtlex_pos_id = e.lemma_subtlex_pos_id "
+              "WHERE CASE WHEN coalesce(a.c, 0) > 0 THEN a.c ELSE coalesce(d.c, 0) END < "
+              required-distractor-count))
+        default-duplicate-assignments
+        (scalar-long
+         conn
+         (str "WITH assigned_sets AS ("
+              "SELECT e.example_sentence_id, "
+              "array_agg(lower(d.distractor_translation) ORDER BY lower(d.distractor_translation)) AS assigned_keys "
+              "FROM " (qtable "example_sentences") " e "
+              "JOIN " (qtable "example_sentence_distractor_assignments") " a "
+              "ON a.example_sentence_id = e.example_sentence_id "
+              "JOIN " (qtable "lemma_pos_distractors") " d "
+              "ON d.lemma_pos_distractor_id = a.lemma_pos_distractor_id "
+              "GROUP BY e.example_sentence_id), "
+              "default_sets AS ("
+              "SELECT lemma_subtlex_pos_id, "
+              "array_agg(lower(distractor_translation) ORDER BY lower(distractor_translation)) AS default_keys "
+              "FROM " (qtable "lemma_pos_distractors") " "
+              "WHERE is_default "
+              "GROUP BY lemma_subtlex_pos_id) "
+              "SELECT count(*) AS c "
+              "FROM assigned_sets assigned "
+              "JOIN " (qtable "example_sentences") " e "
+              "ON e.example_sentence_id = assigned.example_sentence_id "
+              "JOIN default_sets defaults "
+              "ON defaults.lemma_subtlex_pos_id = e.lemma_subtlex_pos_id "
+              "WHERE assigned.assigned_keys = defaults.default_keys"))
+        correct-translation-distractors
+        (scalar-long
+         conn
+         (str "WITH assigned_examples AS ("
+              "SELECT DISTINCT example_sentence_id "
+              "FROM " (qtable "example_sentence_distractor_assignments") "), "
+              "effective_distractors AS ("
+              "SELECT e.example_sentence_id, e.word_translation, d.distractor_translation "
+              "FROM " (qtable "example_sentences") " e "
+              "JOIN " (qtable "example_sentence_distractor_assignments") " a "
+              "ON a.example_sentence_id = e.example_sentence_id "
+              "JOIN " (qtable "lemma_pos_distractors") " d "
+              "ON d.lemma_pos_distractor_id = a.lemma_pos_distractor_id "
+              "UNION ALL "
+              "SELECT e.example_sentence_id, e.word_translation, d.distractor_translation "
+              "FROM " (qtable "example_sentences") " e "
+              "JOIN " (qtable "lemma_pos_distractors") " d "
+              "ON d.lemma_subtlex_pos_id = e.lemma_subtlex_pos_id "
+              "AND d.is_default "
+              "WHERE NOT EXISTS ("
+              "SELECT 1 FROM assigned_examples assigned "
+              "WHERE assigned.example_sentence_id = e.example_sentence_id)) "
+              "SELECT count(*) AS c "
+              "FROM effective_distractors "
+              "WHERE lower(btrim(word_translation)) = lower(btrim(distractor_translation))"))]
     (when (pos? missing-refs)
       (fail "Example sentences have missing lemma/surface references."
             {:missing-references missing-refs}))
     (when (pos? unlinked-targets)
       (fail "Example sentence lemma/surface pairs are not linked."
-            {:unlinked-targets unlinked-targets}))))
+            {:unlinked-targets unlinked-targets}))
+    (when (pos? missing-lemma-pos-refs)
+      (fail "Example sentences have missing lemma/POS references."
+            {:missing-lemma-pos-references missing-lemma-pos-refs}))
+    (when (pos? unlinked-target-lemma-pos)
+      (fail "Example sentence surface/lemma/POS triples are not linked."
+            {:unlinked-target-lemma-pos unlinked-target-lemma-pos}))
+    (when (pos? mismatched-assignments)
+      (fail "Example sentence distractor assignments use a different lemma/POS."
+            {:mismatched-assignments mismatched-assignments}))
+    (when (pos? examples-with-insufficient-defaults)
+      (fail "Example sentence lemma/POS defaults have too few distractors."
+            {:examples-with-insufficient-defaults examples-with-insufficient-defaults
+             :minimum required-distractor-count}))
+    (when (pos? examples-with-insufficient-effective-distractors)
+      (fail "Example sentences have too few effective distractors."
+            {:examples-with-insufficient-effective-distractors
+             examples-with-insufficient-effective-distractors
+             :minimum required-distractor-count}))
+    (when (pos? default-duplicate-assignments)
+      (fail "Example sentence distractor assignments duplicate default sets."
+            {:default-duplicate-assignments default-duplicate-assignments}))
+    (when (pos? correct-translation-distractors)
+      (fail "Example sentence effective distractors include correct translations."
+            {:correct-translation-distractors correct-translation-distractors}))))
 
 (defn- nonempty-target-tables [conn manifest]
   (->> (:tables manifest)

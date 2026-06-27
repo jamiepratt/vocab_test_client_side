@@ -119,11 +119,19 @@ const tableHeaders = {
     "sentence_translation",
     "surface_form_id",
     "lemma_id",
+    "lemma_subtlex_pos_id",
     "word_translation",
-    "distractor_1_translation",
-    "distractor_2_translation",
-    "distractor_3_translation",
-    "distractor_4_translation",
+  ],
+  lemma_pos_distractors: [
+    "lemma_pos_distractor_id",
+    "lemma_subtlex_pos_id",
+    "distractor_translation",
+    "is_default",
+    "import_order",
+  ],
+  example_sentence_distractor_assignments: [
+    "example_sentence_id",
+    "lemma_pos_distractor_id",
   ],
   rejected_lemmas: [
     "rejected_lemma_id",
@@ -293,7 +301,9 @@ writeTable("freedict_pronunciations", []);
 writeTable("freedict_senses", []);
 writeTable("freedict_sense_translations", []);
 writeTable("freedict_sense_definitions", []);
+writeTable("lemma_pos_distractors", []);
 writeTable("example_sentences", []);
+writeTable("example_sentence_distractor_assignments", []);
 writeTable("rejected_lemmas", []);
 writeTable("rejected_surfaces", []);
 writeTable("rejected_freedict_rows", []);
