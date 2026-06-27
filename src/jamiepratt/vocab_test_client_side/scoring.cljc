@@ -28,6 +28,49 @@
       (update-in [band :answered] inc)
       (update-in [band result] inc)))
 
+(def real-item-types
+  #{nil
+    "sentence-context-lemma"
+    :sentence-context-lemma})
+
+(defn real-vocabulary-answer? [answer]
+  (and (not= false (:vocabulary-evidence? answer))
+       (contains? real-item-types (:item-type answer))))
+
+(defn real-vocabulary-answers [answers]
+  (filterv real-vocabulary-answer? answers))
+
+(defn adaptive-block-decision [{:keys [id lower-block-id higher-block-id floor?] :as block} answers]
+  (let [block-answers (filterv #(and (real-vocabulary-answer? %)
+                                     (= id (:adaptive-block-id %)))
+                               answers)
+        real-item-count (count block-answers)
+        correct (count (filter #(= :correct (:result %)) block-answers))
+        correct-rate (if (pos? real-item-count)
+                       (/ correct real-item-count)
+                       0)
+        route-lower? (<= correct-rate 0.15)
+        route-higher? (>= correct-rate 0.85)
+        action (cond
+                 (and route-lower? floor?) :report-floor
+                 (and route-lower? lower-block-id) :route-lower
+                 route-lower? :report
+                 (and route-higher? higher-block-id) :route-higher
+                 route-higher? :report
+                 :else :report)]
+    (assoc block
+           :action action
+           :next-block-id (case action
+                            :route-lower lower-block-id
+                            :route-higher higher-block-id
+                            nil)
+           :estimate-label (when (= :report-floor action)
+                             "under 200")
+           :correct correct
+           :real-item-count real-item-count
+           :correct-rate correct-rate
+           :accuracy-pct (round-value (* 100 correct-rate)))))
+
 (defn with-band-proportions [stats]
   (into {}
         (map (fn [[band-id {:keys [answered correct] :as stat}]]
@@ -114,28 +157,34 @@
     (> dk-count (* wrong-count 2))
     "You used \"don't know\" honestly. This estimate is probably accurate or slightly conservative."))
 
-(defn summarize-results [questions answers]
-  (let [total (count questions)
-        correct (count (filter #(= :correct (:result %)) answers))
-        dk (count (filter #(= :dk (:result %)) answers))
-        wrong (count (filter #(= :wrong (:result %)) answers))
-        review-answers (filterv #(not= :correct (:result %)) answers)
-        band-stats (band-stats-for answers)
-        vocab-estimate (weighted-vocab-estimate band-stats)
-        adjusted-estimate (adjusted-vocab-estimate vocab-estimate wrong)]
-    {:answered (count answers)
-     :total total
-     :correct correct
-     :dk dk
-     :wrong wrong
-     :accuracy-pct (if (pos? total)
-                     (round-value (* 100 (/ correct total)))
-                     0)
-     :band-stats band-stats
-     :review-answers review-answers
-     :vocab-estimate vocab-estimate
-     :adjusted-estimate adjusted-estimate
-     :ceiling-band (ceiling-band band-stats)
-     :comparison (estimate-comparison adjusted-estimate)
-     :interpretation (level-interpretation band-stats adjusted-estimate)
-     :honesty-note (honesty-note wrong dk total)}))
+(defn summarize-results
+  ([questions answers]
+   (summarize-results questions answers nil))
+  ([_questions answers adaptive-decision]
+   (let [evidence-answers (real-vocabulary-answers answers)
+         total (count evidence-answers)
+         correct (count (filter #(= :correct (:result %)) evidence-answers))
+         dk (count (filter #(= :dk (:result %)) evidence-answers))
+         wrong (count (filter #(= :wrong (:result %)) evidence-answers))
+         review-answers (filterv #(not= :correct (:result %)) evidence-answers)
+         band-stats (band-stats-for evidence-answers)
+         vocab-estimate (weighted-vocab-estimate band-stats)
+         adjusted-estimate (adjusted-vocab-estimate vocab-estimate wrong)]
+     {:answered total
+      :total total
+      :correct correct
+      :dk dk
+      :wrong wrong
+      :accuracy-pct (if (pos? total)
+                      (round-value (* 100 (/ correct total)))
+                      0)
+      :band-stats band-stats
+      :review-answers review-answers
+      :vocab-estimate vocab-estimate
+      :adjusted-estimate adjusted-estimate
+      :estimate-label (:estimate-label adaptive-decision)
+      :adaptive-decision adaptive-decision
+      :ceiling-band (ceiling-band band-stats)
+      :comparison (estimate-comparison adjusted-estimate)
+      :interpretation (level-interpretation band-stats adjusted-estimate)
+      :honesty-note (honesty-note wrong dk total)})))

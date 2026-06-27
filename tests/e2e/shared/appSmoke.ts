@@ -106,18 +106,25 @@ function sentenceItem(index: number, overrides: {
   };
 }
 
-function sentenceBlockFixture() {
+function sentenceBlockFixture(overrides: {
+  block?: number;
+  rankStart?: number;
+  rankEnd?: number;
+} = {}) {
+  const block = overrides.block ?? 0;
+  const offset = block * 80;
+
   return {
     level: "pre-a1",
     "requested-level": "absolute-beginner",
     "level-role": "starting-prior",
     "measurement-unit": "lemma",
-    block: 0,
+    block,
     "block-size": 80,
-    "surface-rank-start": 1,
-    "surface-rank-end": 80,
+    "surface-rank-start": overrides.rankStart ?? 1,
+    "surface-rank-end": overrides.rankEnd ?? 80,
     items: Array.from({ length: 80 }, (_, index) => {
-      if (index === 79) {
+      if (block === 0 && index === 79) {
         return sentenceItem(index, {
           sentence: "Niezłomny duch pomaga jej dalej pracować.",
           target: "Niezłomny",
@@ -126,7 +133,7 @@ function sentenceBlockFixture() {
         });
       }
 
-      return sentenceItem(index);
+      return sentenceItem(index + offset);
     }),
     "invalid-items": [],
   };
@@ -479,7 +486,7 @@ export async function runAppSmoke(page: Page) {
   await expect(page.getByText("Wrong: 1", { exact: true })).toBeVisible();
   await expect(page.getByText("Don't know: 78", { exact: true })).toBeVisible();
   await expect(page.getByText("Estimated passive vocabulary", { exact: true })).toBeVisible();
-  await expect(page.getByText("~0 words", { exact: true })).toBeVisible();
+  await expect(page.getByText("under 200", { exact: true })).toBeVisible();
   await expect(page.getByText("Ceiling: 0-250", { exact: true })).toBeVisible();
   await expect(page.getByText("Slightly below your estimate. Your vocabulary appears ~500 words under your 500 guess - but this is well within normal range.")).toBeVisible();
   await expect(page.getByText("Even the top 250 words are shaky, which puts the vocabulary under 250. This is very early - the focus should be on drilling the most frequent words until they're automatic.")).toBeVisible();
@@ -511,10 +518,26 @@ export async function runAppSmoke(page: Page) {
 
 export async function runHighEstimateRegression(page: Page) {
   const block = sentenceBlockFixture();
-  const correctThroughBand5 = block.items.slice(0, 72).map((item) => item["correct-translation"]);
+  const harderBlock = sentenceBlockFixture({ block: 1, rankStart: 250, rankEnd: 1000 });
+  harderBlock.items[0] = sentenceItem(80, {
+    sentence: "Trudniejsze słowo pojawia się dalej.",
+    target: "Trudniejsze",
+    correct: "more difficult",
+    distractors: ["easier", "later", "clean", "bright"],
+  });
+  const correctAnswers = block.items.map((item) => item["correct-translation"]);
+  const requestedBlocks: string[] = [];
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await routeSentenceBlock(page, block);
+  await page.route(/\/api\/sentence-question-blocks(\?.*)?$/, async (route) => {
+    const url = new URL(route.request().url());
+    const requestedBlock = url.searchParams.get("block") ?? "0";
+    requestedBlocks.push(requestedBlock);
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(requestedBlock === "1" ? harderBlock : block),
+    });
+  });
   await page.addInitScript(() => {
     Math.random = () => 0;
     localStorage.removeItem("vocab-theme");
@@ -523,19 +546,20 @@ export async function runHighEstimateRegression(page: Page) {
   await page.goto("/index.html");
   await page.getByRole("button", { name: "Begin Test" }).click();
 
-  for (const answer of correctThroughBand5) {
+  for (const answer of correctAnswers) {
     await answerAndContinue(page, answer);
   }
 
-  for (let index = 0; index < 8; index++) {
-    await answerAndContinue(page, "don't know");
-  }
-
-  await expect(page.getByRole("heading", { level: 1, name: "Results" })).toBeVisible();
-  await expect(page.getByText("~3500 words", { exact: true })).toBeVisible();
-  await expect(page.getByText("Ceiling: 2K-3.5K", { exact: true })).toBeVisible();
-  await expect(page.getByText("closer to ~3500 words than 500", { exact: false })).toBeVisible();
-  await expect(page.getByText("1,200-1,800", { exact: false })).toHaveCount(0);
+  await expect(page.getByRole("status")).toContainText("first block was too easy");
+  await expectSentenceQuestion(page, {
+    scored: 0,
+    item: 1,
+    sentence: "Trudniejsze słowo pojawia się dalej.",
+    target: "Trudniejsze",
+    choices: ["easier", "later", "clean", "bright", "more difficult"],
+  });
+  expect(requestedBlocks).toContain("0");
+  expect(requestedBlocks).toContain("1");
   await expectNoHorizontalOverflow(page);
 }
 
