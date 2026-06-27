@@ -36,6 +36,87 @@
            :correct (str "meaning-" index)})
         (range 80)))
 
+(defn lemma-answer
+  ([stratum result]
+   (lemma-answer stratum result nil))
+  ([stratum result opts]
+   (merge {:adaptive-block-id :pre-a1
+           :item-type "sentence-context-lemma"
+           :inventory-stratum stratum
+           :lemma-rank (inc (* 1000 (dec stratum)))
+           :choice-count 5
+           :guess-rate 0.2
+           :result result}
+          opts)))
+
+(deftest reports-stable-lemma-likely-ranges
+  (let [answers (vec (concat (repeat 16 (lemma-answer 1 :correct))
+                             (repeat 4 (lemma-answer 1 :dk))
+                             (repeat 8 (lemma-answer 2 :correct))
+                             (repeat 12 (lemma-answer 2 :wrong))))
+        first-result (scoring/summarize-results [] answers)
+        second-result (scoring/summarize-results [] answers)
+        {:keys [lower upper]} (:likely-range first-result)]
+    (is (= (select-keys first-result [:lemma-estimate :likely-range])
+           (select-keys second-result [:lemma-estimate :likely-range])))
+    (is (= "recognized Polish lemmas" (:estimate-unit first-result)))
+    (is (<= 0 lower (:lemma-estimate first-result) upper data/lemma-inventory-size))
+    (is (< (:lemma-estimate first-result) data/lemma-inventory-size))))
+
+(deftest adjusts-for-forced-choice-guessing
+  (let [binary-result (scoring/summarize-results
+                       []
+                       (vec (repeat 20 (lemma-answer 1 :correct
+                                                     {:guess-rate 0}))))
+        forced-choice-result (scoring/summarize-results
+                              []
+                              (vec (repeat 20 (lemma-answer 1 :correct
+                                                            {:choice-count 5
+                                                             :guess-rate 0.2}))))]
+    (is (< (:lemma-estimate forced-choice-result)
+           (:lemma-estimate binary-result)))
+    (is (< (get-in forced-choice-result [:likely-range :lower])
+           (get-in binary-result [:likely-range :lower])))))
+
+(deftest reports-borderline-level-band-when-range-crosses-boundary
+  (let [answers (vec (concat (repeat 24 (lemma-answer 1 :correct
+                                                      {:guess-rate 0}))
+                             (repeat 16 (lemma-answer 1 :dk))))
+        result (scoring/summarize-results [] answers)]
+    (is (= "borderline: Absolute beginner / pre-A1 to A1"
+           (:level-band result)))))
+
+(deftest gates-live-estimate-until-enough-real-answers
+  (let [early-result (scoring/summarize-results
+                      []
+                      (vec (repeat 29 (lemma-answer 1 :correct
+                                                    {:guess-rate 0}))))
+        ready-result (scoring/summarize-results
+                      []
+                      (vec (repeat 30 (lemma-answer 1 :correct
+                                                    {:guess-rate 0}))))]
+    (is (= {:ready? false
+            :label "Still calibrating"}
+           (:live-estimate early-result)))
+    (is (= true (get-in ready-result [:live-estimate :ready?])))
+    (is (re-matches #"Current estimate: about [0-9,]+ recognized Polish lemmas"
+                    (get-in ready-result [:live-estimate :label])))
+    (is (re-matches #"Likely range: [0-9,]+-[0-9,]+"
+                    (get-in ready-result [:live-estimate :range-label])))))
+
+(deftest final-floor-result-uses-non-shaming-low-copy
+  (let [decision (scoring/adaptive-block-decision
+                  (data/starting-block :absolute-beginner)
+                  (block-answers :pre-a1 1))
+        result (scoring/summarize-results
+                []
+                (vec (repeat 80 (lemma-answer 1 :dk)))
+                decision)]
+    (is (= "under 200" (:estimate-label result)))
+    (is (= {:lower 0 :upper 200} (:likely-range result)))
+    (is (= "Absolute beginner / pre-A1" (:level-band result)))
+    (is (< (:lemma-estimate result) 200))))
+
 (deftest summarizes-low-score-results
   (let [questions (questions/all)
         answers (mapv (fn [index question]
@@ -52,10 +133,12 @@
     (is (= 1 (:wrong result)))
     (is (= 78 (:dk result)))
     (is (= 1 (:accuracy-pct result)))
-    (is (= 0 (:adjusted-estimate result)))
-    (is (= :B1 (:ceiling-band result)))
-    (is (= "You used \"don't know\" honestly. This estimate is probably accurate or slightly conservative."
-           (:honesty-note result)))))
+    (is (= "recognized Polish lemmas" (:estimate-unit result)))
+    (is (<= 0
+            (get-in result [:likely-range :lower])
+            (:lemma-estimate result)
+            (get-in result [:likely-range :upper])
+            data/lemma-inventory-size))))
 
 (deftest routes-blocks-from-thresholds
   (let [block {:id :a1
@@ -111,3 +194,21 @@
     (is (= 160 (:answered result)))
     (is (= 120 (:correct result)))
     (is (= 40 (:dk result)))))
+
+(deftest lemma-estimate-combines-evidence-across-blocks
+  (let [first-block (vec (repeat 20 (lemma-answer 1 :correct
+                                                  {:adaptive-block-id :pre-a1
+                                                   :guess-rate 0})))
+        next-block (vec (repeat 20 (lemma-answer 2 :correct
+                                                 {:adaptive-block-id :pre-a1-plus
+                                                  :guess-rate 0})))
+        first-result (scoring/summarize-results [] first-block)
+        combined-result (scoring/summarize-results [] (into first-block next-block))]
+    (is (= 40 (:answered combined-result)))
+    (is (> (:lemma-estimate combined-result)
+           (:lemma-estimate first-result)))
+    (is (<= 0
+            (get-in combined-result [:likely-range :lower])
+            (:lemma-estimate combined-result)
+            (get-in combined-result [:likely-range :upper])
+            data/lemma-inventory-size))))

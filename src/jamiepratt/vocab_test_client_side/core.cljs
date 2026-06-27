@@ -449,7 +449,21 @@
             :on-click #(record-answer question choices dont-know-choice)}
    (:label dont-know-choice)])
 
-(defn quiz-screen [{:keys [questions current-question-index question-choices answers answer-locked? feedback continuation-message]}]
+(defn live-estimate-panel [results-data]
+  (let [live-estimate (or (:live-estimate results-data)
+                          {:ready? false
+                           :label "Still calibrating"})]
+    [:section {:aria-label "Live estimate"
+               :aria-live "polite"
+               :class "grid gap-1 rounded-md app-subtle-bg p-3 text-sm"}
+     [:p {:class "text-xs font-bold uppercase app-muted"} "Live estimate"]
+     [:p {:class "font-semibold app-ink-soft"}
+      (:label live-estimate)]
+     (when (:ready? live-estimate)
+       [:p {:class "app-muted"}
+        (:range-label live-estimate)])]))
+
+(defn quiz-screen [{:keys [questions current-question-index question-choices answers answer-locked? feedback continuation-message results-data]}]
   (let [question (nth questions current-question-index)
         choices (or (get question-choices current-question-index)
                     (choice-options question))
@@ -475,6 +489,7 @@
         [:p {:role "status"
              :class "rounded-md app-subtle-bg p-3 text-sm font-semibold app-ink-soft"}
          continuation-message])
+      [live-estimate-panel results-data]
       [:div {:class "flex flex-wrap items-center justify-between gap-3 text-sm font-semibold app-muted"}
        [:span (str scored-count " / " total " scored")]
        [:span (str "Item " current-question-number " of " total)]
@@ -567,26 +582,22 @@
       [:h2 {:id "estimate-heading"
             :class "text-lg font-bold app-ink"}
        "Vocabulary estimate"]
-      [:p {:class (str "rounded-full px-3 py-1 text-xs font-bold ring-1 " (band-style-class (:ceiling-band results-data) :badge))}
-       (str "Ceiling: " (data/band-labels (:ceiling-band results-data)))]]
+      [:p {:class "rounded-full px-3 py-1 text-xs font-bold ring-1 app-subtle-bg app-ink-soft"}
+       (str "Level band: " (:level-band results-data))]]
      [:div {:class "app-accent-panel grid gap-1 rounded-md border p-4"}
       [:p {:class "text-xs font-bold uppercase app-muted"}
-       "Estimated passive vocabulary"]
+       "Estimated recognized Polish lemmas"]
       [:p {:class "app-accent-text break-words text-4xl font-bold"}
-       (or (:estimate-label results-data)
-           (str "~" (:adjusted-estimate results-data) " words"))]]
+       (scoring/estimate-display results-data)]
+      [:p {:class "text-sm font-semibold app-ink-soft"}
+       (str "Likely range: " (scoring/format-range (:likely-range results-data)))]]
      [:p {:class "break-words text-base font-semibold app-ink-soft"}
-      (:comparison results-data)]
+      (str "Approximate level band: " (:level-band results-data))]
      [:p {:class "break-words text-base leading-7 app-muted"}
-      (:interpretation results-data)]
-     (when (:honesty-note results-data)
-       [:p {:class "break-words rounded-md app-subtle-bg p-3 text-sm font-semibold app-ink-soft"}
-        (:honesty-note results-data)])
+      "Likely ranges are broad for short tests and narrow as more sentence-context evidence is added."]
      [:p {:class "break-words rounded-md app-subtle-bg p-3 text-sm leading-6 app-muted"}
       [:strong {:class "font-semibold app-ink"} "A note on Polish: "]
-      "This test scores recognition of lemmas in sentence context."]
-     [:p {:class "break-words rounded-md app-subtle-bg p-3 text-sm leading-6 app-muted"}
-      "Passive vocabulary (recognition) is typically 2-3x active vocabulary (production). This test measures recognition only."]]
+      "This test scores recognition of Polish lemmas in sentence context."]]
     [:button {:type "button"
               :class button-class
               :on-click begin-test}

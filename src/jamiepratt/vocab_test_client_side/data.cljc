@@ -4,6 +4,12 @@
 
 (def adaptive-real-item-count 80)
 
+(def lemma-inventory-size 10000)
+
+(def lemma-stratum-size 1000)
+
+(def live-estimate-min-real-answers 30)
+
 (def level-options
   [{:id :absolute-beginner
     :api-level "absolute-beginner"
@@ -131,6 +137,58 @@
        (<= (:surface-rank-start b)
            (:surface-rank-end a))))
 
+(def lemma-inventory-strata
+  (mapv (fn [index]
+          (let [start (* index lemma-stratum-size)
+                end (min lemma-inventory-size
+                         (+ start lemma-stratum-size))]
+            {:id (inc index)
+             :start start
+             :end end
+             :width (- end start)
+             :label (str start "-" end)}))
+        (range (quot lemma-inventory-size lemma-stratum-size))))
+
+(def lemma-inventory-strata-by-id
+  (into {} (map (juxt :id identity) lemma-inventory-strata)))
+
+(defn lemma-inventory-stratum-id [lemma-inventory-rank]
+  (when (and (number? lemma-inventory-rank)
+             (pos? lemma-inventory-rank))
+    (min (count lemma-inventory-strata)
+         (inc (quot (dec (long lemma-inventory-rank))
+                    lemma-stratum-size)))))
+
+(def level-bands
+  [{:id :pre-a1
+    :label "Absolute beginner / pre-A1"
+    :lower 0
+    :upper 500}
+   {:id :a1
+    :label "A1"
+    :lower 500
+    :upper 1000}
+   {:id :a2
+    :label "A2"
+    :lower 1000
+    :upper 2000}
+   {:id :b1
+    :label "B1"
+    :lower 2000
+    :upper 3000}
+   {:id :b2
+    :label "B2"
+    :lower 3000
+    :upper 5000}
+   {:id :c1
+    :label "C1"
+    :lower 5000
+    :upper 8000}
+   {:id :c2
+    :label "C2"
+    :lower 8000
+    :upper lemma-inventory-size}])
+
 (def bands
   [{:id :B1
     :label "0-250"
@@ -170,11 +228,3 @@
     :items 10}
    {:band :B6
     :items 8}])
-
-(def band-sizes
-  {:B1 250
-   :B2 250
-   :B3 500
-   :B4 1000
-   :B5 1500
-   :B6 2500})
