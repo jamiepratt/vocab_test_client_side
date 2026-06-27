@@ -12,6 +12,7 @@
    [java.nio.charset StandardCharsets]
    [java.security MessageDigest]
    [java.sql Connection]
+   [java.util UUID]
    [java.util.regex Pattern]
    [org.postgresql.copy CopyManager]
    [org.postgresql.core BaseConnection]))
@@ -699,11 +700,174 @@
          :tables (count (:tables manifest))
          :row-counts row-counts}))))
 
+(def answer-event-required-fields
+  [:anonymous-session-id
+   :test-block-id
+   :target-lemma-id
+   :candidate-rank
+   :inventory-stratum
+   :lemma-rank
+   :item-type
+   :choice-count
+   :guess-rate
+   :selected-answer
+   :correct
+   :response-time-ms
+   :attention-check-status])
+
+(defn- event-field [event field]
+  (if (contains? event field)
+    (get event field)
+    (get event (name field))))
+
+(defn- blank-value? [value]
+  (or (nil? value)
+      (and (string? value) (str/blank? value))))
+
+(defn- require-present! [event field]
+  (when-not (or (contains? event field)
+                (contains? event (name field)))
+    (fail (str "Answer event is missing " (name field) ".")
+          {:field field}))
+  (let [value (event-field event field)]
+    (when (blank-value? value)
+      (fail (str "Answer event is missing " (name field) ".")
+            {:field field}))
+    value))
+
+(defn- require-uuid! [event field]
+  (let [value (require-present! event field)]
+    (try
+      (UUID/fromString (str value))
+      (catch IllegalArgumentException _
+        (fail (str "Answer event " (name field) " must be a UUID.")
+              {:field field :value value})))
+    value))
+
+(defn- require-positive-int! [event field]
+  (let [value (require-present! event field)]
+    (when-not (and (integer? value) (pos? value))
+      (fail (str "Answer event " (name field) " must be a positive integer.")
+            {:field field :value value}))
+    value))
+
+(defn- optional-positive-int! [event field]
+  (let [value (event-field event field)]
+    (when (some? value)
+      (when-not (and (integer? value) (pos? value))
+        (fail (str "Answer event " (name field) " must be a positive integer.")
+              {:field field :value value})))
+    value))
+
+(defn- require-nonnegative-int! [event field]
+  (let [value (require-present! event field)]
+    (when-not (and (integer? value) (not (neg? value)))
+      (fail (str "Answer event " (name field) " must be a non-negative integer.")
+            {:field field :value value}))
+    value))
+
+(defn- require-probability! [event field]
+  (let [value (require-present! event field)]
+    (when-not (and (number? value) (<= 0 value 1))
+      (fail (str "Answer event " (name field) " must be between 0 and 1.")
+            {:field field :value value}))
+    value))
+
+(defn- optional-number! [event field]
+  (let [value (event-field event field)]
+    (when (some? value)
+      (when-not (number? value)
+        (fail (str "Answer event " (name field) " must be numeric.")
+              {:field field :value value})))
+    value))
+
+(defn- require-boolean! [event field]
+  (let [value (require-present! event field)]
+    (when-not (instance? Boolean value)
+      (fail (str "Answer event " (name field) " must be boolean.")
+            {:field field :value value}))
+    value))
+
+(defn- require-nonblank-text! [event field]
+  (str (require-present! event field)))
+
+(defn validate-answer-event! [event]
+  (doseq [field answer-event-required-fields]
+    (require-present! event field))
+  (let [surface-difficulty-rank (optional-positive-int! event :surface-difficulty-rank)
+        calibrated-difficulty (optional-number! event :calibrated-difficulty)]
+    (when (and (nil? surface-difficulty-rank)
+               (nil? calibrated-difficulty))
+      (fail "Answer event is missing surface-difficulty-rank or calibrated-difficulty."
+            {:field :surface-difficulty-rank}))
+    {:anonymous-session-id (require-uuid! event :anonymous-session-id)
+     :test-block-id (require-nonblank-text! event :test-block-id)
+     :target-lemma-id (require-positive-int! event :target-lemma-id)
+     :target-surface-form-id (optional-positive-int! event :target-surface-form-id)
+     :candidate-rank (require-positive-int! event :candidate-rank)
+     :inventory-stratum (require-positive-int! event :inventory-stratum)
+     :lemma-rank (require-positive-int! event :lemma-rank)
+     :surface-difficulty-rank surface-difficulty-rank
+     :calibrated-difficulty calibrated-difficulty
+     :item-type (require-nonblank-text! event :item-type)
+     :choice-count (require-positive-int! event :choice-count)
+     :guess-rate (require-probability! event :guess-rate)
+     :selected-answer (require-nonblank-text! event :selected-answer)
+     :correct (require-boolean! event :correct)
+     :response-time-ms (require-nonnegative-int! event :response-time-ms)
+     :attention-check-status (require-nonblank-text! event :attention-check-status)}))
+
+(defn- answer-event-insert-sql []
+  (str "INSERT INTO " (qtable "answer_events") " "
+       "(anonymous_session_id, test_block_id, target_lemma_id, target_surface_form_id, "
+       "candidate_rank, inventory_stratum, lemma_rank, surface_difficulty_rank, "
+       "calibrated_difficulty, item_type, choice_count, guess_rate, selected_answer, "
+       "correct, response_time_ms, attention_check_status) "
+       "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+       "RETURNING answer_event_id, anonymous_session_id, submitted_at, test_block_id, "
+       "target_lemma_id, target_surface_form_id, candidate_rank, inventory_stratum, "
+       "lemma_rank, surface_difficulty_rank, calibrated_difficulty, item_type, "
+       "choice_count, guess_rate, selected_answer, correct, response_time_ms, "
+       "attention_check_status"))
+
+(defn- answer-event-params [event]
+  [(UUID/fromString (str (:anonymous-session-id event)))
+   (:test-block-id event)
+   (:target-lemma-id event)
+   (:target-surface-form-id event)
+   (:candidate-rank event)
+   (:inventory-stratum event)
+   (:lemma-rank event)
+   (:surface-difficulty-rank event)
+   (:calibrated-difficulty event)
+   (:item-type event)
+   (:choice-count event)
+   (:guess-rate event)
+   (:selected-answer event)
+   (:correct event)
+   (:response-time-ms event)
+   (:attention-check-status event)])
+
+(defn record-answer-event!
+  ([event]
+   (let [database-url (or (System/getenv "DATABASE_URL")
+                          (fail "DATABASE_URL is required." {:status 503}))
+         jdbc-url (database-url->jdbc-url database-url)]
+     (with-open [conn (jdbc/get-connection {:connection-uri jdbc-url})]
+       (record-answer-event! conn event))))
+  ([conn event]
+   (let [event (validate-answer-event! event)]
+     (jdbc/execute-one! conn
+                        (into [(answer-event-insert-sql)]
+                              (answer-event-params event))
+                        {:builder-fn rs/as-unqualified-kebab-maps}))))
+
 (defn- sentence-question-candidates-sql []
   (str "WITH candidate_examples AS ("
        "SELECT e.example_sentence_id, "
        "e.sentence, "
        "s.surface_form AS target_surface, "
+       "e.surface_form_id AS target_surface_form_id, "
        "e.lemma_id, "
        "e.lemma_subtlex_pos_id, "
        "p.lemma, "

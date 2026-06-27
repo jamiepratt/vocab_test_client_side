@@ -1,5 +1,10 @@
 import { test } from "@playwright/test";
-import { runApiQuestionLoading, runAppSmoke, runHighEstimateRegression } from "../shared/appSmoke";
+import {
+  runAnswerEventSubmissionFailure,
+  runApiQuestionLoading,
+  runAppSmoke,
+  runHighEstimateRegression,
+} from "../shared/appSmoke";
 
 test("renders and responds to user input", async ({ page }) => {
   await runAppSmoke(page);
@@ -11,4 +16,8 @@ test("keeps high estimate copy consistent with the displayed estimate", async ({
 
 test("loads questions from the configured API", async ({ page }) => {
   await runApiQuestionLoading(page);
+});
+
+test("continues when answer-event submission fails", async ({ page }) => {
+  await runAnswerEventSubmissionFailure(page);
 });

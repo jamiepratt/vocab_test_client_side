@@ -37,6 +37,23 @@
     (doseq [statement (migration-statements relative-path)]
       (jdbc/execute! tx [statement]))))
 
+(def valid-answer-event
+  {:anonymous-session-id "123e4567-e89b-12d3-a456-426614174000"
+   :test-block-id "adaptive-block-0"
+   :target-lemma-id 11
+   :target-surface-form-id 22
+   :candidate-rank 33
+   :inventory-stratum 1
+   :lemma-rank 44
+   :surface-difficulty-rank 55
+   :item-type "sentence-context-lemma"
+   :choice-count 5
+   :guess-rate 0.2
+   :selected-answer "cat"
+   :correct true
+   :response-time-ms 1234
+   :attention-check-status "not-attention-check"})
+
 (defn- write-bundle! [tables]
   (let [root (temp-dir)
         table-entries (mapv (fn [{:keys [table header rows]}]
@@ -291,6 +308,76 @@
            (get-in tables ["example_sentences" :header])))
     (is (= 8 (get-in tables ["lemma_pos_distractors" :rows])))
     (is (= 4 (get-in tables ["example_sentence_distractor_assignments" :rows])))))
+
+(deftest validates-anonymous-answer-events-before-insert
+  (is (= valid-answer-event
+         (select-keys (db/validate-answer-event! valid-answer-event)
+                      (keys valid-answer-event))))
+  (testing "anonymous session id is required and must be a UUID"
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                          #"anonymous-session-id"
+                          (db/validate-answer-event!
+                           (dissoc valid-answer-event :anonymous-session-id))))
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                          #"anonymous-session-id"
+                          (db/validate-answer-event!
+                           (assoc valid-answer-event :anonymous-session-id "not-a-uuid")))))
+  (testing "required calibration metadata is rejected when missing"
+    (doseq [field [:test-block-id :target-lemma-id :candidate-rank
+                   :inventory-stratum :lemma-rank :item-type :choice-count
+                   :guess-rate :selected-answer :correct :response-time-ms
+                   :attention-check-status]]
+      (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                            (re-pattern (name field))
+                            (db/validate-answer-event!
+                             (dissoc valid-answer-event field)))
+          (str field " should be required"))))
+  (testing "one item difficulty signal is required"
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                          #"surface-difficulty-rank"
+                          (db/validate-answer-event!
+                           (dissoc valid-answer-event :surface-difficulty-rank)))))
+  (testing "malformed payload values are rejected"
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                          #"guess-rate"
+                          (db/validate-answer-event!
+                           (assoc valid-answer-event :guess-rate 1.2))))
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                          #"response-time-ms"
+                          (db/validate-answer-event!
+                           (assoc valid-answer-event :response-time-ms -1))))))
+
+(deftest stores-anonymous-answer-event-data
+  (when-let [database-url (not-empty (System/getenv "TEST_DATABASE_URL"))]
+    (let [jdbc-url (db/database-url->jdbc-url database-url)]
+      (try
+        (with-open [conn (jdbc/get-connection {:connection-uri jdbc-url})]
+          (jdbc/execute! conn ["DROP SCHEMA IF EXISTS polish_lexicon CASCADE"])
+          (jdbc/execute! conn ["DROP TABLE IF EXISTS schema_migrations"])
+          (run-migration-file! conn "resources/migrations/202606260001-polish-lexicon-schema.up.sql")
+          (run-migration-file! conn "resources/migrations/202606270001-normalize-example-sentence-distractors.up.sql")
+          (run-migration-file! conn "resources/migrations/202606270002-retain-anonymous-answer-events.up.sql")
+          (let [stored (db/record-answer-event! conn valid-answer-event)]
+            (is (pos-int? (:answer-event-id stored)))
+            (is (= (select-keys valid-answer-event
+                                [:test-block-id :target-lemma-id :target-surface-form-id
+                                 :candidate-rank :inventory-stratum :lemma-rank
+                                 :surface-difficulty-rank :item-type :choice-count
+                                 :selected-answer :correct :response-time-ms
+                                 :attention-check-status])
+                   (select-keys stored
+                                [:test-block-id :target-lemma-id :target-surface-form-id
+                                 :candidate-rank :inventory-stratum :lemma-rank
+                                 :surface-difficulty-rank :item-type :choice-count
+                                 :selected-answer :correct :response-time-ms
+                                 :attention-check-status])))
+            (is (= 0.2 (double (:guess-rate stored))))
+            (is (= (:anonymous-session-id valid-answer-event)
+                   (str (:anonymous-session-id stored))))))
+        (finally
+          (with-open [conn (jdbc/get-connection {:connection-uri jdbc-url})]
+            (jdbc/execute! conn ["DROP SCHEMA IF EXISTS polish_lexicon CASCADE"])
+            (jdbc/execute! conn ["DROP TABLE IF EXISTS schema_migrations"])))))))
 
 (deftest normalizes-legacy-example-distractors-without-changing-effective-set
   (when-let [database-url (not-empty (System/getenv "TEST_DATABASE_URL"))]
