@@ -7,14 +7,28 @@ ALTER TABLE polish_lexicon.example_sentences
 --;;
 
 CREATE TEMP TABLE pvsm001_example_lemma_pos ON COMMIT DROP AS
-SELECT e.example_sentence_id,
-       count(l.lemma_subtlex_pos_id) AS link_count,
-       min(l.lemma_subtlex_pos_id) AS lemma_subtlex_pos_id
-FROM polish_lexicon.example_sentences e
-LEFT JOIN polish_lexicon.surface_form_lemma_links l
-  ON l.surface_form_id = e.surface_form_id
- AND l.lemma_id = e.lemma_id
-GROUP BY e.example_sentence_id;
+WITH ranked_links AS (
+  SELECT e.example_sentence_id,
+         l.lemma_subtlex_pos_id,
+         count(l.lemma_subtlex_pos_id) OVER (PARTITION BY e.example_sentence_id) AS link_count,
+         row_number() OVER (
+           PARTITION BY e.example_sentence_id
+           ORDER BY p.subtlex_frequency DESC NULLS LAST,
+                    p.contextual_diversity_count DESC NULLS LAST,
+                    l.lemma_subtlex_pos_id
+         ) AS link_rank
+  FROM polish_lexicon.example_sentences e
+  LEFT JOIN polish_lexicon.surface_form_lemma_links l
+    ON l.surface_form_id = e.surface_form_id
+   AND l.lemma_id = e.lemma_id
+  LEFT JOIN polish_lexicon.lemma_subtlex_pos p
+    ON p.lemma_subtlex_pos_id = l.lemma_subtlex_pos_id
+)
+SELECT example_sentence_id,
+       link_count,
+       lemma_subtlex_pos_id
+FROM ranked_links
+WHERE link_rank = 1;
 --;;
 
 DO $$
@@ -23,10 +37,11 @@ DECLARE
 BEGIN
   SELECT count(*) INTO bad_count
   FROM pvsm001_example_lemma_pos
-  WHERE link_count <> 1;
+  WHERE link_count < 1
+     OR lemma_subtlex_pos_id IS NULL;
 
   IF bad_count > 0 THEN
-    RAISE EXCEPTION 'Example sentences do not map to exactly one lemma/POS link: % rows', bad_count;
+    RAISE EXCEPTION 'Example sentences do not map to any lemma/POS link: % rows', bad_count;
   END IF;
 END $$;
 --;;
