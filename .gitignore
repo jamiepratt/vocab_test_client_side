@@ -43,3 +43,4 @@
 /data/subtlex-pl/AGENTS.local.md
 npm-debug.log*
 .vercel
+/plans/
