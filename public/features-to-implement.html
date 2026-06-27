@@ -463,12 +463,12 @@
     <div class="header-inner">
       <p class="eyebrow">Implementation document</p>
       <h1>Vocabulary test features to implement</h1>
-      <p class="dek">Feature plan for the current Polish-to-English vocabulary test and backlog: 80-item multiple-choice baseline, frequency-band scoring, result review, methodology docs, calibration path, and progressive confidence with early finish.</p>
+      <p class="dek">Feature plan for the current Polish sentence-context vocabulary-size test and backlog: sentence-question loading, lemma scoring, adaptive continuation, result review, methodology docs, calibration path, and progressive confidence with early finish.</p>
       <div class="chips" aria-label="Document tags">
         <span class="chip">Static HTML</span>
         <span class="chip">GitHub Pages ready</span>
-        <span class="chip">Multiple choice</span>
-        <span class="chip">Frequency bands</span>
+        <span class="chip">Sentence context</span>
+        <span class="chip">Lemma scoring</span>
         <span class="chip">Vocabulary estimate</span>
         <span class="chip">Calibration</span>
       </div>
@@ -480,19 +480,19 @@
       <section id="current">
         <h2>Current app snapshot</h2>
         <ul>
-          <li>Reagent/Shadow app served by <code>public/index.html</code> with Test and Testing methodology routes.</li>
-          <li>Questions load from <code>/api/questions</code>, backed by structured EDN and optional configured API base URL.</li>
-          <li>Test uses 80 dictionary-form Polish words across six bands: 12, 16, 18, 16, 10, and 8 items.</li>
-          <li>Each quiz item shows Polish word, part of speech, band badge, progress bar, four English choices, and <code>don't know</code>.</li>
+          <li>Reagent/Shadow app served by <code>public/index.html</code> with Test, Features, and methodology routes.</li>
+          <li>Sentence-context questions load from <code>/api/sentence-question-blocks</code>, backed by database example sentences and optional configured API base URL.</li>
+          <li>Test uses 80 Polish sentence-context lemma items per block, with adaptive continuation when the first block is outside the informative range.</li>
+          <li>Each quiz item shows a Polish sentence with one highlighted target form, band badge, progress bar, English choices, and <code>don't know</code>.</li>
           <li>Answering locks choices, shows immediate feedback, reveals the correct answer for misses, then enables Next.</li>
-          <li>Results show accuracy, answered/wrong/don't know counts, band breakdown, words to review, ceiling band, passive-vocabulary estimate, interpretation, honesty note, Polish case note, passive-vs-active note, and Retake.</li>
-          <li>Methodology page explains the staged path from frequency-ranked launch test to calibrated adaptive test.</li>
+          <li>Results show accuracy, answered/wrong/don't know counts, accuracy by frequency band, words to review, estimated recognized Polish lemmas, likely range, approximate level band, and Retake.</li>
+          <li>Methodology pages explain sentence-context vocabulary-size measurement and the staged path toward calibrated adaptive testing.</li>
         </ul>
       </section>
 
       <section id="goal">
         <h2>Goal</h2>
-        <p>Build from the current dictionary-form multiple-choice launch test toward a receptive vocabulary test that estimates how many target-language lemmas a learner probably knows. The current app tests isolated dictionary forms; later phases can add sentence context, inflected forms, meaning checks, telemetry, calibration, history, and email updates.</p>
+        <p>Build from the current sentence-context multiple-choice test toward a calibrated receptive vocabulary test that estimates how many Polish lemmas a learner probably recognizes in context. Later phases can add calibrated item difficulty, richer reliability checks, result history, and email updates.</p>
         <div class="callout">
           <p><strong>Main product bet:</strong> start with frequency as the difficulty proxy, ask 80 items at launch to average out item-specific difficulty and gather calibration data, then use collected responses to learn real item difficulty and shorten future tests.</p>
         </div>
@@ -500,14 +500,15 @@
 
       <section id="experience">
         <h2>User experience</h2>
-        <div class="sample" aria-label="Current vocabulary question mockup">
-          <p class="sentence"><mark>woda</mark></p>
-          <p><span class="status">noun</span> <span class="status ok">0-250</span></p>
+        <div class="sample" aria-label="Current sentence question mockup">
+          <p class="sentence"><mark>Kot</mark> pije wodę.</p>
+          <p><span class="status ok">0-250</span></p>
           <div class="choices" aria-label="Current answer choices">
-            <span class="choice">fire</span>
-            <span class="choice">air</span>
-            <span class="choice">earth</span>
-            <span class="choice">water</span>
+            <span class="choice">dog</span>
+            <span class="choice">bird</span>
+            <span class="choice">fish</span>
+            <span class="choice">tree</span>
+            <span class="choice">cat</span>
             <span class="choice">don't know</span>
           </div>
         </div>
@@ -537,8 +538,8 @@
         </div>
         <div class="sample" aria-label="Future confidence and early finish mockup">
           <p><span class="status warn">Mid-test estimate</span> 32 of 80 answered</p>
-          <p class="sentence">Estimated passive vocabulary: <mark>~850 words</mark></p>
-          <p>Confidence: Medium. Expected range: 550-1,250 words.</p>
+          <p class="sentence">Estimated recognized Polish lemmas: <mark>~850</mark></p>
+          <p>Confidence: Medium. Likely range: 550-1,250 lemmas.</p>
           <div class="button-row">
             <span class="button primary">Continue for tighter estimate</span>
             <span class="button">Show results now</span>
@@ -546,9 +547,9 @@
         </div>
         <h3>Future UX requirements</h3>
         <ul>
-          <li>Show complete sentence context with exactly one highlighted tested token.</li>
-          <li>Support inflected displayed forms while scoring the lemma.</li>
-          <li>Ask selective meaning checks after some claimed-known answers.</li>
+          <li>Keep complete sentence context with exactly one highlighted tested token.</li>
+          <li>Support inflected displayed forms while scoring the linked lemma.</li>
+          <li>Add selective reliability checks after some claimed-known answers.</li>
           <li>Ask for email opt-in before or after results if the user wants calibration updates.</li>
           <li>Show a vocabulary-over-time graph for returning users with center, lower, and upper estimate lines.</li>
           <li>While the quiz is in progress, show how confident the estimate is and allow finishing early once the learner is satisfied with that precision.</li>
@@ -585,7 +586,7 @@
 
       <section id="scoring">
         <h2>Scoring model</h2>
-        <p>Current scoring uses dictionary-form words grouped by frequency band. Correct answers count as known, wrong and <code>don't know</code> count as unknown. The estimate sums each band size times that band's hit rate, then applies a small guessing-bias penalty from wrong answers.</p>
+        <p>Current scoring uses sentence-context lemma items grouped into fixed lemma-inventory strata. Correct answers count as recognized, wrong and <code>don't know</code> count as unknown, and forced-choice guessing is accounted for in the posterior update. Results foreground a likely range, not only a point estimate.</p>
         <table>
           <thead>
             <tr>
@@ -596,33 +597,38 @@
           </thead>
           <tbody>
             <tr>
-              <td>Word</td>
-              <td><code>woda</code></td>
-              <td>User-visible tested dictionary form.</td>
+              <td>Sentence</td>
+              <td><code>Kot pije wodę.</code></td>
+              <td>User-visible context.</td>
             </tr>
             <tr>
-              <td>Word class</td>
-              <td><code>noun</code></td>
-              <td>Helps disambiguate translation choices.</td>
+              <td>Target surface</td>
+              <td><code>Kot</code></td>
+              <td>Highlighted form the learner answers about.</td>
             </tr>
             <tr>
-              <td>Band</td>
-              <td><code>B1</code></td>
-              <td>Frequency band used for weighting and result breakdown.</td>
+              <td>Lemma id</td>
+              <td><code>11</code></td>
+              <td>Recognition is scored against the lemma.</td>
+            </tr>
+            <tr>
+              <td>Fixed stratum</td>
+              <td><code>1</code></td>
+              <td>Lemma-inventory bin used for posterior estimates.</td>
             </tr>
             <tr>
               <td>Correct answer</td>
-              <td><code>water</code></td>
-              <td>Known item when selected.</td>
+              <td><code>cat</code></td>
+              <td>Recognized item when selected.</td>
             </tr>
             <tr>
-              <td>Wrong answers</td>
-              <td><code>fire</code>, <code>air</code>, <code>earth</code></td>
-              <td>Plausible distractors.</td>
+              <td>Distractors</td>
+              <td><code>dog</code>, <code>bird</code>, <code>fish</code>, <code>tree</code></td>
+              <td>Plausible alternatives.</td>
             </tr>
           </tbody>
         </table>
-        <p>Future sentence-based scoring should count lemmas, not every observed surface form. If the sentence tests <code>spotkaliśmy</code>, the vocabulary item counted is the lemma <code>spotkać</code>. Failed meaning checks convert that item to unknown and contribute to a reliability flag.</p>
+        <p>Sentence-based scoring counts lemmas, not every observed surface form. If the sentence tests <code>spotkaliśmy</code>, the vocabulary item counted is the lemma <code>spotkać</code>. Future reliability checks can convert unsupported claimed-known answers to unknown and contribute to a reliability flag.</p>
       </section>
 
       <section id="features">
@@ -631,10 +637,10 @@
           <article class="card">
             <h3>Implemented baseline</h3>
             <ul>
-              <li>80-item multiple-choice test.</li>
-              <li>Six frequency bands with visible labels.</li>
-              <li>Structured question data from the API.</li>
-              <li>Immediate feedback, review list, estimate, and methodology route.</li>
+              <li>80-item sentence-context multiple-choice blocks.</li>
+              <li>Visible band labels, progress, and live estimate readiness.</li>
+              <li>Sentence-question data from the API.</li>
+              <li>Immediate feedback, review list, recognized-lemma estimate, and methodology routes.</li>
             </ul>
           </article>
           <article class="card">
@@ -719,33 +725,33 @@
           </thead>
           <tbody>
             <tr>
-              <td>1. Multiple-choice launch test</td>
+              <td>1. Sentence-context test route</td>
               <td><span class="status ok">Done</span></td>
-              <td>80 questions, four choices, <code>don't know</code>, progress, feedback, retake.</td>
-              <td>Browser flow works end to end.</td>
+              <td>80 sentence items, answer choices, <code>don't know</code>, progress, feedback, retake.</td>
+              <td>Browser flow works end to end from <code>#/</code>.</td>
             </tr>
             <tr>
               <td>2. Structured item loading</td>
               <td><span class="status ok">Done</span></td>
-              <td>EDN question bank served through <code>/api/questions</code>.</td>
+              <td>Sentence-question blocks served through <code>/api/sentence-question-blocks</code>.</td>
               <td>App can load questions from local or configured API base URL.</td>
             </tr>
             <tr>
               <td>3. Initial scoring and results</td>
               <td><span class="status ok">Done</span></td>
-              <td>Band hit rates, weighted estimate, guessing penalty, review list, interpretation.</td>
-              <td>Result page reports estimate and band breakdown.</td>
+              <td>Stratum posterior estimate, likely range, review list, level band.</td>
+              <td>Result page reports range and band breakdown.</td>
             </tr>
             <tr>
               <td>4. Telemetry export</td>
-              <td><span class="status warn">Next</span></td>
+              <td><span class="status ok">Done</span></td>
               <td>Persist anonymized response events for calibration.</td>
-              <td>Each event has item id, response, timing, band, and scoring version.</td>
+              <td>Each event has item id, response, timing, ranks, and scoring metadata.</td>
             </tr>
             <tr>
               <td>5. Estimate range</td>
-              <td><span class="status warn">Next</span></td>
-              <td>Add lower/center/upper estimate and reliability label.</td>
+              <td><span class="status ok">Done</span></td>
+              <td>Add lower/center/upper estimate and live readiness.</td>
               <td>Result page shows range, not only a single estimate.</td>
             </tr>
             <tr>
@@ -755,10 +761,10 @@
               <td>User can stop after minimum evidence and results show early-stop confidence/range.</td>
             </tr>
             <tr>
-              <td>7. Sentence item bank and checks</td>
+              <td>7. Reliability checks</td>
               <td><span class="status">Future</span></td>
-              <td>Sentence context, highlighted token, lemma, meaning checks.</td>
-              <td>Scoring can validate claimed-known sentence items.</td>
+              <td>Optional quality items and selective meaning checks.</td>
+              <td>Scoring can flag unreliable sessions.</td>
             </tr>
             <tr>
               <td>8. Result history</td>
@@ -784,13 +790,22 @@
 
       <section id="data">
         <h2>Data shape</h2>
-        <h3>Current question</h3>
+        <h3>Current sentence item</h3>
         <pre><code>{
-  "word": "woda",
-  "word_class": "noun",
-  "band": "B1",
-  "correct": "water",
-  "wrong": ["fire", "air", "earth"]
+  "item-id": "example-sentence:101",
+  "sentence": "Kot pije wodę.",
+  "target-surface": "Kot",
+  "highlight-span": {"start": 0, "end": 3},
+  "lemma-id": 11,
+  "lemma-pos-id": 111,
+  "lemma-inventory-rank": 42,
+  "surface-difficulty-rank": 17,
+  "fixed-stratum": 1,
+  "correct-translation": "cat",
+  "distractors": ["dog", "bird", "fish", "tree"],
+  "item-type": "sentence-context-lemma",
+  "choice-count": 5,
+  "guess-rate": 0.2
 }</code></pre>
         <h3>Future sentence item</h3>
         <pre><code>{
@@ -902,7 +917,7 @@
   </div>
 
   <footer>
-    <p>Part of the Polish Passive Vocabulary Size Test project. Last updated June 24, 2026.</p>
+    <p>Part of the Polish Passive Vocabulary Size Test project. Last updated June 27, 2026.</p>
   </footer>
 </body>
 </html>

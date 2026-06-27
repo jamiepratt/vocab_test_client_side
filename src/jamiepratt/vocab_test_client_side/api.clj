@@ -118,7 +118,6 @@
        :options (no-content-response request)
        :get (case uri
               "/healthz" (json-response request 200 {:status "ok"})
-              "/api/questions" (json-response request 200 (questions/all))
               "/api/sentence-question-blocks"
               (sentence-question-block-response request sentence-question-rows)
               (not-found-response request))

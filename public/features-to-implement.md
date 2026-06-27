@@ -1,22 +1,22 @@
 # Vocabulary test features to implement
 
-Feature plan for the current Polish-to-English vocabulary test and backlog: 80-item multiple-choice baseline, frequency-band scoring, result review, methodology docs, calibration path, and progressive confidence with early finish.
+Feature plan for the current Polish sentence-context vocabulary-size test and backlog: sentence-question loading, lemma scoring, adaptive continuation, result review, methodology docs, calibration path, and progressive confidence with early finish.
 
-Tags: Static HTML, GitHub Pages ready, Multiple choice, Frequency bands, Vocabulary estimate, Calibration
+Tags: Static HTML, GitHub Pages ready, Sentence context, Lemma scoring, Vocabulary estimate, Calibration
 
 ## Current app snapshot
 
-- Reagent/Shadow app served by `public/index.html` with Test and Testing methodology routes.
-- Questions load from `/api/questions`, backed by structured EDN and optional configured API base URL.
-- Test uses 80 dictionary-form Polish words across six bands: 12, 16, 18, 16, 10, and 8 items.
-- Each quiz item shows Polish word, part of speech, band badge, progress bar, four English choices, and `don't know`.
+- Reagent/Shadow app served by `public/index.html` with Test, Features, and methodology routes.
+- Sentence-context questions load from `/api/sentence-question-blocks`, backed by database example sentences and optional configured API base URL.
+- Test uses 80 Polish sentence-context lemma items per block, with adaptive continuation when the first block is outside the informative range.
+- Each quiz item shows a Polish sentence with one highlighted target form, band badge, progress bar, English choices, and `don't know`.
 - Answering locks choices, shows immediate feedback, reveals the correct answer for misses, then enables Next.
-- Results show accuracy, answered/wrong/don't know counts, accuracy by frequency band, words to review, ceiling band, passive-vocabulary estimate, comparison to a 500-word guess, interpretation, honesty note, Polish case note, passive-vs-active note, and Retake.
-- Methodology page explains the staged path from frequency-ranked launch test to calibrated adaptive test.
+- Results show accuracy, answered/wrong/don't know counts, accuracy by frequency band, words to review, estimated recognized Polish lemmas, likely range, approximate level band, and Retake.
+- Methodology pages explain sentence-context vocabulary-size measurement and the staged path toward calibrated adaptive testing.
 
 ## Goal
 
-Build from the current dictionary-form multiple-choice launch test toward a receptive vocabulary test that estimates how many target-language lemmas a learner probably knows. The current app tests isolated dictionary forms; later phases can add sentence context, inflected forms, meaning checks, telemetry, calibration, history, and email updates.
+Build from the current sentence-context multiple-choice test toward a calibrated receptive vocabulary test that estimates how many Polish lemmas a learner probably recognizes in context. Later phases can add calibrated item difficulty, richer reliability checks, result history, and email updates.
 
 Main product bet: start with frequency as the difficulty proxy, ask 80 items at launch to average out item-specific difficulty and gather calibration data, then use collected responses to learn real item difficulty and shorten future tests.
 
@@ -24,18 +24,19 @@ Main product bet: start with frequency as the difficulty proxy, ask 80 items at 
 
 Current question:
 
-> **woda**
+> Kot pije wodę.
 >
-> noun
+> highlighted: **Kot**
 >
 > 0-250
 
 Choices:
 
-- fire
-- air
-- earth
-- water
+- dog
+- bird
+- fish
+- tree
+- cat
 - don't know
 
 Current requirements:
@@ -51,39 +52,39 @@ Current requirements:
 
 Future UX requirements:
 
-- Show complete sentence context with exactly one highlighted tested token.
-- Support inflected displayed forms while scoring the lemma.
-- Ask selective meaning checks after some claimed-known answers.
+- Keep complete sentence context with exactly one highlighted tested token.
+- Support inflected displayed forms while scoring the linked lemma.
+- Add selective reliability checks after some claimed-known answers.
 - Ask for email opt-in before or after results if the user wants calibration updates.
 - Show a vocabulary-over-time graph for returning users with center, lower, and upper estimate lines.
 - While the quiz is in progress, show how confident the estimate is and allow finishing early once the learner is satisfied with that precision.
 
 ## Scoring model
 
-Current scoring uses dictionary-form words grouped by frequency band. Correct answers count as known, wrong and `don't know` count as unknown. The estimate sums each band size times that band's hit rate, then applies a small guessing-bias penalty from wrong answers.
+Current scoring uses sentence-context lemma items grouped into fixed lemma-inventory strata. Correct answers count as recognized, wrong and `don't know` count as unknown, and forced-choice guessing is accounted for in the posterior update. Results foreground a likely range, not only a point estimate.
 
 | Concept | Current stored value | Why it matters |
 |---|---|---|
-| Word | `woda` | User-visible tested dictionary form. |
-| Word class | `noun` | Helps disambiguate translation choices. |
-| Band | `B1` | Frequency band used for weighting and result breakdown. |
-| Correct answer | `water` | Known item when selected. |
-| Wrong answers | `fire`, `air`, `earth` | Plausible distractors. |
+| Sentence | `Kot pije wodę.` | User-visible context. |
+| Target surface | `Kot` | Highlighted form the learner answers about. |
+| Lemma id | `11` | Recognition is scored against the lemma. |
+| Fixed stratum | `1` | Lemma-inventory bin used for posterior estimates. |
+| Correct answer | `cat` | Recognized item when selected. |
+| Distractors | `dog`, `bird`, `fish`, `tree` | Plausible alternatives. |
 
-Future sentence-based scoring should count lemmas, not every observed surface form. If the sentence tests `spotkaliśmy`, the vocabulary item counted is the lemma `spotkać`. A yes answer should count as known only when no verification is requested, or when the meaning check is answered correctly. Failed meaning checks convert that item to unknown and contribute to a reliability flag.
+Sentence-based scoring counts lemmas, not every observed surface form. If the sentence tests `spotkaliśmy`, the vocabulary item counted is the lemma `spotkać`. Future reliability checks can convert unsupported claimed-known answers to unknown and contribute to a reliability flag.
 
 ## Feature list
 
 ### Implemented baseline
 
-- 80-item multiple-choice test.
-- Six frequency bands with visible band labels.
-- Structured question data from the API.
+- 80-item sentence-context multiple-choice blocks.
+- Visible band labels, progress, and live estimate readiness.
+- Sentence-question data from the API.
 - Immediate feedback and locked answers.
 - Banded result breakdown.
 - Words-to-review list.
-- Passive vocabulary estimate, ceiling band, interpretation, and honesty note.
-- Testing methodology route.
+- Recognized-lemma estimate, likely range, level band, and methodology routes.
 
 ### Sentence item bank
 
@@ -146,28 +147,37 @@ Future sentence-based scoring should count lemmas, not every observed surface fo
 
 | Phase | Status | Build | Done when |
 |---|---|---|---|
-| 1. Multiple-choice launch test | Done | 80 questions, four choices, `don't know`, progress, feedback, retake. | Browser flow works end to end. |
-| 2. Structured item loading | Done | EDN question bank served through `/api/questions`. | App can load questions from local or configured API base URL. |
-| 3. Initial scoring and results | Done | Band hit rates, weighted estimate, guessing penalty, review list, interpretation. | Result page reports estimate and band breakdown. |
-| 4. Telemetry export | Next | Persist anonymized response events for calibration. | Each event has item id, response, timing, band, and scoring version. |
-| 5. Estimate range | Next | Add lower/center/upper estimate and reliability label. | Result page shows range, not only a single estimate. |
+| 1. Sentence-context test route | Done | 80 sentence items, answer choices, `don't know`, progress, feedback, retake. | Browser flow works end to end from `#/`. |
+| 2. Structured item loading | Done | Sentence-question blocks served through `/api/sentence-question-blocks`. | App can load questions from local or configured API base URL. |
+| 3. Initial scoring and results | Done | Stratum posterior estimate, likely range, review list, level band. | Result page reports range and band breakdown. |
+| 4. Telemetry export | Done | Persist anonymized response events for calibration. | Each event has item id, response, timing, ranks, and scoring metadata. |
+| 5. Estimate range | Done | Add lower/center/upper estimate and live readiness. | Result page shows range, not only a single estimate. |
 | 6. Progressive confidence and early finish | New | Show live estimate confidence during the quiz and allow finishing early. | User can stop after minimum evidence and results show early-stop confidence/range. |
-| 7. Sentence item bank and checks | Future | Sentence context, highlighted token, lemma, meaning checks. | Scoring can validate claimed-known sentence items. |
+| 7. Reliability checks | Future | Optional quality items and selective meaning checks. | Scoring can flag unreliable sessions. |
 | 8. Result history | Future | Store repeat results and render vocabulary-over-time graph. | Returning users can see estimate movement across completed tests. |
 | 9. Calibration emails | Future | Recompute previous estimates after calibration rounds and email opted-in users when estimates change. | Users can receive updated vocabulary estimates. |
 | 10. Short adaptive test | Future | Select items using learned difficulty instead of frequency alone. | Test reaches similar confidence with fewer questions. |
 
 ## Data shape
 
-Current question:
+Current sentence item:
 
 ```json
 {
-  "word": "woda",
-  "word_class": "noun",
-  "band": "B1",
-  "correct": "water",
-  "wrong": ["fire", "air", "earth"]
+  "item-id": "example-sentence:101",
+  "sentence": "Kot pije wodę.",
+  "target-surface": "Kot",
+  "highlight-span": {"start": 0, "end": 3},
+  "lemma-id": 11,
+  "lemma-pos-id": 111,
+  "lemma-inventory-rank": 42,
+  "surface-difficulty-rank": 17,
+  "fixed-stratum": 1,
+  "correct-translation": "cat",
+  "distractors": ["dog", "bird", "fish", "tree"],
+  "item-type": "sentence-context-lemma",
+  "choice-count": 5,
+  "guess-rate": 0.2
 }
 ```
 
@@ -274,6 +284,6 @@ Expected deployed HTML file: `features-to-implement.html`, relative to the Pages
 - `public/features-to-implement.md`
 - `src/jamiepratt/vocab_test_client_side/core.cljs`
 - `src/jamiepratt/vocab_test_client_side/scoring.cljc`
-- `resources/jamiepratt/vocab_test_client_side/questions.edn`
+- `src/jamiepratt/vocab_test_client_side/questions.clj`
 
-Last updated June 24, 2026.
+Last updated June 27, 2026.

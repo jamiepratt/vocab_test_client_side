@@ -4,7 +4,7 @@
   (:require-macros
    [jamiepratt.vocab-test-client-side.doc-assets :refer [features-html]]))
 
-;; Macro-expanded from public/features-to-implement.html.
+;; Macro-expanded from public/features-to-implement.html at build time.
 (def html (features-html))
 
 (defn doc-anchor-click [event]

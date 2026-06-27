@@ -1,13 +1,8 @@
 (ns jamiepratt.vocab-test-client-side.questions
   (:require
-   [clojure.edn :as edn]
-   [clojure.java.io :as io]
    [clojure.string :as str])
   (:import
    [java.util.regex Pattern]))
-
-(def questions-resource
-  "jamiepratt/vocab_test_client_side/questions.edn")
 
 (def sentence-block-size 80)
 
@@ -24,16 +19,6 @@
    "b2" {:level "B2" :surface-rank-start 4001}
    "c1" {:level "C1" :surface-rank-start 8001}
    "c2" {:level "C2" :surface-rank-start 12001}})
-
-(defn load-questions []
-  (with-open [reader (io/reader (io/resource questions-resource))]
-    (edn/read (java.io.PushbackReader. reader))))
-
-(defonce questions
-  (delay (load-questions)))
-
-(defn all []
-  @questions)
 
 (defn- parse-long-param [value default]
   (if (str/blank? value)

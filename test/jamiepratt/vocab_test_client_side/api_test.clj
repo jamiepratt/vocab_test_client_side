@@ -56,26 +56,19 @@
 (defn- valid-sentence-rows [row]
   (sentence-rows row "default" ["dog" "bird" "fish" "tree"]))
 
-(deftest questions-endpoint-serves-vocabulary-json
+(deftest legacy-questions-endpoint-is-not-product-wired
   (let [response (api/handler {:request-method :get
                                :uri "/api/questions"
                                :headers {"origin" "http://localhost:8000"}})
         body (json-body response)]
     (testing "HTTP contract"
-      (is (= 200 (:status response)))
+      (is (= 404 (:status response)))
       (is (= "application/json; charset=utf-8"
              (get-in response [:headers "Content-Type"])))
       (is (= "http://localhost:8000"
              (get-in response [:headers "Access-Control-Allow-Origin"]))))
-    (testing "question payload"
-      (is (= 80 (count body)))
-      (is (= {"word" "woda"
-              "word-class" "noun"
-              "band" "B1"
-              "correct" "water"
-              "wrong" ["fire" "air" "earth"]}
-             (select-keys (first body)
-                          ["word" "word-class" "band" "correct" "wrong"]))))))
+    (testing "legacy dictionary questions are not exposed as the product route"
+      (is (= {"error" "Not found"} body)))))
 
 (deftest sentence-question-block-serves-default-distractors
   (let [handler (api/make-handler
