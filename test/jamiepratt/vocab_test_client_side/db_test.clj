@@ -5,7 +5,8 @@
    [clojure.string :as str]
    [clojure.test :refer [deftest is testing]]
    [jamiepratt.vocab-test-client-side.db :as db]
-   [next.jdbc :as jdbc])
+   [next.jdbc :as jdbc]
+   [next.jdbc.result-set :as rs])
   (:import
    [java.nio.file Files]))
 
@@ -391,17 +392,19 @@
                                 (lemma_id, lemma, total_frequency_sn_sum, total_frequency_sn_sum_rank,
                                  total_subtlex_frequency, lemma_subtlex_pos_count, surface_form_count,
                                  nkjp_frequency, nkjp_frequency_rank)
-                                VALUES (1, 'kot', 10.0, 1, 10, 1, 1, NULL, NULL)"])
+                                VALUES (1, 'kot', 10.0, 1, 10, 2, 1, NULL, NULL)"])
           (jdbc/execute! conn ["INSERT INTO polish_lexicon.lemma_subtlex_pos
                                 (lemma_subtlex_pos_id, lemma_id, lemma, subtlex_pos,
                                  subtlex_frequency, contextual_diversity_count, contextual_diversity)
-                                VALUES (1, 1, 'kot', 'subst', 10, 10, 1.0)"])
+                                VALUES (1, 1, 'kot', 'subst', 10, 10, 1.0),
+                                       (2, 1, 'kot', 'adj', 20, 20, 1.0)"])
           (jdbc/execute! conn ["INSERT INTO polish_lexicon.surface_forms
                                 (surface_form_id, surface_form)
                                 VALUES (1, 'kot')"])
           (jdbc/execute! conn ["INSERT INTO polish_lexicon.surface_form_lemma_links
                                 (surface_form_lemma_link_id, surface_form_id, lemma_id, lemma_subtlex_pos_id)
-                                VALUES (1, 1, 1, 1)"])
+                                VALUES (1, 1, 1, 1),
+                                       (2, 1, 1, 2)"])
           (jdbc/execute! conn ["INSERT INTO polish_lexicon.example_sentences
                                 (example_sentence_id, sentence, sentence_translation, surface_form_id,
                                  lemma_id, word_translation, distractor_1_translation,
@@ -430,6 +433,15 @@
                          ON d.lemma_subtlex_pos_id = e.lemma_subtlex_pos_id
                         AND d.is_default
                        WHERE e.example_sentence_id = 1"])))))
+          (testing "ambiguous lemma/POS links pick the highest frequency"
+            (is (= 2
+                   (:chosen_lemma_pos
+                    (jdbc/execute-one!
+                     conn
+                     ["SELECT lemma_subtlex_pos_id AS chosen_lemma_pos
+                       FROM polish_lexicon.example_sentences
+                       WHERE example_sentence_id = 1"]
+                     {:builder-fn rs/as-unqualified-lower-maps})))))
           (is (zero?
                (:c (jdbc/execute-one!
                     conn
