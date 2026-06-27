@@ -260,6 +260,14 @@ async function answerAndContinue(page: Page, answer: string) {
   await page.getByRole("button", { name: "Next" }).click();
 }
 
+async function expectPublicMarkdown(page: Page, path: string, requiredText: string) {
+  const response = await page.request.get(path);
+  const body = await response.text();
+
+  expect(response.ok()).toBe(true);
+  expect(body).toContain(requiredText);
+}
+
 async function openTheoryMenu(page: Page) {
   const nav = page.getByRole("navigation", { name: "Main" });
   const menu = nav.locator("details.app-theory-menu");
@@ -344,7 +352,18 @@ export async function runAppSmoke(page: Page) {
     localStorage.removeItem("vocab-theme");
     localStorage.removeItem("vocab-design");
   });
-  await page.goto("/index.html");
+  await page.goto("/index.html#/");
+
+  await expectPublicMarkdown(
+    page,
+    "/progressive-vocabulary-testing-methodology.md",
+    "Progressive vocabulary test methodology",
+  );
+  await expectPublicMarkdown(
+    page,
+    "/vocabulary-size-testing-methodology.md",
+    "Polish Vocabulary Size Testing Methodology",
+  );
 
   await expectMainNav(page, "Test");
   await expectThemeSwitcher(page);
@@ -376,6 +395,11 @@ export async function runAppSmoke(page: Page) {
   await expect(page).toHaveURL(/#\/features$/);
   await expect(page.getByRole("heading", { level: 1, name: "Vocabulary test features to implement" })).toBeVisible();
   await expect(page.getByRole("heading", { level: 2, name: "Current app snapshot" })).toBeVisible();
+  const currentSnapshot = page.locator("#current");
+  await expect(currentSnapshot.getByText("Sentence-context questions load from")).toBeVisible();
+  await expect(currentSnapshot.getByText("/api/sentence-question-blocks")).toBeVisible();
+  await expect(page.getByText("Questions load from /api/questions")).toHaveCount(0);
+  await expect(page.getByText("Test uses 80 dictionary-form Polish words")).toHaveCount(0);
   await expectMainNav(page, "Features");
 
   await page.goto("/adaptive-vocabulary-testing.html");
@@ -565,7 +589,7 @@ export async function runHighEstimateRegression(page: Page) {
     localStorage.removeItem("vocab-theme");
     localStorage.removeItem("vocab-design");
   });
-  await page.goto("/index.html");
+  await page.goto("/index.html#/");
   await page.getByRole("button", { name: "Begin Test" }).click();
 
   for (const answer of correctAnswers) {
@@ -609,7 +633,7 @@ export async function runApiQuestionLoading(page: Page) {
     localStorage.removeItem("vocab-theme");
     localStorage.removeItem("vocab-design");
   });
-  await page.goto("/index.html");
+  await page.goto("/index.html#/");
   await page.getByRole("radio", { name: "A1", exact: true }).click();
   await page.getByRole("button", { name: "Begin Test" }).click();
 
@@ -642,7 +666,7 @@ export async function runAnswerEventSubmissionFailure(page: Page) {
     localStorage.removeItem("vocab-design");
   });
 
-  await page.goto("/index.html");
+  await page.goto("/index.html#/");
   await page.getByRole("button", { name: "Begin Test" }).click();
   await page.getByRole("button", { name: "cat", exact: true }).click();
 

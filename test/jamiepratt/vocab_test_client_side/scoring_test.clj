@@ -2,17 +2,17 @@
   (:require
    [clojure.test :refer [deftest is]]
    [jamiepratt.vocab-test-client-side.data :as data]
-   [jamiepratt.vocab-test-client-side.questions :as questions]
    [jamiepratt.vocab-test-client-side.scoring :as scoring]))
 
 (defn answer-for [index question result]
   {:question-index index
+   :adaptive-block-id (:adaptive-block-id question)
+   :item-type (:item-type question)
    :word (:word question)
-   :word-class (:word-class question)
    :band (:band question)
    :selected (case result
                :correct (:correct question)
-               :wrong (first (:wrong question))
+               :wrong "wrong answer"
                :dk "don't know")
    :correct (:correct question)
    :result result})
@@ -118,7 +118,7 @@
     (is (< (:lemma-estimate result) 200))))
 
 (deftest summarizes-low-score-results
-  (let [questions (questions/all)
+  (let [questions (evidence-questions :pre-a1)
         answers (mapv (fn [index question]
                         (answer-for index question
                                     (case index
