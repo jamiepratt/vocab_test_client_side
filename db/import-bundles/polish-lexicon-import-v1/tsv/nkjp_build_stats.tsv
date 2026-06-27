@@ -1,0 +1,9 @@
+stage	rows	count
+aggregated	1741260	233009365
+dropped:abbreviation_or_unit	1815	1593820
+dropped:contains_digit	467701	5267402
+dropped:empty_after_strip	4909	4776116
+dropped:non_polish_alpha	414128	1021461
+dropped:single_letter	3876	485214
+kept	4471969	233009365
+source	5364398	246153378

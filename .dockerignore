@@ -9,4 +9,5 @@ playwright-report
 public/js
 target
 test-results
+db/import-bundles
 npm-debug.log*

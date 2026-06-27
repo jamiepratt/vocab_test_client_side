@@ -1,0 +1,5606 @@
+freedict_sense_translation_id	freedict_sense_id	translation
+1	1	w
+2	2	at
+3	2	on
+4	3	in
+5	3	at
+6	4	into
+7	5	be
+8	6	be
+9	6	exist
+10	7	don't
+11	7	not
+12	8	isn't it
+13	9	no
+14	9	nope
+15	10	not
+16	10	no
+17	11	-self
+18	11	herself
+19	12	it
+20	13	one
+21	13	you
+22	13	they
+23	14	and
+24	15	then
+25	16	this
+26	17	it
+27	17	this
+28	18	about
+29	19	from
+30	20	from
+31	20	of
+32	21	with
+33	22	at
+34	22	on
+35	23	by
+36	24	on
+37	24	onto
+38	25	he
+39	26	for
+40	27	to
+41	28	until
+42	28	'til
+43	29	up to
+44	29	to
+45	30	so that
+46	31	that
+47	32	this
+48	33	be supposed to
+49	34	feel
+50	34	have
+51	35	have
+52	36	have for
+53	36	have
+54	37	must
+55	37	have to
+56	37	be to
+57	37	have got to need to
+58	37	ought to
+59	38	wear
+60	39	I
+61	40	about
+62	40	at
+63	41	against
+64	42	what
+65	42	which
+66	43	every
+67	44	that
+68	44	which
+69	44	what
+70	45	and
+71	46	but
+72	47	that
+73	48	which
+74	49	which
+75	49	what
+76	49	which one
+77	50	which
+78	50	which one
+79	51	who
+80	51	that
+81	51	which
+82	52	as well as
+83	53	as
+84	53	like
+85	54	but
+86	55	yak
+87	56	like
+88	56	as
+89	57	as as
+90	58	how
+91	59	how
+92	59	as
+93	60	as
+94	60	this way
+95	61	so
+96	61	that
+97	61	this
+98	62	yes
+99	62	yep
+100	62	ay
+101	62	right
+102	63	you
+103	63	thou
+104	64	but
+105	64	however
+106	65	ale
+107	66	but
+108	67	ale
+109	68	can
+110	68	be able to
+111	69	may
+112	69	can
+113	70	might
+114	70	could
+115	70	can
+116	71	about
+117	72	after
+118	72	past
+119	73	each
+120	73	every
+121	74	on
+122	75	on
+123	75	over
+124	76	speak
+125	76	write in
+126	77	to
+127	78	at
+128	79	at
+129	79	because of
+130	80	at
+131	80	for
+132	81	at
+133	81	in
+134	82	behind
+135	82	after
+136	82	at
+137	83	for
+138	83	at
+139	84	in
+140	84	at
+141	85	because of
+142	86	every
+143	87	for
+144	87	from
+145	87	since
+146	88	from
+147	89	from
+148	89	for
+149	89	since
+150	90	than
+151	91	lord
+152	91	master
+153	91	gentleman
+154	92	master
+155	92	lord
+156	93	sir
+157	93	mister
+158	93	gentleman
+159	94	want
+160	94	like
+161	95	year
+162	96	or
+163	97	whether
+164	97	if
+165	98	know
+166	99	my
+167	99	mine
+168	100	for
+169	100	to
+170	101	to
+171	101	towards
+172	102	because of
+173	102	through
+174	103	by
+175	104	by
+176	104	over
+177	105	by
+178	105	with
+179	106	for
+180	106	over
+181	107	through
+182	107	across
+183	107	thru
+184	108	already
+185	108	yet
+186	109	no more
+187	109	not anymore
+188	110	only
+189	110	just
+190	111	so
+191	112	such
+192	113	such
+193	113	so
+194	114	more
+195	114	most
+196	115	very
+197	116	her
+198	116	their
+199	116	his
+200	116	its
+201	117	say
+202	118	speak
+203	118	say
+204	119	speak
+205	119	talk
+206	120	talk
+207	120	speak
+208	121	we
+209	122	must
+210	122	have to
+211	123	need to
+212	123	must
+213	124	say
+214	124	tell
+215	125	one
+216	126	one
+217	127	one
+218	128	human
+219	128	man
+220	128	human being
+221	129	man
+222	130	person
+223	130	man
+224	131	alone
+225	131	single
+226	132	just
+227	132	very
+228	133	oneself
+229	134	different
+230	134	other
+231	135	else
+232	136	other
+233	136	another
+234	137	all
+235	137	everything
+236	138	here
+237	139	tense
+238	139	time
+239	140	time
+240	141	time
+241	141	tense
+242	142	well
+243	143	well
+244	143	good
+245	144	our
+246	144	ours
+247	145	all
+248	146	ould
+249	147	to
+250	147	so that
+251	148	would
+252	149	else
+253	149	more
+254	150	still
+255	150	even
+256	150	yet
+257	151	still
+258	151	yet
+259	152	yet
+260	152	already
+261	153	good
+262	154	interesting
+263	154	good
+264	155	right
+265	155	good
+266	156	tasty
+267	156	good
+268	157	B
+269	158	blow
+270	159	case
+271	160	time
+272	160	once
+273	160	twice
+274	161	maybe
+275	161	perhaps
+276	161	peradventure
+277	162	day
+278	163	daytime
+279	163	day
+280	164	something
+281	164	anything
+282	165	therefore
+283	165	so
+284	166	well
+285	167	affair
+286	167	business
+287	167	issue
+288	168	case
+289	169	now
+290	170	your
+291	170	yours
+292	171	first
+293	171	prime
+294	172	chief
+295	172	first
+296	173	prime
+297	174	chief mate
+298	174	chief officer
+299	174	first mate
+300	175	nothing
+301	176	ed
+302	176	ied
+303	177	two
+304	178	when
+305	179	when
+306	179	while
+307	180	before
+308	180	in front of
+309	181	in front of
+310	181	before
+311	182	job
+312	182	occupation
+313	183	operation
+314	183	run
+315	184	work
+316	185	work
+317	185	job
+318	186	work
+319	186	labour
+320	187	somebody
+321	187	someone
+322	187	anybody
+323	187	anyone
+324	188	who
+325	189	who
+326	189	that
+327	190	new
+328	190	novel
+329	191	there
+330	192	great
+331	193	great
+332	193	big
+333	194	as well as
+334	195	what
+335	195	what kind of
+336	196	in order to
+337	196	so that
+338	196	to
+339	196	so as
+340	197	ask
+341	197	request
+342	197	beg
+343	198	about
+344	198	at
+345	199	against
+346	199	at
+347	200	at
+348	201	entire
+349	201	whole
+350	201	all
+351	202	whole
+352	202	entire
+353	202	all
+354	203	however
+355	204	after all
+356	205	even
+357	206	Miss
+358	207	Madame
+359	207	Miss
+360	207	you
+361	208	madam
+362	208	Mrs
+363	208	lady
+364	209	think
+365	210	think
+366	210	realize
+367	211	where
+368	212	where
+369	212	anywhere
+370	212	nowhere
+371	212	somewhere
+372	212	wherever
+373	213	do
+374	214	do
+375	214	make
+376	214	create
+377	215	place
+378	215	site
+379	215	scene
+380	216	place
+381	216	space
+382	217	space
+383	217	room
+384	217	place
+385	218	see
+386	219	run
+387	220	stand
+388	221	Polish
+389	222	Polish
+390	223	every
+391	223	each
+392	223	all
+393	224	against
+394	225	before
+395	226	under
+396	226	below
+397	226	beneath
+398	227	person
+399	228	when
+400	228	while
+401	228	as
+402	228	if
+403	229	live
+404	230	baby
+405	231	child
+406	232	child
+407	232	kid
+408	233	should
+409	233	ought
+410	234	it be possible
+411	234	one can
+412	234	you can
+413	235	one may
+414	235	you may
+415	236	home
+416	236	house
+417	237	house
+418	237	home
+419	238	any
+420	238	some
+421	238	a an
+422	239	or
+423	240	elder
+424	240	elderberry
+425	240	sambucus
+426	241	without
+427	242	second
+428	242	runner-up
+429	243	much
+430	243	a lot of
+431	243	lots of
+432	244	much
+433	244	a lot of
+434	244	many
+435	244	lots of
+436	245	go
+437	246	run
+438	247	walk
+439	247	go
+440	248	as
+441	249	page
+442	249	side
+443	250	party
+444	250	side
+445	251	side
+446	251	page
+447	252	voice
+448	253	give
+449	254	let
+450	254	allow
+451	255	can
+452	256	give in
+453	256	give up
+454	256	surrender
+455	257	someone
+456	257	somebody
+457	258	a few
+458	258	several
+459	259	just
+460	259	right now
+461	260	exactly
+462	260	indeed
+463	261	indeed quite
+464	262	just
+465	262	precisely
+466	263	law
+467	264	law
+468	264	right
+469	265	right
+470	265	law
+471	266	city
+472	266	town
+473	267	city
+474	267	town
+475	267	inner city
+476	268	why
+477	269	why
+478	270	than
+479	271	depression
+480	271	low
+481	272	lowland
+482	273	end
+483	274	end
+484	274	finish
+485	275	world
+486	275	Earth
+487	276	above
+488	276	over
+489	277	at
+490	277	on
+491	278	over
+492	278	above
+493	279	attend
+494	280	come on
+495	281	go
+496	282	go out
+497	283	walk
+498	283	go
+499	284	work
+500	285	way
+501	285	method
+502	286	way
+503	286	method
+504	286	manner
+505	287	act
+506	287	statute
+507	287	bill
+508	287	constitution
+509	287	enactment
+510	287	legislation
+511	288	also
+512	288	too
+513	288	as well
+514	288	either
+515	288	neither
+516	288	nor
+517	289	high
+518	290	high
+519	290	tall
+520	291	tall
+521	291	high
+522	292	certain
+523	292	sure
+524	292	convinced
+525	293	certain
+526	293	sure
+527	293	sure-fire
+528	293	surefire
+529	294	confident
+530	294	dependable
+531	294	trusted
+532	295	safe
+533	295	certain
+534	296	steady
+535	296	ironclad
+536	296	unfaltering
+537	297	little
+538	297	small
+539	298	low
+540	298	little
+541	299	old
+542	300	old
+543	300	expire
+544	301	old
+545	301	expire
+546	301	stale
+547	302	bro
+548	302	buddy
+549	302	mate
+550	303	problem
+551	304	subject
+552	305	thing
+553	306	no
+554	306	none
+555	307	know
+556	308	know
+557	308	can
+558	309	at
+559	310	at
+560	310	by
+561	311	of
+562	312	anyway
+563	312	still
+564	313	always
+565	313	ever
+566	313	constantly
+567	314	never
+568	314	ever
+569	315	moment
+570	315	instant
+571	316	moment
+572	316	minute
+573	317	you
+574	318	admittedly
+575	319	right
+576	320	truth
+577	321	truth
+578	321	veracity
+579	322	or
+580	323	last
+581	324	perhaps
+582	324	maybe
+583	325	unless
+584	326	school
+585	327	it be necessary to
+586	327	one ought to
+587	327	one should
+588	328	plain
+589	328	plane
+590	329	simple
+591	330	simple
+592	330	easy
+593	330	plain
+594	331	simple
+595	331	plain
+596	332	straight
+597	332	plain
+598	332	plane
+599	333	three
+600	334	problem
+601	335	problem
+602	335	trouble
+603	336	nobody
+604	336	no one
+605	337	life
+606	338	road
+607	338	way
+608	339	track
+609	340	trip
+610	341	way
+611	341	road
+612	342	really
+613	342	indeed
+617	345	woman
+618	346	belong
+619	347	one should ought to
+620	348	Mrs. and Mr.
+621	349	state
+622	349	country
+623	350	Mrs. and Mr.
+624	351	lady and gentleman
+625	352	master
+626	353	then
+627	353	at that time
+628	354	money
+629	355	arm
+630	356	hand
+631	356	arm
+632	357	father
+633	358	father
+634	358	dad
+635	359	much
+636	359	many
+637	359	lot
+638	359	a whole lot
+639	360	far
+640	361	because
+641	362	therefore
+642	362	so
+643	362	thus
+644	363	high-powered
+645	364	important
+646	364	germane
+647	365	valid
+648	366	situation
+649	367	afterwards
+650	367	then
+651	367	later on
+652	367	after
+653	368	part
+654	368	compound
+655	369	part
+656	369	piece
+657	369	element
+658	369	movement
+659	370	see
+660	371	watch
+661	372	commission
+662	372	committee
+663	372	board
+664	373	thanks
+665	374	thanks
+666	375	thanks to
+667	375	due to
+668	376	own
+669	377	if
+670	378	conduct
+671	378	lead
+672	379	drive
+673	380	lead
+674	381	lead to
+675	381	result in
+676	382	lead
+677	382	guide
+678	383	change
+679	384	shift
+680	385	look
+681	385	look like
+682	386	look out
+683	387	country
+684	388	stay
+685	389	stop
+686	389	wait
+687	390	wait
+688	390	anticipate
+689	391	feel
+690	391	sense
+691	392	smell
+692	393	feel
+693	394	centre of cyclone
+694	394	storm centre
+695	395	collar in the end of a rope
+696	396	eye
+697	397	seaman sailor on lookout duty
+698	398	understand
+699	398	comprehend
+700	398	see
+701	398	apprehend
+702	398	get
+703	399	help
+704	399	aid
+705	399	assistance
+706	400	midfield
+707	401	court
+708	402	a little
+709	402	a bit
+710	402	some
+711	402	few
+712	403	few
+713	403	little
+714	404	break down
+715	405	go
+716	406	go
+717	406	join the army
+718	407	angry
+719	407	mad
+720	408	bad
+721	409	bad
+722	409	evil
+723	410	bad
+724	410	poor
+725	411	wrong
+726	411	bad
+727	412	capita
+728	412	head
+729	413	head
+730	414	head of
+731	414	head
+732	415	next
+733	415	another
+734	416	family
+735	417	cleanup
+736	418	order
+737	419	new
+738	420	young
+739	421	bridegroom
+740	422	laddie
+741	423	big
+742	424	big
+743	424	large
+744	425	work
+745	426	advice
+746	426	counsel
+747	427	council
+748	427	advice
+749	428	word
+750	429	word
+751	429	promise
+752	430	hour
+753	431	o'clock
+754	431	time
+755	431	hour
+756	432	if
+757	433	nor
+758	433	neither nor
+759	433	or
+760	434	no
+761	434	not one
+762	435	group
+763	436	center
+764	436	centre
+765	437	inside
+766	438	means
+767	438	measure
+768	439	late
+769	440	goal
+770	440	aim
+771	440	objective
+772	440	design
+773	441	target
+774	441	goal
+775	441	purpose
+779	443	often
+780	443	frequently
+781	444	but
+782	444	yet
+783	444	after all
+784	445	minister
+785	445	secretary
+786	446	concentrate
+787	447	consider
+788	447	deem
+789	447	find
+790	448	consider
+791	448	find
+792	448	deem
+793	449	take care
+794	450	mark
+795	451	matter
+796	452	mean
+805	456	publish
+806	457	spend
+807	458	appear
+808	458	seem
+809	459	information
+810	460	information office
+811	461	remember
+812	462	envoy
+813	463	member of parliament
+814	463	Congressman
+815	463	M.P.
+816	464	month
+817	465	good
+818	466	possession
+819	467	voice
+820	468	voice
+821	468	floor
+822	469	voice
+823	469	vote
+824	470	vote
+825	470	voice
+826	471	during
+827	471	while
+828	472	ask
+829	473	channel
+830	474	program
+831	474	programme
+832	475	the… the
+833	476	quickly
+834	476	fast
+835	477	accident
+836	477	chance
+837	478	case
+838	479	case
+839	479	event
+840	480	so many
+841	480	so much
+842	481	go out
+843	481	exit
+844	481	leave
+845	482	between
+846	482	among
+847	483	government
+848	483	administration
+849	484	order
+850	485	row
+851	485	line
+852	486	design
+853	486	project
+854	487	plan
+855	487	project
+856	488	project
+857	489	need
+858	490	car
+859	490	automobile
+860	491	operate
+861	491	work
+862	491	act
+863	491	function
+864	491	be in operation
+865	492	band
+866	492	group
+867	493	company
+868	493	ensemble
+869	493	troupe
+870	494	complex
+871	494	set
+872	494	unit
+873	495	syndrome
+874	495	complex
+875	496	team
+876	496	group
+877	496	body
+878	497	state
+879	498	state
+880	498	condition
+881	498	as at
+882	499	hear
+883	500	i.e.
+884	500	that this be
+885	501	until
+886	502	so
+887	503	system
+888	504	mum
+889	504	mother
+890	504	mummy
+891	505	love
+892	506	be in love
+893	507	make love
+894	508	mother
+895	509	reason
+896	509	cause
+897	510	plaintiff
+898	510	complainant
+899	511	how many
+900	511	how much
+901	512	how much
+902	512	how many
+903	513	how many
+904	513	how much
+905	514	how much
+906	514	how many
+907	515	week
+908	516	night
+909	516	nighttime
+910	517	like
+911	517	fancy
+912	517	be fond of
+913	517	care for
+914	518	pose
+915	519	outside
+916	520	different
+917	521	result
+918	521	effect
+919	522	as if
+920	523	if czas przeszły
+921	524	if czas teraźniejszy
+922	525	if past perfect
+923	526	if would
+924	527	almost
+925	527	in a way
+926	527	kind of
+927	527	sort of
+928	528	play
+929	529	play
+930	529	act
+931	529	star
+932	530	market
+933	531	market
+934	531	marketplace
+945	537	base
+946	537	alkali
+947	538	principle
+948	538	tenet
+949	538	rule
+950	539	early
+951	540	ability
+952	540	capability
+953	541	possibility
+954	541	opportunity
+955	542	water
+956	543	mountain
+957	544	mountain
+958	544	hill
+959	545	top
+960	546	conclusion
+961	547	proposal
+962	547	suggestion
+963	547	request
+964	548	dot
+965	549	point
+966	550	root
+967	551	subject
+968	551	topic
+969	551	theme
+970	551	matter
+971	552	girl
+972	553	girlfriend
+973	553	girl
+974	554	maid
+975	555	decision
+976	556	ground
+977	556	soil
+978	557	land
+979	557	soil
+980	558	soil
+981	558	earth
+982	559	since
+983	559	because
+984	559	for
+985	559	'cause
+986	560	man
+987	560	male
+988	561	let
+989	562	come on
+990	563	get
+991	563	treat
+992	564	take
+993	565	take
+994	565	undertake
+995	566	question
+996	567	question
+997	567	query
+998	568	questioning
+999	569	dividend
+1000	570	participation
+1001	570	contribution
+1002	570	take part
+1003	571	share
+1004	571	holding
+1005	571	stock
+1006	572	share
+1007	572	part
+1011	575	live
+1012	575	reside
+1013	576	government
+1014	577	power
+1015	577	authority
+1016	578	today
+1017	578	nowadays
+1018	579	today
+1019	579	to-day
+1020	580	police
+1021	580	cop
+1022	581	conversation
+1023	581	talk
+1024	582	taste
+1025	583	try
+1026	583	attempt
+1027	584	idea
+1028	585	thought
+1029	585	thinking
+1030	586	only
+1031	587	war
+1032	587	warfare
+1033	588	beginning
+1034	588	commencement
+1035	588	onset
+1036	588	start
+1037	589	exist
+1038	589	be
+1039	590	social
+1040	591	both
+1041	592	long
+1042	592	for a long time
+1043	593	senator
+1044	594	above
+1045	594	over
+1046	595	over
+1047	595	above
+1048	595	beyond
+1049	596	history
+1050	596	story
+1051	597	story
+1052	597	affair
+1053	598	search
+1054	598	seek
+1055	598	look for
+1056	599	friend
+1057	599	buddy
+1058	600	example
+1059	600	instance
+1060	601	paragon
+1061	601	example
+1062	602	spell
+1063	602	write
+1064	603	write
+1065	604	write
+1066	604	type
+1067	605	employee
+1068	605	worker
+1069	606	go
+1070	606	ride
+1071	607	ride
+1072	607	go
+1073	607	travel
+1074	607	drive
+1075	608	slide
+1076	609	choice
+1077	609	selection
+1078	609	pick
+1079	610	action
+1080	611	share
+1081	611	stock
+1082	612	book
+1083	613	some
+1084	614	somebody
+1085	614	someone
+1086	614	some people
+1087	615	condition
+1088	615	requirement
+1090	617	agreement
+1091	617	deal
+1096	619	film
+1097	620	film
+1098	620	movie
+1099	620	motion picture
+1100	620	picture
+1101	620	moving picture
+1102	621	inhabitant
+1103	621	indweller
+1104	622	hope
+1109	625	period
+1110	626	force
+1111	627	power
+1112	627	strength
+1113	627	force
+1114	628	strength
+1115	628	force
+1116	629	street
+1117	630	mayor
+1118	631	president
+1119	632	almost
+1120	632	nearly
+1121	633	talk
+1122	633	speak
+1123	634	too
+1124	635	sale
+1125	635	market
+1126	636	wife
+1127	637	knit
+1128	638	happen
+1129	639	probably
+1130	639	surely
+1131	640	bank
+1132	641	pool
+1133	641	bank
+1134	642	age
+1135	643	century
+1136	644	minute
+1137	645	only
+1138	645	sole
+1139	646	can
+1140	646	be able
+1141	647	real
+1142	647	natural
+1143	648	real
+1144	648	true
+1145	649	real
+1146	649	true
+1147	649	authentic
+1148	650	truthful
+1149	650	veracious
+1150	651	alteration
+1151	651	correction
+1152	651	modification
+1153	651	adjustment
+1154	651	patch
+1155	652	amendment
+1156	653	revision
+1157	654	thousand
+1158	655	thousand
+1159	655	one thousand
+1160	656	son
+1161	657	map
+1162	657	plan
+1163	658	plan
+1164	659	schedule
+1165	660	set
+1166	661	customer
+1167	661	client
+1168	662	client
+1169	662	customer
+1170	663	main
+1171	663	principal
+1180	668	office
+1181	668	department
+1182	669	chairman
+1183	669	president
+1184	670	return
+1185	670	come back
+1186	671	match
+1187	671	game
+1188	672	fund
+1189	673	peace
+1190	674	room
+1191	675	room
+1192	675	chamber
+1193	676	club
+1194	676	society
+1195	676	association
+1196	677	chance
+1197	678	adamantly
+1198	678	firmly
+1199	678	reliably
+1200	678	soundly
+1201	679	absolutely
+1202	679	sure
+1203	679	you betcha
+1204	680	surely
+1205	680	you can bet your bottom dollar
+1206	681	together
+1207	682	call
+1208	682	name
+1209	683	name
+1210	683	dub
+1211	684	public
+1212	685	next
+1213	685	following
+1214	686	base
+1215	687	basic
+1216	688	third
+1217	689	director
+1218	689	principal
+1219	689	manager
+1220	689	headmaster
+1221	689	head
+1222	689	headteacher
+1223	690	member
+1224	690	fellow
+1225	690	adherent
+1226	691	limb
+1228	693	beautiful
+1229	693	pretty
+1230	694	bright
+1231	694	light
+1232	695	light
+1233	695	bright
+1234	696	start
+1235	696	begin
+1236	697	gold
+1237	697	golden
+1238	698	golden
+1239	699	zloty
+1240	700	long
+1241	701	get to know
+1242	702	meet
+1243	702	become acquaint
+1244	703	recognize
+1245	703	recognise
+1246	704	meet
+1247	705	recognize one another recognise one another
+1248	706	see the value of
+1249	706	see through
+1250	707	believe
+1251	708	believe
+1252	708	trust
+1253	709	price
+1254	710	price
+1255	710	cost
+1259	713	insurance
+1260	713	assecuration
+1262	715	calculate
+1263	716	count
+1264	716	calculate
+1265	717	count
+1266	717	expect
+1267	718	consider
+1268	718	take into account
+1269	719	brother
+1270	720	brother
+1271	720	bro
+1272	721	bet
+1273	721	wager
+1274	722	plant
+1275	723	cost
+1276	723	expense
+1277	723	price
+1278	723	charge
+1279	724	accident
+1280	725	incident
+1283	727	be in for something
+1284	727	do time
+1285	727	serve time
+1286	728	sit
+1287	729	body
+1288	730	field
+1289	730	body
+1290	731	four
+1291	732	door
+1292	733	door
+1293	733	gate
+1295	735	activity
+1296	735	operation
+1297	736	clapper
+1298	737	heart
+1299	738	hearts
+1300	739	full
+1301	739	whole
+1302	740	point
+1303	741	ration
+1304	742	constitute
+1305	742	make
+1306	743	move
+1307	743	movement
+1308	744	movement
+1309	744	motion
+1310	745	traffic
+1311	745	movement
+1312	746	face
+1313	747	judge
+1314	748	consider
+1315	748	think
+1316	748	deem
+1317	749	consideration
+1318	749	regard
+1319	749	respect
+1320	750	reason
+1321	751	activity
+1322	752	operation
+1323	753	game
+1324	753	match
+1325	754	game
+1326	754	play
+1327	755	playing
+1328	755	game
+1331	757	area
+1332	758	boss
+1333	758	chief
+1334	759	close
+1335	759	near
+1336	760	near
+1337	760	close
+1338	761	from here
+1339	761	hence
+1340	761	away
+1341	762	hence
+1342	762	therefore
+1343	762	hereof
+1344	762	that's why
+1345	762	thence
+1346	763	according to
+1347	763	accordingly
+1352	765	match
+1353	765	meeting
+1354	766	meeting
+1355	766	date
+1356	767	despite
+1357	767	in spite of
+1358	767	although
+1359	767	notwithstanding
+1360	768	love
+1361	768	affection
+1362	768	fondness
+1363	769	love
+1364	769	sweetheart
+1365	770	church
+1366	771	church
+1367	771	kirk
+1368	772	need
+1369	772	necessity
+1370	773	protection
+1371	774	security
+1372	775	entirety
+1373	775	whole
+1374	776	hospital
+1375	777	write
+1376	777	type
+1377	778	TV dinner
+1378	779	likely to
+1379	780	off-the-hook
+1380	780	off-the-peg
+1381	780	off-the-rack
+1382	780	ready made
+1383	781	poise
+1384	781	set
+1385	781	willing
+1386	782	ready
+1387	782	prepare
+1388	782	alert
+1389	782	yare
+1390	783	ready
+1391	783	wired for sound
+1392	784	still
+1393	785	number
+1394	786	number
+1395	786	figure
+1396	787	number
+1397	787	numeral
+1398	788	singular plural
+1399	788	number
+1400	789	soon
+1401	789	about to
+1403	791	fight
+1404	792	fight
+1405	792	struggle
+1406	793	struggle
+1407	794	in front of
+1408	794	in the face of
+1409	794	in the presence of
+1410	795	in relation to
+1411	795	in that case
+1412	795	take into consideration
+1413	796	in relation to
+1414	796	to
+1415	796	towards
+1416	797	area
+1417	797	range
+1418	797	scope
+1419	798	extent
+1420	798	scope
+1421	799	evening
+1422	799	night
+1423	800	gender
+1424	801	genus
+1425	801	gender
+1426	802	kind
+1427	803	continuously
+1428	803	keep do
+1429	804	still
+1430	805	yeah
+1431	806	fact
+1432	807	moment
+1433	807	instant
+1435	809	position
+1436	810	workplace
+1437	811	last
+1438	812	fellow
+1439	813	guest
+1440	814	guest
+1441	814	visitor
+1442	815	doctor
+1443	815	physician
+1446	817	boy
+1449	819	political
+1450	820	distrain
+1451	821	fill
+1452	821	take
+1453	822	occupy
+1454	822	engage
+1455	822	interest
+1456	823	occupy
+1457	823	take up
+1458	824	reserve
+1459	824	book
+1460	824	keep
+1461	825	be engage
+1462	825	be occupy
+1463	825	work
+1464	826	take care
+1465	827	assert
+1466	827	maintain
+1467	827	claim
+1468	827	allege
+1469	827	contend
+1470	827	make an allegation
+1472	829	hard
+1473	830	bloke
+1474	830	guy
+1475	830	dude
+1476	830	pal
+1477	831	company
+1478	832	call
+1479	833	telephone
+1480	833	phone
+1481	834	baking pan
+1482	835	form
+1483	836	shape
+1484	837	shape
+1485	837	form
+1486	838	your
+1487	838	yours
+1488	839	enough
+1489	840	quite
+1490	841	enough
+1491	841	no more
+1492	842	distant
+1493	842	far
+1494	843	yesterday
+1495	844	yesterday
+1508	847	border
+1509	847	frontier
+1510	847	boundary
+1511	848	boundary
+1512	849	frontier
+1513	850	limit
+1514	851	process
+1515	852	trial
+1516	852	process
+1517	853	mark
+1518	853	sign
+1519	854	mean
+1520	855	level
+1521	856	level
+1522	856	grade
+1523	857	level
+1524	857	standard
+1525	857	phase
+1528	860	from where
+1529	861	where from
+1530	861	whence
+1532	863	free
+1533	864	single
+1534	864	free
+1535	865	slow
+1536	866	examination
+1537	867	examination
+1538	867	investigation
+1539	868	research
+1540	869	answer
+1541	869	reply
+1542	870	achieve
+1543	870	attain
+1544	871	come
+1545	872	reach
+1546	873	opportunity
+1547	873	occasion
+1548	874	think
+1549	875	husband
+1550	875	spouse
+1551	876	five
+1552	877	again
+1553	878	weapon
+1554	878	arm
+1555	879	Black
+1556	880	Black
+1557	880	black
+1558	881	black
+1559	882	black
+1560	882	sable
+1561	883	Black
+1562	883	black
+1563	884	read
+1564	885	part
+1565	885	role
+1566	886	role
+1570	889	number
+1571	889	issue
+1572	890	document
+1573	891	document
+1574	891	deed
+1575	891	record
+1576	892	identification
+1577	892	document
+1578	893	alike
+1579	893	similar
+1580	894	similar
+1581	895	hold
+1582	895	keep
+1583	896	keep
+1584	897	pass
+1585	898	wrong
+1586	898	badly
+1587	899	build
+1588	899	erect
+1589	900	confront
+1590	901	get up
+1591	901	stand up
+1592	902	stop
+1593	903	perhaps
+1594	904	probably
+1595	904	perhaps
+1596	905	probably
+1597	905	perhaps
+1598	905	more
+1599	906	common
+1603	909	football
+1604	910	leg
+1611	913	management
+1612	914	rejoice
+1613	914	please
+1614	914	enjoy
+1615	914	tickle
+1616	915	enjoy
+1617	916	laugh
+1621	919	before
+1622	919	prior to
+1623	919	by the time
+1624	920	nowadays
+1625	920	now
+1626	920	currently
+1627	921	difficult
+1628	921	hard
+1629	922	difficult
+1630	922	tough
+1631	922	hard
+1644	929	exactly
+1645	929	precisely
+1646	929	accurately
+1647	930	boy
+1648	931	boyfriend
+1649	932	White
+1650	933	white
+1651	934	White
+1652	934	white
+1653	935	course
+1654	936	row
+1655	937	sequence
+1656	938	thrust
+1657	939	tomorrow
+1658	940	tomorrow
+1659	941	suffice
+1660	942	language
+1661	942	programming language
+1662	943	language
+1663	943	speech
+1664	944	language
+1665	944	tongue
+1666	945	tongue
+1667	946	tongue
+1668	946	language
+1669	947	urban
+1670	947	municipal
+1671	947	city
+1681	954	basic
+1682	955	art
+1683	956	art
+1684	956	ability
+1685	957	piece
+1686	957	item
+1687	958	play
+1688	958	piece
+1689	959	once
+1690	959	sometime
+1691	959	someday time
+1692	959	somewhen
+1693	960	half
+1694	961	after
+1695	961	afterwards
+1696	962	whereas
+1697	962	while
+1698	962	however
+1699	963	marshal
+1700	963	marshall
+1701	964	colleague
+1702	965	scouting troop
+1703	966	squad
+1704	966	troop
+1705	967	team
+1706	967	crew
+1707	968	ask
+1708	969	accordingly
+1709	970	agreeably
+1710	970	facilely
+1711	971	unanimously
+1712	972	present
+1713	973	relation
+1715	975	peace
+1716	976	possess
+1717	976	own
+1718	976	have
+1721	978	in another way
+1722	979	otherwise
+1728	983	matter
+1729	984	matter
+1730	984	question
+1731	985	problem
+1732	986	owner
+1733	987	create
+1734	988	form
+1735	988	constitute
+1736	989	class
+1737	990	class
+1738	990	classroom
+1739	991	classroom
+1741	993	announce
+1742	993	make known
+1743	994	give
+1744	994	pass
+1745	995	pass
+1746	996	serve
+1747	996	dish out
+1749	998	that
+1750	999	blood
+1751	1000	opinion
+1752	1001	opinion
+1753	1001	view
+1754	1002	reputation
+1755	1003	message
+1756	1003	advice
+1757	1003	information
+1758	1004	duty
+1759	1005	service
+1760	1006	strange
+1761	1006	weird
+1762	1006	bizarre
+1763	1006	out-of-the-way
+1765	1008	special
+1766	1009	phylum
+1767	1010	type
+1768	1010	model
+1769	1011	character
+1770	1011	fellow
+1771	1011	guy
+1772	1012	office
+1773	1012	bureau
+1774	1013	environment
+1775	1014	return
+1776	1015	return
+1777	1015	comeback
+1778	1015	homecoming
+1779	1016	linked list
+1780	1016	list
+1781	1017	list
+1782	1017	register
+1783	1017	roll
+1784	1018	dog
+1785	1018	doggo
+1786	1018	hound
+1787	1019	require
+1788	1020	million
+1789	1021	first
+1790	1022	business
+1791	1023	deal
+1792	1023	matter
+1793	1024	interest
+1794	1025	framework
+1795	1026	structure
+1796	1027	sleep
+1797	1028	sleep
+1798	1028	be asleep
+1799	1029	character
+1800	1030	figure
+1801	1030	being
+1802	1031	form
+1803	1032	curious
+1804	1032	interested
+1805	1033	interesting
+1806	1034	affiliate
+1807	1035	individual
+1808	1036	unit
+1809	1037	window
+1810	1038	window
+1811	1038	casement
+1816	1042	enter
+1817	1042	go into
+1818	1043	center
+1819	1043	centre
+1820	1044	remind
+1821	1045	remind
+1822	1045	recall
+1823	1045	recollect
+1824	1046	resemble
+1825	1047	job
+1826	1047	work
+1827	1048	work
+1828	1049	workplace
+1829	1050	light
+1830	1051	lights
+1831	1052	tell
+1832	1052	narrate
+1837	1056	newspaper
+1838	1056	paper
+1839	1057	daughter
+1840	1058	arrive
+1841	1058	come
+1842	1059	answer
+1843	1060	answer
+1844	1060	meet
+1845	1060	fulfil
+1846	1061	answer
+1847	1061	reply
+1848	1062	answer
+1849	1062	reply
+1850	1062	resay
+1851	1063	be responsible
+1852	1064	correspond
+1853	1064	accord
+1854	1065	correspond
+1855	1065	match
+1856	1065	equal
+1857	1066	respond
+1858	1066	return
+1859	1067	say one lesson
+1860	1067	answer
+1861	1068	suit
+1862	1069	adequately
+1863	1069	accurately
+1864	1069	appropriately
+1865	1069	correctly
+1866	1069	duly
+1867	1069	properly
+1868	1070	actually
+1869	1070	in fact
+1870	1070	in point of fact
+1871	1070	intrinsically
+1872	1071	parent
+1873	1071	parents
+1874	1072	since
+1875	1072	if
+1876	1073	when
+1877	1074	holy
+1878	1074	saint
+1879	1075	holy
+1880	1075	sacred
+1881	1076	vote
+1882	1077	it goes without saying
+1883	1077	it is a well-known fact it is a common knowledge
+1884	1077	needless to say
+1885	1078	nobody knows
+1886	1078	there is no knowing
+1887	1078	there is no saying
+1888	1078	there is no telling
+1889	1079	company
+1890	1080	society
+1891	1081	degree
+1892	1082	rank
+1893	1083	step
+1894	1084	opinion
+1895	1085	sentence
+1908	1092	in the morning
+1909	1093	morning
+1910	1094	fitting
+1911	1094	suitable
+1912	1094	proper
+1913	1094	adequate
+1914	1094	relevant
+1915	1095	use
+1916	1096	damage
+1917	1096	harm
+1918	1096	loss
+1919	1097	pity
+1920	1097	what a pity
+1921	1098	competition
+1922	1098	contest
+1927	1100	eat
+1928	1101	lie
+1929	1102	letter
+1930	1103	letter
+1931	1103	epistle
+1933	1105	dad
+1934	1105	daddy
+1935	1106	especially
+1936	1107	necessary
+1937	1108	near
+1938	1108	close
+1939	1109	then
+1942	1111	sometimes
+1945	1114	either or
+1946	1115	or
+1947	1116	-ever
+1951	1118	surname
+1952	1118	family name
+1953	1118	last name
+1954	1119	author
+1955	1119	architect
+1956	1120	chair
+1957	1120	preside
+1958	1121	allow
+1959	1121	let
+1960	1122	allow
+1961	1122	permit
+1962	1122	let
+1963	1123	every
+1964	1123	all
+1965	1123	any
+1966	1124	error
+1967	1124	mistake
+1968	1125	mistake
+1969	1125	error
+1977	1129	look
+1985	1134	teach
+1986	1135	learn
+1987	1136	give an account
+1988	1136	report
+1989	1137	pass
+1990	1137	fail
+1991	1138	return
+1992	1138	turn over
+1993	1139	take an exam
+1994	1140	appear
+1995	1140	seem
+1996	1141	rely
+1997	1141	trust
+1998	1142	event
+1999	1143	party
+2000	1144	contact
+2001	1145	socket
+2002	1145	outlet
+2003	1146	switch
+2004	1147	wonderful
+2005	1147	great
+2006	1147	excellence
+2007	1147	mindblowing
+2008	1147	perfection
+2009	1148	science
+2010	1149	study
+2011	1149	learn
+2012	1149	teach
+2013	1150	ill
+2014	1150	sick
+2015	1151	sick
+2016	1151	ill
+2017	1152	patient
+2018	1152	ill
+2020	1154	music
+2021	1155	profit
+2022	1155	benefit
+2023	1156	use
+2024	1156	make use of
+2025	1157	in conjunction with
+2026	1157	together with
+2027	1158	coal duff
+2028	1158	culm
+2029	1158	fine coal
+2030	1158	slack
+2031	1159	dust
+2032	1160	old
+2033	1160	long-ago
+2034	1161	constantly
+2035	1162	still
+2036	1163	economy
+2037	1164	management
+2038	1165	human
+2039	1166	human
+2040	1166	humane
+2041	1167	strong
+2049	1171	intend
+2050	1171	plan
+2051	1171	to be go to
+2056	1173	so
+2057	1173	then
+2058	1173	thus
+2059	1174	thus
+2060	1174	so
+2061	1174	then
+2062	1175	then
+2063	1176	direction
+2064	1176	way
+2065	1177	low
+2066	1178	tax
+2067	1179	area
+2068	1180	field
+2069	1181	pay
+2070	1181	ante up
+2071	1182	notice
+2072	1182	observe
+2073	1183	remark
+2074	1183	observe
+2075	1184	sale
+2076	1185	sister
+2077	1185	nurse
+2078	1186	dear
+2079	1186	expensive
+2080	1187	expensive
+2081	1187	dear
+2082	1188	care about
+2083	1189	depend
+2084	1189	be up to
+2085	1190	find
+2086	1191	find
+2087	1191	discover
+2088	1191	get
+2089	1192	find
+2090	1192	query
+2091	1193	be
+2095	1197	ID
+2096	1198	proof
+2097	1198	evidence
+2098	1199	safety
+2099	1199	security
+2101	1201	shop
+2102	1201	store
+2103	1202	give back
+2104	1202	repay
+2105	1203	meaning
+2106	1203	purport
+2107	1204	point
+2108	1205	sense
+2114	1210	position
+2115	1211	grieve
+2116	1212	be worry
+2117	1212	grieve
+2118	1213	appropriate
+2119	1213	suitable
+2120	1213	proper
+2121	1214	competent
+2122	1215	specific
+2123	1215	typical
+2124	1216	that
+2125	1217	as well as
+2126	1217	both and
+2127	1218	professional
+2128	1219	prize
+2129	1219	reward
+2130	1219	award
+2131	1220	reward
+2132	1221	party
+2133	1222	profession
+2134	1222	occupation
+2135	1222	job
+2136	1222	career
+2138	1224	height
+2139	1225	increase
+2140	1225	grow
+2141	1226	serious
+2142	1227	name
+2143	1228	product
+2144	1229	task
+2145	1229	job
+2146	1229	chores
+2147	1229	errand
+2148	1230	net
+2149	1231	net
+2150	1231	chain
+2151	1232	net
+2152	1232	fishnet
+2153	1233	network
+2154	1233	Web
+2155	1234	network
+2156	1234	system
+2157	1235	spiderweb
+2158	1235	cobweb
+2159	1235	spider's web
+2160	1235	web
+2161	1236	supply
+2162	1237	trap
+2164	1239	easily
+2165	1239	easy
+2166	1240	accrue
+2172	1242	particularly
+2173	1242	especially
+2174	1242	specially
+2175	1243	particularly
+2176	1243	singularly
+2177	1243	specifically
+2178	1244	die
+2179	1244	pass away
+2180	1245	German
+2181	1246	German
+2182	1247	approach
+2183	1248	line
+2184	1249	range
+2185	1250	rank
+2186	1251	route
+2187	1252	shape
+2188	1253	propose
+2189	1253	suggest
+2190	1253	offer
+2191	1253	come up
+2192	1253	propound
+2193	1254	guilt
+2194	1254	fault
+2195	1255	veena
+2196	1256	branch
+2197	1256	division
+2198	1257	squad
+2199	1257	troop
+2205	1262	drive
+2206	1263	guide
+2207	1264	lead
+2208	1265	treasure
+2209	1266	worth
+2210	1267	likeable
+2211	1267	nice
+2212	1267	agreeable
+2213	1267	amiable
+2214	1267	kind
+2215	1268	nice
+2216	1268	pleasant
+2217	1269	beloved
+2224	1274	execute
+2225	1274	perform
+2226	1274	make
+2227	1275	perform
+2228	1276	practise
+2229	1277	produce
+2230	1278	source
+2231	1279	source
+2232	1279	spring
+2233	1280	spring
+2234	1280	source
+2235	1281	suddenly
+2236	1281	abruptly
+2237	1282	apply
+2240	1284	change
+2241	1284	exchange
+2242	1285	change
+2243	1285	replace
+2244	1285	swap
+2246	1287	apparently
+2249	1289	amount
+2250	1290	policeman
+2251	1290	police officer
+2252	1291	victim
+2253	1291	sacrifice
+2256	1293	circle
+2257	1294	circle
+2258	1294	ring
+2259	1295	disc
+2260	1295	disk
+2261	1296	wheel
+2262	1297	near
+2263	1297	close to
+2264	1298	watch
+2266	1300	rail
+2267	1300	railway
+2268	1300	railroad
+2269	1301	turn
+2270	1302	illness
+2271	1302	sickness
+2272	1302	disease
+2273	1303	forest
+2274	1303	wood
+2275	1304	forest
+2276	1304	wood
+2277	1304	woods
+2278	1305	knowledge
+2279	1306	proposition
+2280	1306	offer
+2281	1307	certainty
+2282	1308	veracity
+2283	1308	verity
+2284	1309	teacher
+2285	1309	instructor
+2286	1310	college senate
+2287	1310	university college
+2288	1311	senate
+2289	1312	fabric
+2290	1312	material
+2291	1313	material
+2294	1315	finish
+2295	1315	end
+2296	1315	complete
+2297	1316	kill
+2298	1316	terminate
+2299	1317	quit
+2300	1317	stop
+2301	1318	go
+2302	1319	drink
+2303	1320	pinch
+2304	1321	allude
+2305	1321	hint
+2306	1321	insinuate
+2307	1322	drink
+2308	1323	dollar
+2312	1325	close
+2313	1325	ratify
+2314	1325	conclude
+2315	1325	enter into
+2316	1325	make
+2317	1326	contain
+2318	1326	include
+2319	1327	investment
+2320	1327	capital expenditure
+2321	1328	rehearsal
+2322	1328	trial
+2323	1329	sample
+2324	1330	test
+2325	1330	trial
+2326	1330	attempt
+2327	1330	try
+2328	1330	effort
+2331	1332	effect
+2332	1332	result
+2333	1333	impression
+2340	1339	come
+2341	1339	arrive
+2342	1340	estimation
+2343	1340	evaluation
+2344	1341	evaluation
+2345	1342	grade
+2346	1342	mark
+2348	1344	be
+2349	1344	be found
+2350	1345	perform
+2351	1345	appear
+2352	1346	resign
+2353	1346	leave
+2354	1347	I am grieve
+2355	1347	I'm sorry
+2356	1347	miserably
+2357	1347	nastily
+2358	1347	unpleasantly
+2359	1348	January
+2360	1349	American
+2361	1350	American
+2362	1350	US
+2363	1351	fuck
+2364	1351	shit
+2365	1352	whore
+2366	1352	bitch
+2367	1353	feature
+2368	1354	function
+2369	1355	apartment
+2370	1355	flat
+2371	1356	flat
+2372	1356	apartment
+2373	1357	live
+2374	1358	sentence
+2375	1358	judgment
+2376	1359	soldier
+2379	1361	boat
+2380	1362	master
+2381	1362	champion
+2382	1363	against
+2383	1363	versus
+2384	1364	versus
+2385	1364	against
+2386	1365	accomplish
+2390	1367	exclusive
+2391	1368	independent
+2392	1369	private
+2402	1376	red
+2403	1377	red
+2404	1377	commie
+2405	1378	red
+2406	1378	commie
+2407	1379	solution
+2408	1380	step
+2409	1381	explain
+2410	1382	translate
+2411	1382	interpret
+2415	1385	change
+2416	1386	remainder
+2417	1387	remainder
+2418	1387	rest
+2426	1392	chance
+2427	1393	fate
+2428	1393	destiny
+2429	1394	lot
+2430	1395	lottery ticket
+2431	1396	sign
+2432	1397	sign
+2433	1397	mark
+2434	1397	symbol
+2435	1398	card
+2436	1399	card
+2437	1399	sheet
+2438	1400	charter
+2439	1401	tab
+2440	1402	competitor
+2441	1402	contestant
+2442	1402	player
+2443	1402	contender
+2444	1402	participant
+2445	1403	participant
+2446	1403	competitor
+2447	1403	contender
+2448	1403	contestant
+2449	1404	ball
+2450	1405	saw
+2451	1406	brief
+2452	1406	concise
+2453	1406	short
+2454	1407	short
+2455	1407	brief
+2456	1408	short
+2457	1408	brief
+2458	1408	concise
+2459	1409	object
+2460	1409	subject
+2461	1410	object
+2462	1410	thing
+2463	1411	subject
+2464	1412	probably
+2465	1412	likely
+2466	1412	presumably
+2467	1413	decide
+2469	1415	ring
+2470	1416	ring
+2471	1416	call
+2472	1417	ring
+2473	1417	clink
+2474	1417	jangle
+2475	1418	scene
+2476	1418	stage
+2477	1419	stage
+2478	1419	scene
+2479	1420	agree
+2480	1420	concur
+2481	1421	consent
+2482	1421	agree
+2483	1421	allow
+2484	1422	frame
+2486	1424	computer
+2487	1425	former
+2488	1426	ex
+2489	1427	offer
+2490	1428	offer
+2491	1428	proposal
+2492	1429	considerably
+2493	1429	much
+2494	1429	significantly
+2495	1429	notably
+2496	1429	widely
+2497	1430	animal
+2498	1431	animal
+2499	1431	beast
+2504	1434	cause
+2505	1434	reason
+2508	1437	assemble
+2509	1438	collect
+2510	1439	fold
+2511	1440	consist
+2521	1446	instead
+2522	1446	rather than
+2523	1447	instead
+2524	1447	instead of
+2525	1448	awkward
+2526	1449	silly
+2527	1450	stupid
+2528	1450	foolish
+2529	1450	dumb
+2530	1451	stupid
+2531	1451	silly
+2532	1452	move
+2533	1453	move on
+2534	1453	start
+2535	1454	start
+2536	1455	touch
+2537	1456	ghost
+2538	1456	phantom
+2539	1456	apparition
+2540	1457	mind
+2541	1458	soul
+2542	1459	spirit
+2543	1460	hard
+2544	1460	arduous
+2545	1461	heavy
+2552	1466	institution
+2553	1467	fortunate
+2554	1467	lucky
+2555	1468	happy
+2556	1469	lucky
+2557	1469	fortunate
+2558	1469	happy
+2559	1470	game
+2560	1470	play
+2561	1470	fun
+2562	1471	driver
+2563	1471	chauffeur
+2564	1472	be lost
+2565	1473	die
+2566	1474	die
+2567	1474	disappear
+2568	1475	get lost
+2569	1476	lose one's way
+2570	1477	discussion
+2572	1479	July
+2573	1480	look
+2574	1480	glance
+2575	1480	have a glance
+2576	1480	lay eyes
+2579	1483	cooperation
+2580	1483	co-operation
+2581	1483	collaboration
+2582	1484	last
+2583	1484	previous
+2584	1485	previous
+2585	1485	former
+2586	1485	preceding
+2587	1486	help
+2588	1486	assist
+2589	1487	method
+2590	1488	method
+2591	1488	way
+2592	1489	society
+2593	1490	calmly
+2594	1490	quietly
+2595	1490	coolly
+2596	1490	gently
+2597	1490	mildly
+2598	1490	unhurriedly
+2599	1491	easily
+2600	1492	leisurely
+2601	1493	take it easy
+2602	1494	a bit
+2603	1494	a little bit
+2604	1494	a trifle
+2605	1494	slightly
+2606	1494	a notch
+2607	1494	faintly
+2608	1495	some
+2609	1495	a little
+2615	1500	tree
+2622	1505	add
+2629	1510	somewhere
+2630	1511	somewhere
+2631	1511	something
+2632	1512	agreement
+2633	1512	treaty
+2634	1513	system
+2635	1513	configuration
+2636	1513	set
+2637	1514	memory
+2638	1515	memory
+2639	1515	recollection
+2640	1516	recollection
+2641	1516	memory
+2642	1517	actually
+2643	1517	really
+2644	1517	indeed
+2645	1517	truly
+2646	1517	certainly
+2647	1517	genuinely
+2648	1518	is that so
+2649	1519	can
+2650	1519	be able
+2651	1520	sum
+2652	1521	await
+2653	1522	expect
+2654	1522	hope
+2655	1523	prefer
+2656	1524	would like
+2657	1525	point
+2658	1525	indicate
+2659	1525	show
+2660	1526	record
+2661	1526	stand
+2662	1527	clearly
+2663	1527	plainly
+2664	1528	unmistakeably
+2665	1529	puzzle
+2666	1530	think
+2667	1531	high
+2668	1531	highly
+2669	1532	future
+2670	1533	next
+2671	1534	immediately
+2672	1534	right now
+2673	1534	promptly
+2674	1535	responsibility
+2675	1535	liability
+2676	1535	charge
+2677	1535	responsibleness
+2678	1536	bottom
+2679	1537	hole
+2683	1541	close
+2684	1542	close
+2685	1542	close out
+2686	1542	exit
+2687	1542	shut down
+2688	1543	shut up
+2689	1544	credit
+2690	1544	charge account
+2691	1545	agree
+2692	1546	offer
+2693	1546	provide
+2694	1547	serve
+2695	1548	carry
+2696	1548	wear
+2697	1549	wear
+2698	1549	carry
+2699	1550	organ
+2711	1557	international
+2712	1558	remain
+2713	1558	stay
+2714	1559	stay
+2715	1559	remain
+2716	1560	article
+2723	1563	hair
+2726	1565	in between
+2727	1566	pretty
+2728	1566	quite
+2729	1567	quite
+2730	1568	foreign
+2731	1568	alien
+2732	1568	overseas
+2736	1571	league
+2737	1572	patient
+2738	1573	line-up
+2740	1575	usually
+2741	1576	internal
+2742	1576	interior
+2743	1577	care
+2744	1577	protection
+2745	1578	guardianship
+2746	1578	custody
+2747	1579	agent
+2748	1579	representative
+2749	1580	agent
+2750	1580	secret agent
+2751	1581	agent
+2752	1581	spy
+2753	1582	agent
+2761	1588	Prime Minister
+2762	1588	prime minister
+2763	1589	bequest
+2764	1590	entry
+2765	1591	notation
+2766	1592	record
+2767	1593	recording
+2768	1594	registration
+2772	1597	air
+2773	1598	be in force
+2774	1598	take effect
+2775	1599	be obligatory
+2776	1599	oblige
+2777	1600	amuse
+2778	1601	entertain
+2779	1601	amuse
+2780	1602	stay
+2781	1602	be a guest
+2782	1603	play
+2783	1604	meter
+2784	1604	metre
+2789	1608	table
+2790	1608	desk
+2810	1621	average
+2811	1622	mean
+2812	1622	mediocre
+2813	1622	indifferent
+2814	1622	ordinary
+2815	1623	middle
+2816	1623	medium
+2817	1624	splendid
+2818	1624	great
+2820	1626	in the meantime
+2821	1626	until then
+2822	1627	meanwhile
+2823	1627	in the meantime
+2824	1627	in the mean time
+2825	1628	so long
+2826	1629	in contrast
+2827	1630	hard
+2828	1630	firmly
+2829	1631	priest
+2834	1634	department
+2835	1635	faculty
+2836	1636	area
+2837	1637	defence
+2838	1637	defense
+2839	1638	distraint
+2840	1639	occupation
+2841	1639	activity
+2842	1639	job
+2844	1641	fire
+2845	1642	collection
+2846	1643	contribution
+2847	1644	due
+2848	1644	fee
+2849	1645	section
+2850	1646	loss
+2851	1647	dominical
+2852	1648	lordly
+2853	1649	your
+2854	1649	yours
+2855	1650	your
+2856	1650	yours
+2860	1652	faith
+2861	1653	faith
+2862	1653	belief
+2863	1653	confidence
+2864	1653	trust
+2865	1654	ship
+2866	1654	craft
+2867	1655	ship
+2868	1655	vessel
+2869	1655	boat
+2870	1655	craft
+2872	1657	heaven
+2873	1657	sky
+2874	1658	sky
+2875	1658	heaven
+2878	1661	long ago
+2879	1662	purchase
+2880	1662	shopping
+2882	1664	version
+2883	1665	other
+2884	1666	attack
+2885	1666	assault
+2886	1666	crackdown
+2887	1666	lunge
+2888	1666	raid
+2889	1666	thrust
+2890	1667	attack
+2891	1667	seizure
+2892	1668	October
+2893	1669	today's
+2896	1671	judge
+2897	1672	referee
+2898	1672	arbitrator
+2899	1673	participant
+2900	1674	play
+2901	1675	arm
+2902	1676	shoulder
+2903	1677	upper arm
+2904	1677	shoulder
+2905	1678	finger
+2906	1678	toe
+2907	1678	digit
+2910	1680	for some reason
+2911	1680	somewhy
+2912	1681	somehow
+2916	1684	sun
+2917	1685	sun
+2918	1685	sunshine
+2919	1686	familial
+2920	1687	witness
+2921	1688	witness
+2922	1688	eyewitness
+2923	1688	onlooker
+2924	1688	spectator
+2925	1689	album
+2926	1690	disc
+2927	1691	plate
+2928	1691	board
+2929	1692	plate
+2930	1692	slab
+2931	1693	take off
+2932	1693	remove
+2933	1694	fee
+2934	1694	payment
+2935	1694	charge
+2936	1695	fruition
+2937	1695	fulfilment
+2938	1695	realisation
+2939	1695	realization
+2940	1696	production
+2941	1697	realization
+2942	1697	realisation
+2943	1697	accomplishment
+2944	1697	execution
+2945	1697	implementation
+2947	1699	foreign
+2948	1700	alien
+2949	1701	do
+2950	1701	have
+2951	1702	take place
+2952	1703	April
+2953	1704	except
+2954	1704	but
+2955	1704	except for
+2956	1705	accusation
+2957	1706	objection
+2958	1706	reproach
+2959	1706	reproof
+2960	1707	assure
+2961	1708	ensure
+2962	1708	provide
+2963	1709	punishment
+2964	1709	penalty
+2965	1710	almost
+2966	1710	nearly
+2967	1710	practically
+2968	1711	act
+2969	1712	document
+2970	1713	nude
+2971	1714	around
+2972	1714	among
+2973	1715	August
+2974	1716	reality
+2975	1717	quantity
+2976	1717	amount
+2977	1718	paper
+2978	1719	demonstrate
+2979	1719	show
+2980	1720	display
+2981	1720	indicate
+2982	1721	point
+2983	1721	demonstrate
+2984	1722	show
+2985	1722	demonstrate
+2986	1723	show
+2987	1723	demonstrate
+2988	1723	display
+2989	1724	character
+2990	1724	hero
+2991	1725	hero
+2992	1726	doctor
+2993	1727	reminiscence
+2994	1728	trace
+2995	1729	track
+2996	1730	track
+2997	1730	footprint
+2998	1731	vestige
+2999	1732	energy
+3000	1733	energy
+3001	1733	power
+3004	1735	style
+3005	1736	stylus
+3006	1736	style
+3007	1737	foot
+3008	1738	assume
+3009	1739	receive
+3010	1740	take
+3021	1747	world
+3022	1747	global
+3023	1748	known
+3029	1752	address
+3030	1753	constant
+3031	1753	permanent
+3032	1753	steady
+3033	1754	direct
+3034	1755	regular
+3035	1756	solid
+3036	1757	steady
+3037	1757	fixed
+3038	1757	stable
+3039	1758	horse
+3040	1758	knight
+3041	1759	knight
+3042	1759	horse
+3043	1760	pommel horse
+3044	1760	horse
+3045	1761	cost
+3046	1762	taste
+3047	1763	grow
+3048	1764	grow
+3049	1764	increase
+3050	1765	rise
+3051	1766	escape
+3052	1766	run away
+3053	1766	flee
+3054	1766	skedaddle
+3056	1768	soon
+3057	1768	shortly
+3058	1769	trip
+3059	1769	journey
+3060	1769	voyage
+3061	1769	travel
+3067	1774	become
+3068	1775	happen
+3069	1776	season
+3070	1777	pain
+3071	1777	aching
+3072	1778	pain
+3073	1778	aching
+3074	1778	ache
+3080	1782	exclusively
+3081	1782	only
+3084	1784	do
+3085	1784	make
+3088	1786	free
+3089	1787	slowly
+3090	1787	slow
+3091	1788	be allow
+3092	1789	special
+3093	1789	exceptional
+3094	1790	meet
+3095	1791	choose
+3096	1791	elect
+3097	1792	elect
+3098	1792	choose
+3103	1795	work
+3105	1797	mention
+3106	1797	refer
+3107	1798	remember
+3108	1798	recall
+3109	1799	cause
+3110	1799	bring about
+3111	1800	neighbourhood
+3112	1800	neighborhood
+3122	1804	risk
+3123	1805	fourth
+3124	1806	desire
+3125	1807	bet
+3126	1808	build
+3127	1808	erect
+3128	1809	buy
+3129	1810	place
+3130	1810	put
+3131	1811	stake
+3132	1812	stand
+3133	1813	appear
+3134	1814	oppose
+3135	1815	personal
+3136	1816	personal
+3137	1816	private
+3139	1818	repeat
+3140	1818	reiterate
+3141	1818	resay
+3159	1830	Sunday
+3160	1831	drive
+3161	1831	go
+3162	1832	ride
+3169	1836	public prosecutor's office
+3170	1837	be
+3171	1838	become
+3172	1839	remain
+3173	1839	be leave
+3174	1840	stay
+3175	1841	gate
+3176	1842	gate
+3177	1842	goal
+3178	1843	goal
+3179	1844	goal
+3180	1844	gate
+3181	1845	wicket
+3183	1847	holiday
+3186	1850	acquaintance
+3191	1853	apparatus
+3192	1853	implement
+3193	1854	equipment
+3194	1854	gear
+3195	1855	local
+3197	1857	mystery
+3198	1858	secret
+3199	1859	agency
+3200	1860	acceptance
+3201	1861	reception
+3202	1861	party
+3203	1862	ten
+3207	1865	participate
+3208	1865	take part
+3209	1865	partake
+3212	1867	victory
+3213	1867	win
+3214	1868	school
+3215	1868	scholastic
+3216	1869	blank
+3217	1870	chaste
+3218	1870	pure
+3219	1870	unsullied
+3220	1871	clean
+3221	1871	clear
+3222	1872	clear
+3223	1872	clean
+3224	1873	clear
+3225	1873	net
+3226	1874	pure
+3227	1874	fine
+3228	1875	pure
+3229	1875	sheer
+3230	1875	perfect
+3231	1876	safe
+3232	1877	safe
+3233	1877	secure
+3238	1881	car
+3244	1885	soul
+3261	1891	experience
+3262	1892	army
+3263	1893	claim
+3264	1894	be almost
+3265	1895	seriously
+3266	1896	green
+3267	1897	environmentalist
+3268	1897	greenie
+3269	1897	treehugger
+3270	1898	operation
+3271	1898	surgery
+3272	1899	surgery
+3273	1899	operation
+3282	1906	feeble
+3283	1906	mediocre
+3284	1906	poor
+3285	1907	submissive
+3286	1908	weak
+3287	1909	weak
+3288	1909	faint
+3289	1909	frail
+3290	1910	weak
+3291	1910	unsound
+3296	1913	behaviour
+3297	1913	behavior
+3306	1917	introduce
+3307	1917	condescend
+3308	1917	do
+3309	1918	present
+3310	1918	show
+3311	1918	establish
+3316	1923	change over
+3317	1923	switch
+3318	1924	cover
+3319	1925	cross
+3320	1926	experience
+3321	1926	go through
+3322	1927	go through
+3323	1927	pass
+3324	1928	pass
+3325	1929	pass by
+3326	1930	pass through
+3327	1931	entirely
+3328	1931	completely
+3329	1931	totally
+3330	1931	wholly
+3331	1931	altogether
+3332	1931	all
+3333	1932	kid
+3334	1933	rectitudinous
+3335	1933	righteous
+3336	1934	right
+3342	1938	merchandise
+3343	1938	commodity
+3348	1941	sell
+3349	1941	vend
+3350	1942	sell
+3352	1944	color
+3353	1944	tincture
+3354	1945	colour
+3355	1946	colour
+3356	1946	hue
+3357	1946	color
+3358	1947	suit
+3359	1947	color
+3361	1949	concord
+3362	1949	reconciliation
+3363	1950	consent
+3364	1951	happen
+3365	1952	often go
+3366	1953	visit
+3367	1954	hotel
+3371	1957	apprenticeship
+3372	1957	practice
+3373	1958	practice
+3374	1959	any
+3375	1960	natural
+3376	1961	prosecutor
+3377	1961	public prosecutor
+3379	1963	access
+3380	1964	sport
+3381	1964	sports
+3385	1967	university
+3386	1967	college
+3387	1968	rich
+3388	1968	wealthy
+3389	1969	chatter
+3390	1969	gab
+3391	1969	talk
+3392	1970	interest
+3393	1971	be interest in
+3394	1971	take interest in
+3395	1972	importance
+3396	1972	significance
+3397	1972	weight
+3398	1973	meaning
+3399	1973	sense
+3409	1977	analysis
+3410	1978	partner
+3411	1979	inform
+3412	1980	ordinary
+3413	1980	common
+3414	1980	regular
+3415	1980	casual
+3417	1982	the South
+3418	1983	South
+3419	1984	midday
+3420	1984	noon
+3421	1985	south
+3422	1985	midday
+3423	1986	shoe
+3424	1986	boot
+3425	1987	account
+3426	1988	bill
+3427	1988	check
+3428	1989	calculation
+3442	1998	attendance
+3443	1999	presence
+3445	2001	district
+3446	2001	region
+3447	2002	region
+3448	2002	area
+3449	2003	grant
+3450	2004	admit
+3451	2005	confess
+3452	2006	alcohol
+3453	2007	alcohol
+3454	2007	liquor
+3455	2008	internet
+3465	2013	English
+3466	2014	English
+3471	2017	kinship
+3472	2017	relation
+3473	2018	relation
+3474	2019	story
+3476	2021	shoot
+3477	2022	crime
+3478	2022	offence
+3479	2023	French
+3480	2024	French
+3481	2025	notice
+3482	2026	observe
+3483	2026	watch
+3484	2027	novel
+3492	2032	Russian
+3493	2033	Russian
+3497	2035	song
+3498	2036	fair
+3499	2037	particular
+3500	2038	specific
+3501	2039	protect
+3502	2039	shelter
+3503	2040	base
+3504	2041	base camp
+3505	2042	basis
+3506	2043	foundation
+3518	2047	badly
+3519	2047	faintly
+3520	2047	severely
+3521	2048	heavily
+3522	2048	with difficulty
+3523	2048	gravely
+3524	2048	hard
+3525	2048	seriously
+3526	2049	sea
+3535	2056	circumstance
+3539	2058	event
+3544	2060	piece
+3545	2061	piece
+3546	2061	bit
+3547	2062	seven
+3548	2063	Western
+3549	2064	Western
+3550	2064	western
+3551	2065	execute
+3552	2066	lose
+3558	2070	advise
+3559	2071	deal
+3560	2071	handle
+3561	2072	consult
+3568	2076	confirm
+3569	2076	affirm
+3570	2076	assure
+3571	2076	support
+3572	2077	keep
+3573	2078	preserve
+3574	2079	preserve
+3575	2079	keep
+3576	2080	behave
+3579	2082	coffee
+3580	2083	coffee
+3581	2083	coffee bean
+3585	2086	left
+3586	2087	leftist
+3595	2091	Friday
+3596	2092	tournament
+3598	2094	report
+3599	2094	account
+3600	2094	return
+3601	2094	dispatch
+3603	2096	departure
+3604	2097	assume
+3605	2097	take
+3606	2097	take up
+3607	2098	encompass
+3608	2099	grip
+3609	2099	seize
+3610	2100	hug
+3611	2100	embrace
+3612	2101	survey
+3613	2101	take in
+3621	2105	darling
+3622	2105	sweetheart
+3623	2106	darling
+3624	2106	sweetheart
+3625	2107	loving
+3629	2109	artist
+3630	2109	street performer
+3632	2111	design
+3633	2111	model
+3634	2112	model
+3635	2113	rescue
+3636	2113	salvage
+3637	2114	save
+3645	2121	stage
+3646	2121	phase
+3647	2122	visit
+3648	2122	call
+3649	2123	until
+3650	2123	before
+3651	2123	till
+3652	2124	while
+3653	2124	as long as
+3659	2128	technical
+3660	2128	technological
+3684	2139	the West
+3685	2139	West
+3686	2140	set
+3687	2140	sunset
+3688	2141	west
+3689	2141	West
+3690	2142	expense
+3691	2142	expenditure
+3692	2143	full moon
+3693	2144	height
+3696	2147	radio
+3697	2148	medical
+3699	2150	garbage
+3700	2150	rubbish
+3701	2150	trash
+3702	2151	junk
+3703	2152	bastard
+3704	2152	scum
+3705	2153	dare
+3710	2156	threaten
+3711	2157	tradition
+3712	2158	immobility
+3713	2159	real estate
+3714	2159	estate
+3719	2161	underline
+3720	2162	underline
+3721	2162	emphasize
+3722	2162	underscore
+3724	2164	chief
+3728	2168	clef
+3729	2168	key
+3730	2169	flock
+3731	2169	skein
+3732	2170	head stone
+3733	2170	keystone
+3734	2171	key
+3735	2172	key
+3736	2172	clue
+3737	2173	key
+3738	2173	code
+3739	2174	key
+3740	2174	wrench
+3741	2175	vee formation
+3742	2176	wrench
+3743	2176	spanner
+3744	2176	key
+3745	2177	fear
+3746	2177	awe
+3747	2178	scarecrow
+3748	2179	early
+3762	2189	property
+3767	2192	dead
+3768	2193	collect
+3769	2194	gather
+3770	2195	pick
+3771	2195	pick up
+3772	2196	rally
+3773	2196	call
+3774	2196	summon
+3775	2197	gather
+3777	2199	river
+3779	2201	sing
+3783	2205	horrible
+3784	2205	terrible
+3785	2206	horrible
+3786	2206	terrible
+3787	2206	awful
+3788	2207	terrible
+3789	2207	horrible
+3790	2207	frightful
+3791	2207	horrific
+3792	2208	endure
+3793	2209	suffer
+3794	2210	general
+3797	2213	fuck
+3798	2213	screw
+3799	2213	shag
+3800	2214	fuck
+3801	2214	screw
+3802	2214	sod
+3803	2215	pepper
+3804	2216	talk bullshit bollocks crap
+3813	2220	achieve
+3814	2220	bring
+3815	2221	bring back
+3816	2221	carry back
+3817	2222	treat
+3818	2223	link
+3819	2223	relate
+3820	2224	tie
+3821	2224	bind
+3822	2224	bundle
+3823	2225	opinion
+3824	2225	view
+3825	2225	take
+3826	2226	device
+3827	2227	get
+3828	2227	receive
+3829	2228	quality
+3833	2230	career
+3834	2231	cuisine
+3835	2231	cooking
+3836	2231	kitchen
+3837	2232	kitchen
+3838	2232	cuisine
+3843	2236	everywhere
+3844	2237	everywhere
+3845	2237	all over
+3850	2240	willingly
+3851	2240	gladly
+3852	2240	eagerly
+3853	2241	necessary
+3860	2245	hurt
+3861	2245	ache
+3882	2258	necessity
+3883	2259	advise
+3884	2260	consult
+3885	2260	seek advice
+3886	2261	get by
+3887	2261	cope with
+3891	2263	prepare
+3892	2264	get ready
+3897	2268	enemy
+3898	2268	foe
+3905	2270	ticket
+3907	2272	pass judgment
+3908	2272	valuate
+3909	2273	interest
+3910	2274	become interest in
+3921	2281	nose
+3925	2284	domain
+3926	2285	field
+3927	2285	sphere
+3928	2286	poor
+3930	2288	cell
+3931	2289	mobile
+3934	2292	ballot
+3935	2292	poll
+3936	2293	ballot
+3937	2293	vote
+3938	2294	officer
+3939	2295	flower
+3940	2295	blossom
+3941	2296	flower
+3942	2296	blossom
+3943	2296	bloom
+3944	2297	plant
+3945	2297	flower
+3947	2299	ear
+3948	2300	handle
+3951	2302	marriage
+3952	2302	matrimony
+3953	2303	marry couple
+3955	2305	decide
+3956	2306	grandma
+3957	2306	grandmother
+3958	2307	trade
+3959	2308	administration
+3960	2309	administration
+3961	2309	management
+3962	2310	management
+3963	2310	administration
+3970	2314	machine
+3971	2315	queue
+3972	2316	queue
+3973	2316	line
+3974	2317	round
+3975	2318	turn
+3985	2323	empty
+3986	2323	blank
+3987	2324	healthy
+3988	2324	sound
+3989	2324	able
+3990	2325	healthy
+3991	2325	wholesome
+3993	2327	civil
+3994	2327	civic
+3995	2328	civilian
+3996	2328	civil
+3999	2330	square
+4000	2330	place
+4002	2332	ability
+4012	2336	ego
+4013	2337	producer
+4014	2338	producer
+4015	2338	manufacturer
+4016	2339	term
+4017	2340	easy
+4018	2341	phenomenon
+4021	2343	die
+4022	2343	pass away
+4023	2343	decease
+4024	2344	deign
+4025	2345	want
+4026	2345	desire
+4027	2346	will have
+4032	2350	back
+4035	2353	defend
+4038	2356	news
+4039	2356	tiding
+4041	2358	contemporary
+4042	2358	present
+4044	2360	gear
+4045	2361	grammatical mood
+4046	2362	mode
+4047	2363	mode
+4048	2363	procedure
+4049	2363	mechanism
+4057	2368	local
+4058	2369	local
+4059	2370	impression
+4060	2370	sensation
+4061	2371	be in time
+4062	2371	come in time
+4063	2371	come too late
+4064	2371	miss
+4065	2372	keep pace
+4066	2373	closed
+4067	2374	conservator
+4068	2374	custody
+4069	2374	management
+4070	2375	control
+4071	2375	inspection
+4072	2375	surveillance
+4073	2376	supervision
+4074	2376	oversight
+4075	2376	care
+4076	2376	keeping
+4077	2376	superintendence
+4082	2379	neighbour
+4083	2379	neighbor
+4094	2386	at this very moment
+4095	2386	just
+4096	2387	a likely story
+4097	2387	nothing of the kind
+4098	2387	tell me another
+4099	2388	exactly
+4100	2388	just
+4101	2388	precisely
+4102	2389	any
+4106	2392	junior high school
+4107	2392	middle school
+4108	2392	secondary school
+4109	2393	lesson
+4110	2394	unit
+4111	2395	date
+4112	2396	epoch
+4113	2396	era
+4114	2397	course
+4115	2397	current
+4116	2398	course
+4117	2398	run
+4118	2399	flight
+4119	2400	run
+4120	2401	run
+4121	2401	race
+4122	2402	receive
+4123	2403	lead
+4124	2404	run
+4125	2404	trot
+4134	2410	divide
+4135	2411	divide
+4136	2411	separate
+4137	2411	split
+4138	2411	distribute
+4139	2412	share
+4140	2412	participate
+4141	2413	crockery set
+4142	2414	information service
+4143	2414	news bulletin
+4144	2415	serve
+4145	2416	service
+4146	2417	bus
+4147	2417	coach
+4148	2418	represent
+4155	2423	fish
+4164	2428	wound
+4165	2428	injury
+4175	2433	conceal
+4176	2434	hide
+4185	2438	wish
+4196	2446	bracket
+4197	2447	castle
+4198	2447	lock
+4199	2448	lock
+4200	2449	zipper
+4201	2449	zip
+4202	2449	fastener
+4204	2451	inscription
+4205	2451	caption
+4206	2451	credit
+4207	2451	subtitle
+4208	2451	text
+4211	2454	order
+4212	2454	command
+4213	2454	behest
+4214	2454	instruction
+4215	2455	contract
+4216	2456	find
+4217	2457	farmer
+4218	2457	agriculturist
+4233	2468	kill
+4234	2469	kill
+4235	2469	slay
+4236	2470	nail up
+4237	2471	commit a suicide
+4238	2471	kill oneself
+4239	2472	popular
+4240	2472	widespread
+4241	2472	common
+4242	2472	well-known
+4247	2475	mouth
+4248	2476	cheap
+4249	2476	inexpensive
+4250	2477	command
+4251	2477	control
+4252	2478	reign
+4253	2478	control
+4254	2479	rule
+4255	2479	reign
+4265	2483	shape
+4266	2483	form
+4267	2484	maintain
+4272	2488	gear
+4273	2489	revolution
+4274	2489	rotation
+4275	2489	turn
+4276	2489	circumvolution
+4277	2489	twist
+4278	2490	rotation
+4279	2491	rotation
+4280	2491	circumvolution
+4281	2491	revolution
+4282	2491	turn
+4283	2491	twist
+4284	2492	traffic
+4285	2493	turnover
+4286	2494	episode
+4287	2494	instalment
+4288	2495	section
+4289	2496	segment
+4290	2496	line segment
+4291	2497	decidedly
+4292	2498	emotion
+4293	2498	excitement
+4302	2504	side
+4303	2505	side
+4304	2505	flank
+4305	2506	parent
+4308	2509	awake
+4309	2509	wake up
+4312	2511	test
+4313	2512	academy
+4314	2512	university
+4315	2512	college
+4318	2514	sex
+4319	2515	cinema
+4320	2515	movie theater
+4321	2515	theater
+4322	2516	the cinema
+4323	2516	the movie
+4326	2519	assets
+4327	2520	estate
+4328	2520	manor
+4329	2520	property
+4330	2521	fortune
+4331	2521	wealth
+4333	2523	feature
+4334	2523	property
+4336	2525	health
+4337	2525	health care
+4338	2525	healthcare
+4339	2526	procedure
+4340	2527	forehead
+4341	2528	check
+4342	2528	inspect
+4343	2528	monitor
+4344	2528	verify
+4345	2528	check up on
+4346	2528	keep an eye on
+4347	2529	pitch
+4348	2530	dwelling
+4349	2531	headquarters
+4350	2531	seat
+4351	2532	approach
+4352	2533	abide
+4353	2533	reside
+4358	2537	acerbic
+4359	2538	acute
+4360	2539	hot
+4361	2539	spicy
+4362	2540	lethal
+4363	2541	sharp
+4364	2541	hot
+4366	2543	hot
+4367	2544	warm
+4368	2544	hot
+4369	2545	mind
+4370	2546	sheet
+4371	2546	card
+4374	2549	theory
+4376	2551	fifth
+4379	2553	ledge
+4380	2553	projection
+4381	2554	performance
+4382	2554	show
+4392	2561	be liable to
+4393	2561	be subject to
+4394	2562	be subordinate to
+4406	2570	back
+4414	2576	do sightseeing
+4415	2577	examine
+4416	2577	inspect
+4417	2578	look
+4418	2578	see
+4419	2579	watch
+4420	2580	examine oneself
+4421	2580	look at oneself
+4422	2581	look around
+4423	2582	look back
+4428	2585	Monday
+4430	2587	reaction
+4435	2590	boundary
+4436	2591	edge
+4437	2591	rim
+4438	2591	verge
+4439	2591	hem
+4440	2592	shore
+4441	2592	coast
+4442	2592	strand
+4443	2593	final
+4444	2594	final
+4445	2594	end
+4446	2594	ending
+4447	2595	finale
+4464	2606	event
+4465	2607	event
+4466	2607	happening
+4467	2608	entry
+4468	2609	password
+4474	2614	perfect
+4477	2617	amusing
+4478	2617	entertaining
+4479	2617	funny
+4480	2618	funny
+4481	2618	amusing
+4482	2618	entertaining
+4484	2620	war
+4487	2622	book
+4495	2627	education
+4496	2628	affection
+4497	2629	feeling
+4504	2633	smile
+4517	2640	move
+4518	2641	at one sitting
+4519	2641	sit
+4520	2642	session
+4521	2642	meeting
+4522	2642	assembly
+4523	2642	conference
+4524	2642	hearing
+4540	2647	drawing
+4541	2647	cartoon
+4542	2648	argument
+4543	2649	argument
+4544	2649	point
+4545	2650	musical
+4546	2650	music
+4547	2651	shade
+4548	2651	shadow
+4549	2652	nim
+4550	2653	backward
+4551	2654	blind
+4552	2655	dark
+4553	2656	dark
+4554	2656	dim
+4555	2656	lightless
+4556	2657	deep
+4557	2658	low
+4558	2659	swarthy
+4559	2659	tanned
+4560	2659	weather-beaten
+4564	2662	daily
+4565	2662	every day
+4568	2664	press
+4569	2665	indemnity
+4570	2665	compensation
+4571	2665	damages
+4572	2665	recompense
+4573	2665	amends
+4574	2666	thesis
+4579	2670	team
+4580	2671	euro
+4594	2678	bring
+4595	2678	bring round
+4596	2679	wave
+4597	2680	eyesight
+4598	2680	vision
+4599	2681	look
+4600	2681	glance
+4601	2681	gaze
+4602	2682	mission
+4611	2688	adversary
+4612	2688	opponent
+4613	2688	enemy
+4614	2688	partner
+4615	2689	twenty
+4617	2691	silence
+4618	2692	silence
+4621	2694	preparation
+4628	2699	last
+4629	2699	yester-
+4639	2704	cure
+4640	2704	treat
+4648	2711	wind
+4652	2714	the East
+4653	2715	east
+4654	2716	germination
+4655	2716	rise
+4656	2717	rise
+4657	2717	east
+4660	2720	head for
+4666	2722	exchange
+4667	2723	swap
+4673	2727	final
+4674	2727	definitive
+4675	2727	ultimate
+4676	2727	conclusive
+4677	2727	eventual
+4678	2727	inflexible
+4679	2728	ultimate
+4680	2728	utmost
+4681	2729	gable
+4682	2730	maximum
+4683	2730	peak
+4684	2731	summit
+4685	2732	summit
+4686	2732	top
+4687	2732	peak
+4688	2732	apex
+4689	2733	ice
+4690	2734	blowjob
+4691	2735	ice
+4692	2735	ice cream
+4699	2740	camcorder
+4700	2740	camera
+4701	2741	seldom
+4702	2741	rarely
+4703	2742	sparsely
+4704	2743	bookcase
+4705	2743	library
+4706	2744	library
+4707	2745	library
+4708	2745	bookcase
+4709	2746	repeat
+4720	2751	section
+4723	2753	judicial
+4725	2755	exam
+4726	2755	test
+4727	2755	examination
+4735	2760	in person
+4736	2761	personally
+4737	2762	back
+4738	2762	defender
+4739	2763	defender
+4744	2767	story
+4745	2767	tale
+4746	2768	talk
+4747	2769	promise
+4748	2770	expert
+4749	2770	pundit
+4751	2772	interest
+4753	2774	prison
+4754	2774	jail
+4780	2787	directly
+4781	2788	atmosphere
+4782	2789	atmosphere
+4783	2789	ambience
+4784	2790	fur trimming
+4785	2791	gate
+4786	2792	positive
+4787	2793	gas
+4805	2801	deposit
+4806	2802	work
+4807	2802	piece
+4811	2806	medal
+4812	2807	adopt
+4813	2808	assume
+4814	2808	take over
+4815	2809	be get overcome with
+4816	2810	intercept
+4817	2810	seize
+4818	2811	be get worried
+4819	2811	worry
+4820	2812	take to heart
+4824	2815	dip
+4825	2815	fall
+4826	2816	inheritance
+4827	2817	additive inverse
+4828	2817	opposite
+4829	2818	contrary
+4830	2819	opposite
+4831	2820	limitation
+4832	2820	restriction
+4833	2821	mental deficiency
+4834	2821	obtuseness
+4835	2822	garden
+4848	2829	snow
+4852	2832	formula
+4853	2833	pattern
+4854	2833	design
+4855	2833	model
+4858	2835	result
+4859	2835	effect
+4861	2837	sojourn
+4862	2837	stay
+4863	2838	search
+4864	2838	seek
+4865	2838	look for
+4866	2839	seek
+4873	2843	extraordinary
+4874	2843	great
+4875	2844	fresh
+4876	2845	sweet
+4886	2853	technique
+4887	2854	technology
+4895	2857	think out
+4899	2860	present
+4900	2860	gift
+4902	2862	trade
+4903	2862	commerce
+4904	2863	cart
+4905	2863	caravan
+4906	2863	wagon waggon
+4907	2864	generation
+4908	2865	shot
+4909	2866	add
+4910	2866	join
+4911	2867	join
+4913	2869	ever
+4914	2869	whenever
+4915	2869	anytime
+4916	2870	extraordinary
+4917	2871	fabulous
+4918	2871	fantastic
+4919	2871	magic
+4920	2872	far-out
+4921	2872	freakish
+4922	2872	peculiar
+4923	2873	rare
+4924	2873	special
+4925	2873	wondrous
+4926	2874	unusual
+4927	2874	uncommon
+4928	2874	anomalous
+4929	2874	outrageous
+4930	2875	breast
+4931	2876	breast
+4932	2876	chest
+4933	2877	Cross
+4934	2877	cross
+4935	2878	cross
+4936	2879	lower back
+4937	2879	sacrum
+4938	2880	rood
+4939	2880	cross
+4940	2881	rate
+4941	2882	stake
+4943	2884	file
+4944	2885	packet
+4945	2885	wad
+4961	2896	sound
+4962	2896	tone
+4964	2898	big
+4965	2898	ponderous
+4966	2899	powerful
+4967	2899	mighty
+4968	2900	cherry-picked
+4969	2900	picked
+4970	2900	selected
+4971	2901	be'shert
+4972	2902	business
+4973	2903	after all
+4974	2903	eventually
+4975	2903	ultimately
+4976	2904	decisively
+4977	2905	lot
+4978	2905	plot
+4979	2905	allotment
+4985	2908	confine
+4986	2908	detain
+4987	2908	imprison
+4988	2908	jail
+4996	2911	investigation
+4997	2912	crime
+4998	2913	felony
+5001	2916	break off a relationship
+5002	2916	break up
+5003	2917	leave
+5004	2917	walk away
+5005	2917	depart
+5006	2918	pass away
+5007	2919	admittedly
+5008	2919	even though
+5009	2919	while it is true that
+5010	2920	ball
+5011	2920	sphere
+5012	2921	crutch
+5013	2922	shot
+5014	2923	shot
+5015	2923	ball
+5016	2924	sphere
+5019	2927	factory
+5020	2927	plant
+5023	2930	lie
+5024	2931	prove
+5025	2931	reveal
+5026	2932	show
+5030	2935	drug
+5031	2935	narcotic
+5032	2935	dope
+5033	2935	narco narc nark
+5034	2936	adult
+5035	2936	grown-up
+5036	2937	adult
+5037	2937	of age
+5038	2938	adult
+5039	2939	cold
+5040	2940	willingness
+5041	2940	desire
+5042	2940	wish
+5070	2960	give
+5071	2961	provide
+5072	2962	be infectious
+5073	2962	infect
+5078	2965	beauty parlour
+5079	2965	consulting-room
+5080	2965	surgery
+5081	2966	cabinet
+5082	2967	study
+5083	2968	mislead
+5084	2968	deceive
+5085	2968	lead astray
+5086	2968	mix up
+5087	2969	entrance
+5095	2973	ass
+5096	2973	arse
+5097	2973	butt
+5098	2973	asshole
+5100	2975	vision
+5103	2978	arrest
+5104	2979	confiscate
+5105	2979	distrain
+5106	2980	terribly
+5107	2980	desperately
+5108	2981	terribly
+5109	2981	dreadfully
+5111	2983	crazy
+5112	2983	dotty
+5113	2983	wild
+5114	2984	crazy
+5115	2984	frantic
+5116	2984	wild
+5117	2985	crazy
+5118	2985	mad
+5119	2986	insane
+5120	2986	mad
+5121	2986	as mad as a March hare
+5122	2986	as mad as a hatter hare
+5123	2986	barking
+5124	2986	barking mad
+5125	2987	mad
+5126	2987	crazy
+5127	2987	wild
+5128	2987	crazy like a fox
+5129	2987	delirious
+5130	2987	excited
+5133	2989	accused
+5134	2989	defendant
+5135	2989	indictee
+5138	2992	palace
+5139	2992	manor house
+5151	2998	in the vicinity of
+5152	2998	near
+5153	2998	nearby
+5154	2998	neighborhood
+5155	2998	neighbourhood
+5156	2998	vicinity
+5173	3011	capitulate
+5174	3011	give in
+5175	3011	give up
+5176	3011	resign
+5177	3011	surrender
+5178	3012	capitulate
+5179	3012	give in
+5180	3012	give up
+5181	3012	surrender
+5182	3012	throw in the towel
+5183	3012	back down
+5184	3013	jurist
+5185	3013	lawyer
+5186	3014	sector
+5194	3019	favourite
+5195	3020	payment
+5196	3021	commandant
+5197	3022	commandant
+5198	3022	commanding officer
+5199	3023	commander
+5200	3023	commissioner
+5201	3023	police commandant
+5202	3024	fire chief
+5203	3024	marshal
+5204	3025	scoutmaster
+5206	3027	effort
+5217	3033	pope
+5249	3047	memoir
+5250	3048	memory
+5251	3048	recollection
+5252	3048	remembrance
+5253	3048	reminiscence
+5254	3048	reference
+5255	3049	mention
+5256	3050	souvenir
+5258	3052	mass
+5259	3052	a whole lot
+5260	3052	flood
+5261	3052	heaps of
+5262	3052	sea
+5263	3053	ground
+5264	3053	earth
+5265	3054	mass
+5266	3055	visit
+5267	3056	appropriately
+5268	3056	accordingly
+5269	3056	adequately
+5270	3057	respectively
+5271	3057	accordingly
+5272	3058	regulations
+5273	3059	abutment
+5274	3060	connection
+5275	3061	merger
+5276	3062	before long
+5277	3062	soon
+5278	3063	not long
+5279	3063	shortly
+5283	3067	pass
+5284	3068	belt
+5285	3069	lane
+5286	3070	stripe
+5287	3071	waist
+5288	3072	pass
+5289	3073	flight
+5290	3074	lot
+5291	3075	planet
+5303	3082	cool
+5304	3082	fine
+5314	3089	lots
+5315	3089	bags of
+5316	3089	heaps of
+5317	3089	plenty
+5318	3089	tons
+5329	3097	injured
+5330	3097	wounded
+5331	3098	morning
+5332	3099	theft
+5333	3099	larceny
+5334	3100	pocket
+5350	3108	exit
+5351	3108	gate
+5352	3109	exiting
+5353	3110	output
+5354	3111	output
+5355	3111	exit
+5356	3112	authorization
+5357	3112	entitlement
+5358	3113	touch
+5361	3116	thief
+5362	3117	summer
+5364	3119	joke
+5365	3119	jest
+5366	3120	busy
+5367	3120	occupied
+5372	3124	kilometre
+5373	3124	kilometer
+5374	3125	surprise
+5380	3129	equal
+5381	3130	even
+5395	3139	lonely
+5396	3140	lonesome
+5404	3147	external
+5405	3147	exterior
+5406	3147	superficial
+5407	3147	extern
+5408	3147	extraneous
+5409	3147	outdoor
+5419	3153	deeply
+5420	3153	profoundly
+5430	3159	interesting
+5431	3160	engine
+5432	3160	motor
+5435	3162	organism
+5436	3163	conduct
+5437	3163	lead
+5438	3164	account
+5439	3164	narration
+5440	3164	report
+5441	3165	description
+5442	3165	specification
+5447	3168	sexual
+5468	3178	frankly
+5469	3178	sincerely
+5472	3180	prayer
+5473	3180	orison
+5488	3189	weekend
+5489	3190	ha
+5492	3192	easy
+5493	3193	light
+5494	3194	light
+5495	3194	lightweight
+5496	3195	player
+5497	3195	gambler
+5498	3196	the
+5511	3204	miracle
+5512	3204	wonder
+5513	3205	amusing
+5514	3205	fancy
+5515	3206	funny
+5516	3206	entertaining
+5517	3207	krockdown
+5518	3208	ridiculous
+5527	3214	screen
+5528	3215	screen
+5529	3215	shield
+5530	3216	knife
+5542	3224	tired
+5543	3224	weary
+5544	3225	proud
+5545	3226	proud
+5546	3226	boastful
+5547	3226	prideful
+5555	3232	fulfil
+5556	3232	act
+5557	3232	do
+5558	3232	perform
+5559	3233	mail
+5560	3233	post
+5561	3234	post office
+5562	3234	mail
+5563	3235	post
+5564	3235	mail
+5565	3236	midday
+5566	3236	noon
+5567	3237	southern
+5568	3237	southerly
+5569	3238	arrange
+5570	3238	establish
+5571	3239	arrange
+5572	3239	organize
+5573	3239	set up
+5574	3239	prepare
+5575	3239	stage
+5576	3239	throw a party
+5577	3240	equip
+5578	3240	install
+5579	3240	fit out
+5580	3240	fit up
+5581	3240	furnish
+5582	3240	gear
+5583	3241	set up set up
+5584	3242	install oneself at in
+5585	3242	set up as
+5586	3243	girlfriend
+5587	3243	friend
+5590	3246	brand
+5591	3246	mark
+5592	3247	march
+5593	3248	comrade
+5594	3248	companion
+5595	3249	partner
+5596	3249	companion
+5598	3251	sad
+5599	3251	brokenhearted
+5600	3251	rueful
+5608	3256	atmosphere
+5609	3256	ambience
+5610	3256	spirit
+5611	3257	mood
+5612	3257	humour
+5613	3257	humor
+5614	3257	cheer
+5620	3262	anyone
+5621	3262	anybody
+5630	3268	leave
+5653	3282	unknown
+5654	3282	anonymous
+5655	3283	angle
+5656	3284	corner
+5657	3285	point of view
+5658	3286	cavity
+5659	3287	hole
+5664	3291	gold
+5665	3292	map
+5666	3293	map
+5667	3293	chart
+5673	3297	lieutenant
+5674	3297	first lieutenant
+5675	3297	poruchik
+5676	3298	cadre
+5677	3298	staff
+5678	3299	audience
+5686	3304	represent
+5687	3305	imagine
+5688	3305	envisage
+5692	3308	guard
+5693	3308	watch
+5694	3308	look after
+5695	3308	supervise
+5696	3308	mind
+5697	3309	tend
+5725	3328	introduction
+5726	3329	crew
+5727	3329	team
+5728	3330	personnel
+5729	3330	staff
+5736	3335	front
+5737	3335	face
+5738	3335	head
+5739	3335	fore
+5741	3337	loss
+5750	3343	murder
+5751	3343	homicide
+5752	3343	assassination
+5783	3359	dependence
+5784	3359	dependency
+5785	3360	relation
+5794	3368	talent
+5795	3369	magazine
+5796	3370	warehouse
+5797	3370	storehouse
+5805	3375	cat
+5806	3376	dust bunny
+5807	3377	freshman
+5809	3379	altogether
+5810	3379	including
+5811	3379	inclusive
+5812	3379	jointly
+5813	3379	together
+5840	3392	secret
+5848	3396	break up
+5849	3396	split up
+5850	3397	break
+5851	3397	break off
+5852	3398	tear off
+5853	3398	tear
+5854	3399	arrive
+5855	3399	come in
+5856	3400	influence
+5857	3400	affect
+5858	3400	bias
+5859	3401	sail into
+5860	3401	swim into
+5861	3402	flow into
+5870	3409	visible
+5877	3414	complaint
+5889	3424	farmer
+5890	3425	man
+5891	3425	guy
+5892	3426	peasant
+5895	3428	cut down
+5896	3428	downscale
+5897	3428	reduce
+5898	3428	restrict
+5899	3429	mark off
+5900	3430	come down to
+5901	3431	commander
+5902	3431	leader
+5903	3431	commandant
+5904	3431	commanding officer
+5905	3431	officer
+5906	3432	manly
+5907	3433	masculine
+5941	3448	buddy
+5942	3448	pal
+5945	3451	inscribe
+5946	3452	inscribe
+5947	3452	write in
+5948	3453	enter one's name
+5949	3453	register
+5950	3454	register
+5951	3454	write down
+5956	3457	compatible
+5957	3457	congruent
+5958	3457	legal
+5959	3458	harmonious
+5960	3459	peaceable
+5970	3465	begrudge
+5971	3466	pity
+5972	3466	feel sorry
+5973	3467	regret
+5974	3468	regret
+5975	3468	repent
+5976	3469	able
+5977	3469	capable
+5978	3470	talented
+5979	3470	gifted
+5980	3470	clever
+5981	3471	sin
+5989	3478	stairs
+5990	3478	staircase
+5991	3479	cycle
+5996	3482	bicycle
+5997	3482	bike
+5998	3482	cycle
+5999	3482	pushbike
+6001	3484	performance
+6003	3486	hang
+6004	3487	hang loosely
+6005	3488	hang
+6006	3488	be feel
+6007	3489	owe
+6012	3493	wine
+6032	3504	violence
+6033	3505	search
+6034	3505	hunt
+6035	3505	quest
+6036	3506	exercise
+6037	3506	instruction
+6038	3507	bear
+6039	3507	stand
+6040	3507	unbearable
+6049	3512	nocturnal
+6050	3512	nightly
+6053	3514	hire
+6054	3515	involve
+6055	3516	get involved
+6056	3517	premiere
+6066	3525	escape
+6067	3525	flight
+6068	3525	getaway
+6069	3525	defection
+6070	3525	elopement
+6078	3530	temperature
+6083	3533	drunk
+6084	3533	intoxicated
+6085	3533	drunken
+6086	3534	drunk
+6089	3536	real
+6092	3538	explanation
+6093	3538	clarification
+6097	3541	independently
+6098	3542	regardless of
+6099	3542	irrespectively
+6105	3547	at the same time
+6106	3547	also
+6107	3548	declaration
+6115	3553	describe
+6123	3558	tempo
+6124	3559	tempo
+6125	3559	speed
+6126	3559	rate
+6127	3560	autopsy
+6128	3561	section
+6136	3566	birth
+6137	3567	birthday
+6138	3568	shoot
+6139	3569	agreement
+6140	3569	covenant
+6141	3569	entente
+6142	3569	settlement
+6143	3570	agreement
+6144	3570	deal
+6145	3571	understanding
+6146	3572	appearance
+6147	3572	look
+6155	3579	cold
+6156	3579	coldly
+6157	3580	coldly
+6158	3580	cold
+6159	3581	cold
+6160	3581	coldness
+6161	3581	frigidity
+6162	3582	appertain to
+6163	3582	be due to
+6164	3582	be owe to
+6169	3585	knowledge
+6182	3593	lose
+6183	3593	mislay
+6184	3594	ruin
+6185	3594	bring to ruin
+6186	3595	get lost
+6187	3595	lose oneself
+6188	3595	lose the way
+6189	3596	go astray
+6190	3597	distance
+6195	3602	police
+6214	3614	clothes
+6215	3614	attire
+6218	3616	size
+6219	3617	battle
+6220	3618	advance
+6221	3619	advancement
+6222	3620	promotion
+6223	3621	deceptive
+6224	3621	phoney
+6225	3622	false
+6226	3622	phoney
+6238	3631	northern
+6239	3631	north
+6240	3632	order
+6241	3633	salon
+6242	3633	living room
+6254	3640	bathroom
+6255	3640	bath
+6257	3642	airport
+6258	3642	airfield
+6259	3643	jump
+6260	3643	skip
+6274	3651	actually
+6275	3651	in fact
+6276	3652	that's right
+6277	3652	yes, it is
+6281	3654	attire
+6282	3655	tune
+6283	3655	accordatura
+6295	3662	rally
+6296	3663	veche
+6303	3669	photo
+6304	3669	photograph
+6305	3669	picture
+6306	3669	still image
+6307	3670	photography
+6308	3670	photograph
+6312	3672	murderer
+6313	3672	killer
+6325	3681	rook
+6326	3681	castle
+6327	3682	stack
+6328	3683	tower
+6329	3683	rook
+6330	3683	castle
+6331	3684	turret
+6334	3687	anxiety
+6335	3688	anxiety
+6336	3688	fear
+6338	3690	comment
+6339	3691	commentary
+6340	3691	comment
+6350	3698	indicator
+6351	3699	pointer
+6374	3713	hate
+6375	3713	detest
+6385	3717	darkness
+6386	3718	attractive
+6390	3720	drab
+6391	3720	grey
+6392	3721	grey
+6393	3721	drab
+6394	3722	grey
+6395	3722	drab
+6396	3722	gray
+6397	3723	lane
+6398	3724	racetrack
+6399	3725	residual rock
+6400	3725	tor
+6401	3726	thorium
+6402	3727	track
+6403	3728	track
+6404	3728	trajectory
+6405	3728	path
+6406	3728	course
+6407	3729	current
+6408	3729	up to date
+6409	3730	dad
+6410	3730	daddy
+6416	3733	exercise
+6417	3733	do exercise
+6418	3733	rehearse
+6424	3738	agree
+6425	3739	make an appointment
+6434	3744	afresh
+6435	3744	newly
+6437	3746	carbon
+6438	3747	charcoal
+6439	3748	coal
+6440	3748	carbon
+6447	3750	guilty
+6448	3751	adventure
+6476	3765	loan
+6477	3765	debt
+6481	3768	speed
+6482	3769	speed
+6483	3769	quickness
+6484	3770	velocity
+6489	3774	wide
+6490	3775	expedition
+6491	3776	expedition
+6492	3776	party
+6493	3777	party
+6494	3778	trousseau
+6499	3782	homeland
+6500	3782	fatherland
+6501	3782	motherland
+6502	3783	decay
+6503	3784	fall
+6504	3784	falling
+6505	3785	misstep
+6506	3785	trip
+6507	3785	tumble
+6508	3786	register
+6519	3793	intermediation
+6520	3794	folk
+6521	3794	people
+6522	3795	people
+6523	3795	nation
+6526	3797	activity
+6546	3811	above
+6547	3812	over
+6548	3813	lie
+6549	3813	falsehood
+6563	3821	dead
+6570	3826	advocate
+6571	3827	lawyer
+6572	3827	attorney
+6573	3827	barrister
+6574	3828	advocaat
+6581	3832	happen
+6582	3833	pop in
+6583	3834	set
+6584	3835	wing
+6588	3837	homicide
+6589	3838	winner
+6590	3838	victor
+6595	3840	paint
+6596	3841	make up
+6616	3853	institute
+6618	3855	not all too
+6619	3855	not too
+6620	3855	not very
+6621	3856	absolutely
+6629	3861	edit
+6630	3862	edition
+6639	3868	moon
+6640	3869	moon
+6641	3869	Moon
+6642	3870	moonlight
+6671	3886	creation
+6672	3886	formation
+6675	3889	board
+6676	3890	deck
+6677	3891	layer
+6699	3905	arrest
+6700	3906	keep
+6701	3907	stop
+6702	3907	halt
+6707	3910	nicely
+6708	3910	prettily
+6715	3914	trick
+6718	3917	irritate
+6719	3917	annoy
+6720	3917	upset
+6721	3918	be irritate
+6722	3919	worthy
+6723	3919	admirable
+6724	3919	trustworthy
+6743	3933	live
+6744	3934	wait
+6745	3935	get
+6746	3936	wait
+6763	3948	C
+6764	3949	three
+6765	3950	trinity
+6766	3951	portfolio
+6767	3952	wallet
+6768	3952	billfold
+6771	3954	since when
+6772	3955	where from
+6773	3956	for as long as
+6774	3957	since
+6780	3961	childhood
+6810	3980	being
+6811	3980	entity
+6812	3980	living
+6813	3981	existence
+6814	3981	subsistence
+6815	3982	seventh
+6828	3990	gallery
+6836	3994	ambulance
+6837	3995	ambulance service
+6838	3995	emergency service
+6839	3995	mountain rescue service
+6840	3995	technical emergency service
+6841	3996	standby
+6842	3996	alert
+6843	3996	readiness
+6844	3996	stand-by
+6866	4008	grass
+6867	4008	herb
+6868	4009	weed
+6869	4009	grass
+6879	4014	excursion guide
+6880	4015	pilot
+6881	4016	remote control
+6882	4017	this way
+6892	4023	population
+6899	4027	cautiously
+6900	4027	carefully
+6901	4027	guardedly
+6903	4029	beat
+6904	4030	break
+6905	4031	hurt
+6906	4032	break
+6907	4032	break apart
+6908	4033	crash
+6931	4050	table
+6932	4051	TV
+6933	4051	TV set
+6934	4051	television
+6951	4060	automotive
+6952	4060	car
+6953	4060	motor
+6957	4064	status
+6972	4069	basin
+6973	4070	bedpan
+6974	4071	pool
+6975	4072	swimming pool
+6976	4072	pool
+6992	4081	light
+6993	4081	kindle
+6994	4081	ignite
+6995	4081	strike
+6996	4082	start
+6997	4082	put on
+6998	4082	switch on
+6999	4083	turn on
+7000	4083	switch on
+7001	4084	start
+7002	4085	become enthusiastic
+7003	4086	boil
+7004	4086	grow get heated
+7005	4087	catch fire
+7006	4087	ignite
+7007	4087	light
+7008	4088	go on
+7009	4088	light up
+7020	4094	per annum
+7021	4094	yearly
+7029	4098	fashion
+7033	4101	desk
+7034	4101	writing desk
+7035	4101	writing table
+7059	4117	truck
+7060	4117	lorry
+7062	4119	support
+7063	4119	help
+7074	4124	worker
+7075	4124	workman
+7078	4127	precise
+7079	4127	exact
+7080	4128	hunt
+7081	4129	pursue
+7082	4129	chase
+7083	4130	compete
+7084	4130	race
+7103	4142	performance
+7104	4142	show
+7105	4143	presentation
+7106	4144	double
+7113	4148	beach
+7114	4148	strand
+7117	4151	initially
+7118	4151	at first
+7119	4151	in the beginning
+7120	4152	anniversary
+7122	4154	billion
+7123	4154	milliard
+7139	4163	circle
+7140	4163	ring
+7147	4167	shirt
+7155	4173	airport
+7156	4174	port
+7157	4175	port
+7158	4175	harbour
+7161	4177	poetry
+7162	4178	station
+7163	4179	destroy
+7164	4179	kill
+7165	4180	murder
+7166	4180	kill
+7167	4181	grapple with
+7180	4189	undoubtedly
+7181	4189	no doubt
+7182	4189	arguably
+7183	4189	undeniably
+7187	4192	quiet
+7188	4193	quiet
+7189	4193	silent
+7201	4199	identity
+7202	4200	identity
+7203	4200	sameness
+7210	4205	simultaneously
+7211	4205	at the same time
+7212	4205	concurrently
+7213	4206	image
+7214	4206	picture
+7221	4211	adapt
+7222	4212	be postterm be post-term
+7223	4213	carry
+7224	4214	carry forward
+7225	4215	carry
+7226	4215	carry over
+7227	4215	manhandle
+7228	4216	change
+7229	4217	communicate
+7230	4218	convey
+7231	4219	copy
+7232	4219	transfer
+7233	4220	divide a word
+7234	4221	exceed
+7235	4221	surpass
+7236	4222	introduce
+7237	4223	move
+7238	4224	postpone
+7239	4225	prefer
+7240	4226	transfer
+7241	4227	transmit
+7242	4228	transport
+7243	4229	transpose
+7244	4230	overshoot
+7245	4231	adapt
+7246	4232	change
+7247	4233	move
+7248	4234	propagate
+7249	4234	spread
+7250	4235	spread
+7251	4236	transmit
+7252	4237	front
+7253	4237	battlefront
+7254	4238	weather front
+7259	4241	quotation
+7260	4241	citation
+7261	4241	quote
+7266	4245	grace
+7267	4246	mercy
+7268	4246	grace
+7279	4255	WWW
+7280	4256	www
+7311	4279	sand
+7313	4281	repair
+7314	4281	renovation
+7315	4281	correction
+7316	4281	mend
+7317	4281	remedy
+7328	4287	wolf
+7329	4288	meat grinder
+7333	4290	swear
+7345	4296	a day
+7346	4296	daily
+7387	4323	concern
+7388	4323	anxiety
+7389	4323	agitation
+7390	4323	unease
+7391	4323	uneasiness
+7400	4332	constantly
+7401	4332	permanently
+7402	4332	continually
+7430	4348	sentry
+7431	4349	laboratory
+7432	4349	lab
+7437	4351	carbohydrate
+7438	4351	sugars
+7439	4352	sugar
+7453	4365	burden
+7454	4366	weight
+7456	4368	qualification
+7472	4380	brightly
+7473	4381	clearly
+7474	4381	plainly
+7488	4391	cell
+7493	4395	breath
+7496	4398	extract
+7497	4398	pull out
+7498	4398	take away
+7499	4398	uproot
+7500	4399	pick up
+7501	4399	seduce
+7513	4408	funeral
+7514	4408	burial
+7526	4414	significant
+7532	4419	promise
+7568	4442	confidence
+7569	4442	trust
+7588	4453	fresh
+7589	4453	new
+7590	4453	renew
+7591	4453	repeat
+7592	4453	second
+7598	4458	uprising
+7599	4458	insurrection
+7607	4463	interpretation
+7613	4468	evil
+7614	4468	harm
+7625	4474	opinion
+7626	4474	statement
+7627	4475	predicate
+7628	4476	ruling
+7629	4476	judgement
+7647	4486	treatment
+7648	4486	therapy
+7649	4486	curing
+7650	4487	sit down
+7651	4487	sit
+7668	4499	precisely
+7669	4499	strictly
+7686	4507	blockhead
+7687	4507	head
+7688	4507	nut
+7689	4508	head
+7695	4513	announcement
+7696	4513	ad
+7697	4513	advert
+7698	4514	declaration
+7699	4514	notice
+7700	4514	advertisement
+7701	4514	publication
+7704	4517	bouncer
+7705	4517	doorman
+7706	4518	goalkeeper
+7707	4518	goalie
+7708	4519	form
+7709	4520	remittance
+7710	4521	remittance
+7711	4521	money order
+7712	4522	source
+7713	4523	transfer
+7719	4526	bag
+7720	4526	sack
+7721	4527	panhandle
+7722	4527	salient
+7723	4527	spur
+7744	4535	cow
+7755	4544	honour
+7756	4544	honor
+7772	4557	look
+7773	4557	face
+7774	4557	air
+7775	4558	mine
+7776	4559	popularity
+7785	4564	scream
+7786	4564	shout
+7789	4566	officially
+7790	4567	eagle
+7791	4568	mix
+7802	4574	associate with
+7803	4574	mix with
+7804	4575	stop
+7822	4588	D
+7823	4589	two
+7827	4593	motorway
+7828	4593	highway
+7829	4593	freeway
+7830	4593	expressway
+7846	4606	graceful
+7847	4607	grateful
+7848	4607	thankful
+7889	4634	dear
+7890	4634	beloved
+7891	4635	beloved
+7892	4635	love
+7893	4635	sweetheart
+7912	4644	hint
+7919	4647	fill in
+7920	4648	fulfill
+7923	4650	serial
+7947	4666	fury
+7948	4667	passion
+7950	4669	kingdom
+7951	4669	realm
+7968	4677	attacker
+7969	4678	forward
+7970	4678	striker
+7986	4686	egg
+7987	4687	kernel
+7990	4689	cash
+7991	4690	cash
+7992	4690	currency
+7993	4690	ready money
+7994	4690	cash money
+7995	4690	hard cash
+7996	4690	ready cash
+7997	4691	change
+7998	4691	conversion
+7999	4691	metamorphosis
+8000	4691	transformation
+8001	4691	alteration
+8002	4691	transfiguration
+8024	4703	application
+8025	4704	pass
+8026	4705	tale
+8027	4706	salesman
+8028	4706	shop assistant
+8029	4706	salesclerk
+8030	4706	sales assistant
+8033	4709	medicine
+8034	4710	wage
+8035	4710	salary
+8036	4710	pay
+8037	4710	earnings
+8049	4719	experiment
+8055	4724	dress
+8056	4724	frock
+8057	4725	merit
+8058	4725	contribution
+8064	4729	calamity
+8065	4729	unhappiness
+8066	4730	misfortune
+8067	4730	affliction
+8075	4733	belly
+8076	4733	abdomen
+8077	4733	stomach
+8078	4734	equilibrium
+8079	4734	balance
+8080	4735	audition
+8081	4736	interrogation
+8082	4736	examination
+8083	4736	questioning
+8087	4739	archive
+8094	4744	fire
+8100	4748	board
+8101	4749	board
+8102	4749	plank
+8103	4750	bench
+8116	4756	ankle
+8117	4757	cube
+8143	4768	as
+8144	4768	like
+8145	4769	like
+8146	4770	range
+8147	4770	reach
+8148	4771	inspection
+8149	4771	survey
+8150	4772	execution
+8151	4772	performing
+8152	4772	production
+8155	4775	to get control over
+8156	4776	to seize
+8190	4798	ahead
+8191	4799	forward
+8192	4799	ahead
+8193	4799	on
+8194	4799	forth
+8195	4799	forwards
+8196	4800	forward quick march
+8203	4803	stump
+8204	4804	furniture
+8205	4804	piece of furniture
+8206	4805	emotional
+8234	4820	medicine
+8235	4820	drug
+8260	4835	ten
+8261	4836	reserve
+8262	4836	stock
+8263	4837	spare tyre
+8264	4837	spare wheel
+8265	4838	wrestling
+8266	4839	key
+8267	4840	age
+8268	4840	era
+8269	4841	day
+8270	4841	twenty-four hours
+8273	4844	near
+8278	4848	employment
+8287	4855	satisfaction
+8301	4861	ruler
+8302	4862	basket
+8303	4862	hamper
+8304	4863	recycle bin
+8305	4863	trash
+8306	4863	trash can
+8307	4864	waste bin
+8308	4864	bin
+8309	4864	litter bin
+8310	4864	rubbish bin
+8311	4864	wastebasket
+8313	4866	order
+8314	4866	commission
+8315	4867	ordering
+8316	4868	purchase order
+8323	4872	copy
+8324	4873	lance
+8326	4875	drama
+8336	4881	column
+8337	4881	pillar
+8338	4882	file
+8342	4885	fee
+8343	4885	remuneration
+8344	4885	payment
+8345	4885	wage
+8346	4885	wages
+8347	4886	payment
+8348	4887	reward
+8386	4909	acknowledgement
+8387	4909	recognition
+8388	4910	discretion
+8389	4911	recognition
+8395	4913	put on
+8396	4914	set
+8397	4915	history
+8399	4917	attack
+8400	4917	aggression
+8401	4917	assault
+8402	4918	fit
+8404	4920	cake
+8405	4920	pie
+8406	4921	dough
+8407	4921	batter
+8408	4922	vulnerability
+8409	4923	weakness
+8410	4923	flakiness
+8411	4924	weakness
+8412	4924	frailty
+8413	4925	weakness
+8414	4925	soft spot
+8415	4926	sadness
+8416	4926	sorrow
+8482	4961	associate
+8483	4961	connect
+8484	4961	relate
+8485	4962	bind
+8486	4962	cojoin
+8487	4962	concatenate
+8488	4962	conjoin
+8489	4962	interlock
+8490	4962	pinion
+8491	4963	join
+8492	4963	link
+8493	4963	strap
+8494	4963	tether
+8507	4970	taxi
+8508	4970	taxicab
+8516	4975	barely
+8517	4975	hardly
+8518	4976	just
+8519	4977	as soon as
+8520	4978	only
+8522	4980	unnecessary
+8523	4980	needless
+8524	4980	superfluous
+8525	4980	useless
+8526	4980	redundant
+8527	4980	dispensable
+8534	4985	instruction
+8535	4986	manual
+8547	4995	mirror
+8548	4995	looking-glass
+8554	4999	mile
+8565	5003	well-founded
+8566	5003	justified
+8567	5003	founded
+8568	5003	informed
+8569	5003	principled
+8570	5003	reasoned
+8573	5006	disc
+8574	5007	discus
+8575	5008	disk
+8599	5023	honor
+8600	5023	credit
+8601	5023	glory
+8605	5027	hardly
+8606	5027	scarcely
+8607	5028	no sooner
+8608	5029	hardly
+8609	5029	scarcely
+8615	5034	revenge
+8616	5034	vengeance
+8617	5034	retribution
+8618	5035	sex
+8619	5035	gender
+8632	5040	acutely
+8633	5040	sharply
+8634	5041	harshly
+8635	5041	savagely
+8636	5041	sharply
+8637	5041	sternly
+8638	5042	sharply
+8648	5048	lady
+8649	5048	queen
+8650	5049	queen
+8651	5049	lady
+8654	5052	youth
+8655	5052	adolescence
+8661	5055	dignity
+8662	5056	surname
+8671	5062	opposite
+8672	5062	contrary
+8673	5062	reverse
+8674	5062	obverse
+8675	5063	look peek
+8678	5065	portrait
+8702	5077	equitably
+8703	5077	justly
+8704	5077	with reason
+8705	5078	right
+8706	5078	rightly
+8707	5079	that's right
+8709	5081	suffering
+8710	5081	affliction
+8711	5081	anguish
+8712	5081	torment
+8713	5081	tribulation
+8714	5082	dig
+8715	5083	kick
+8716	5084	magic
+8733	5095	cordially
+8734	5095	heartily
+8735	5095	warmly
+8736	5096	naked
+8737	5097	naked
+8738	5097	nude
+8739	5097	bare
+8744	5100	application
+8745	5100	usage
+8746	5100	use
+8750	5104	educate
+8751	5105	form
+8785	5125	apprise
+8786	5125	apprize
+8794	5132	breach
+8795	5132	infringement
+8796	5132	derogation
+8797	5132	disturbance
+8798	5133	alarm
+8823	5147	painful
+8824	5147	acute
+8825	5148	painful
+8826	5148	afflicting
+8827	5149	cover
+8828	5149	cap
+8829	5150	cover
+8830	5150	cap
+8831	5150	defray
+8832	5151	cover
+8833	5151	cap
+8834	5151	impregnate
+8869	5173	knight
+8870	5173	cavalier
+8871	5173	ritter
+8884	5179	clue
+8885	5180	instruction
+8886	5181	needle
+8887	5181	hand
+8888	5181	pointer
+8889	5181	indicator
+8901	5188	drink
+8902	5188	beverage
+8907	5192	abbreviation
+8908	5193	shortcut
+8909	5194	thinking
+8910	5195	publicly
+8911	5195	in public
+8912	5195	publically
+8947	5215	tend
+8948	5215	used to
+8949	5216	lift
+8950	5216	elevator
+8951	5217	smell
+8952	5217	stink
+8953	5218	stink
+8954	5218	smell
+8971	5224	blow
+8990	5234	affirmation
+8991	5234	statement
+9000	5239	congratulation
+9043	5261	gorgeous
+9060	5271	broadcast
+9061	5271	broadcasting
+9062	5272	emission
+9063	5273	issue
+9083	5285	shelf
+9088	5289	fifty
+9089	5290	lung
+9090	5291	bond
+9091	5291	togetherness
+9092	5292	link
+9093	5292	tie
+9094	5292	attachment
+9095	5292	connection
+9096	5292	connexion
+9097	5292	kinship
+9100	5295	clip
+9101	5296	leaf
+9102	5296	blade
+9103	5297	leaf
+9104	5297	leaf node
+9111	5303	hunt
+9122	5311	comfortable
+9123	5312	mostly
+9124	5312	usually
+9125	5313	recording
+9129	5315	support
+9135	5320	generally
+9136	5321	generally
+9137	5321	broadly
+9142	5324	grow up
+9143	5325	increase
+9161	5339	flock
+9162	5339	shoal
+9163	5339	group
+9164	5340	herd
+9165	5340	crowd
+9166	5340	multitude
+9167	5340	swarm
+9168	5340	throng
+9169	5341	herd
+9170	5341	flock
+9171	5341	drove
+9186	5351	ambition
+9191	5354	probable
+9192	5354	likely
+9193	5354	possible
+9208	5367	disturb
+9209	5367	disquiet
+9210	5368	stupidity
+9211	5368	foolishness
+9213	5370	forty
+9218	5375	metal
+9247	5390	consultation
+9248	5391	consultation
+9249	5391	advice
+9258	5396	absolute
+9259	5396	downright
+9260	5397	finished
+9261	5398	finite
+9278	5408	power
+9292	5418	challenge
+9293	5419	clunker
+9294	5420	corpse
+9295	5420	cadaver
+9302	5425	boarded up
+9303	5425	nailed shut
+9304	5426	jammed
+9305	5427	killed
+9308	5430	pound
+9316	5436	dressed
+9320	5440	tunnel
+9327	5446	stretching
+9328	5447	tension
+9329	5448	tension
+9330	5448	voltage
+9339	5455	back
+9347	5461	soft
+9371	5478	argue
+9375	5482	beard
+9376	5483	chin
+9416	5506	loneliness
+9417	5506	solitude
+9418	5507	retirement
+9419	5507	solitude
+9439	5516	projectile
+9440	5516	bullet
+9441	5516	missile
+9490	5541	threat
+9491	5541	menace
+9503	5549	chicken
+9508	5553	painter
+9515	5558	undertake
+9516	5559	tank
+9517	5559	container
+9518	5559	cistern
+9519	5559	vessel
+9550	5574	suspicion
+9556	5579	wrong
+9568	5585	dawn
+9569	5586	dawn
+9570	5586	daybreak
+9571	5586	sunrise
+9572	5586	break of day
+9573	5587	daylight
+9574	5587	dawn
+9662	5641	noise
+9663	5641	racket
+9665	5643	permission
+9666	5643	authorisation
+9667	5643	authorization
+9683	5654	rose
+9698	5663	reference
+9720	5678	education
+9722	5680	each other
+9723	5680	one another
+9724	5681	likewise
+9725	5681	same to you
+9754	5697	sense
+9803	5724	fast
+9804	5725	post
+9810	5729	steel
+9821	5736	T-shirt
+9843	5747	café
+9844	5747	coffeehouse
+9845	5747	coffee house
+9849	5750	meeting
+9941	5799	patience
+9962	5808	clock
+9963	5808	watch
+9977	5818	bunch
+9978	5819	crash barrier
+9979	5820	crew
+9980	5820	pack
+9981	5821	gang
+9986	5824	reading
+9995	5830	attract
+9996	5831	pull
+10015	5839	breakfast
+10056	5866	corruption
+10057	5866	bribery
+10058	5866	corruptibility
+10061	5869	beauty
+10067	5873	bath
+10070	5875	decrease
+10071	5875	lessen
+10072	5875	reduce
+10073	5876	decrease
+10074	5876	reduce
+10075	5876	lessen
+10076	5877	reduce
+10077	5877	shrink
+10078	5877	scale down
+10081	5880	gang
+10101	5896	calendar
+10109	5903	pressure
+10122	5910	localisation
+10155	5926	taste
+10185	5945	age
+10186	5946	era
+10187	5947	identical
+10234	5976	clinical school
+10235	5976	teaching hospital
+10236	5976	university hospital
+10249	5982	smell
+10250	5983	trump
+10258	5987	cymbal
+10259	5987	plate
+10260	5988	plate
+10261	5988	dish
+10262	5989	platter
+10263	5990	turntable
+10282	6003	empire
+10284	6005	stain
+10285	6005	spot
+10299	6012	echo
+10301	6014	in good shape
+10302	6014	physical fitness
+10303	6015	standing
+10338	6036	coin
+10339	6036	piece
+10379	6056	communication
+10385	6060	fraud
+10386	6061	fraud
+10387	6061	con
+10388	6061	deception
+10389	6061	swindle
+10390	6061	cheating
+10391	6061	deceit
+10403	6066	cassette
+10430	6089	thigh
+10461	6114	vice versa
+10462	6114	inversely
+10463	6114	the other way around
+10481	6124	nest
+10482	6125	slot
+10483	6125	socket
+10484	6126	socket
+10488	6130	cut
+10489	6131	ace
+10490	6132	as
+10491	6133	ace
+10492	6134	A-flat
+10493	6134	A♭
+10511	6147	destination
+10512	6148	fate
+10513	6148	destiny
+10516	6150	mess
+10559	6173	chastity
+10560	6174	cleanness
+10561	6175	purity
+10571	6180	breakfast
+10572	6181	darkly
+10604	6197	company
+10605	6197	companionship
+10606	6198	company
+10607	6198	troop
+10669	6230	pillow
+10670	6231	pillow
+10671	6231	cushion
+10696	6246	married
+10740	6267	ancestor
+10749	6271	command
+10750	6271	order
+10751	6271	prescribe
+10752	6271	recommend
+10753	6272	demand
+10754	6272	require
+10760	6276	rescue
+10761	6277	rescue
+10762	6277	help
+10771	6283	cousin
+10792	6298	fleet
+10812	6310	envious
+10813	6311	jealous
+10823	6319	fever
+10824	6320	fever
+10825	6320	rush
+10846	6334	always
+10847	6334	perpetually
+10848	6334	constantly
+10849	6334	continuously
+10850	6334	permanently
+10851	6335	eternally
+10852	6335	forever
+10853	6335	evermore
+10907	6363	helpful
+10908	6364	useful
+10946	6390	a little
+10960	6401	charming
+10973	6408	rope
+10974	6408	line
+10975	6408	cord
+10988	6417	baggage
+10989	6417	burden
+10990	6418	luggage
+10991	6418	baggage
+11011	6431	paw
+11015	6435	meninx
+11016	6436	tire
+11017	6436	tyre
+11018	6437	tent
+11033	6445	pepper
+11034	6445	black pepper
+11047	6454	audience
+11048	6455	auditorium
+11089	6480	rape
+11092	6483	sympathise
+11093	6483	empathise
+11094	6483	condole
+11095	6483	feel sorry
+11102	6487	ski
+11103	6488	composition
+11104	6488	assemblage
+11105	6489	compound
+11112	6491	litre
+11113	6491	liter
+11175	6529	grandson
+11176	6529	grandchild
+11184	6536	payment
+11185	6537	host
+11186	6537	receive
+11187	6537	regale
+11188	6537	take in
+11189	6537	wine and dine
+11190	6538	enjoy hospitality
+11191	6538	indwell
+11192	6539	keep
+11196	6543	order
+11197	6544	ordering
+11205	6551	beast
+11206	6552	beast
+11207	6552	fiend
+11255	6579	lodgings
+11285	6594	likewise
+11286	6594	and the same to you
+11287	6595	mutually
+11306	6607	connection
+11316	6613	dish
+11319	6615	cheaply
+11320	6615	inexpensively
+11349	6631	fluid
+11350	6632	liquid
+11352	6634	A
+11353	6635	five
+11354	6636	high five
+11355	6636	high-five
+11384	6654	linchpin lynchpin
+11385	6655	spine
+11386	6655	vertebral column
+11387	6655	backbone
+11388	6655	spinal column
+11400	6662	two hundred
+11412	6670	throne
+11442	6683	bay
+11443	6683	gulf
+11444	6683	bight
+11445	6683	cove
+11446	6683	creek
+11447	6683	inlet
+11448	6684	lay-by
+11449	6684	pull-off
+11450	6684	waiting bay
+11451	6685	sinus
+11581	6749	polite
+11582	6749	courteous
+11583	6749	amiable
+11584	6749	suave
+11592	6756	theoretically
+11597	6760	resemblance
+11598	6760	similarity
+11599	6761	similarity
+11645	6793	belongings
+11646	6793	property
+11647	6793	estate
+11648	6793	possesions
+11673	6809	involvement
+11674	6809	engagement
+11685	6818	kindly
+11699	6827	choke
+11700	6828	stew
+11701	6828	braise
+11702	6829	strangle
+11703	6830	supress
+11704	6831	suffocate
+11735	6846	oxygen
+11740	6850	awfully
+11741	6850	horribly
+11742	6850	terribly
+11743	6850	abominably
+11744	6850	beastly
+11745	6850	dreadfully
+11746	6851	terribly
+11822	6896	arrow
+11867	6926	software
+11868	6927	sound
+11877	6933	black widow
+11878	6933	black widow spider
+11879	6933	widow spider
+11880	6934	widow
+11882	6936	duh
+11883	6937	well
+11884	6938	ba
+11885	6939	well
+11937	6974	disgusting
+11938	6974	hideous
+11939	6975	age
+11940	6975	old age
+11996	7008	position
+11997	7008	location
+11998	7008	site
+11999	7009	situation
+12000	7010	regiment
+12038	7030	by no means
+12039	7030	far from it
+12040	7030	in no way
+12041	7030	not at all
+12042	7031	by no means
+12043	7031	not at all
+12044	7031	in no way
+12045	7031	far from it
+12076	7050	wasp
+12111	7067	worth
+12140	7091	except
+12141	7091	minus
+12142	7092	disadvantage
+12143	7092	drawback
+12144	7092	shortcoming
+12145	7093	minus
+12169	7105	envy
+12170	7106	jealousy
+12192	7121	flatten equal
+12219	7133	post
+12251	7152	commanding
+12252	7152	grand
+12253	7152	imposing
+12254	7153	impressive
+12255	7153	imposing
+12256	7153	magnificent
+12273	7164	confirmation
+12274	7164	affirmation
+12275	7164	acknowledgement
+12276	7164	corroboration
+12277	7165	sweat
+12288	7173	vitamin
+12298	7181	locker
+12301	7184	show
+12302	7184	spectacle
+12303	7185	spectacle
+12360	7221	power
+12361	7222	replenish
+12362	7222	supply
+12402	7244	hare
+12485	7292	technician
+12514	7311	discovery
+12515	7311	invention
+12520	7315	lev
+12521	7316	lion
+12618	7376	recent
+12619	7376	fresh
+12660	7404	stronghold
+12661	7404	fortress
+12808	7491	loyalty
+12809	7491	allegiance
+12822	7499	worrying
+12823	7499	worrisome
+12824	7499	disturbing
+12825	7499	unsettling
+12826	7499	troublesome
+12913	7555	gate
+12921	7561	arrear
+12922	7562	backlog
+13010	7614	Satan
+13019	7618	across
+13020	7618	opposite
+13081	7655	create
+13082	7655	do
+13083	7655	make
+13093	7661	fortunately
+13094	7661	aptly
+13095	7661	felicitously
+13096	7661	happily
+13097	7661	successfully
+13098	7662	fortunately
+13099	7662	luckily
+13100	7662	mercifully
+13101	7662	thankfully
+13102	7663	joyfully
+13103	7664	forbid
+13104	7664	ban
+13105	7664	prohibit
+13106	7664	disallow
+13190	7713	hunting
+13191	7713	hunt
+13202	7720	seat
+13203	7721	sitting
+13222	7733	origin
+13223	7733	provenance
+13244	7743	formally
+13245	7743	de jure
+13246	7743	in due form
+13247	7743	officially
+13248	7743	regularly
+13249	7744	in form
+13250	7744	structurally
+13299	7778	easiness
+13300	7778	facility
+13301	7778	ease
+13302	7778	smooth
+13327	7795	out
+13432	7855	polo neck
+13433	7855	turtleneck sweater
+13434	7856	turtleneck
+13435	7857	golf
+13442	7861	cake
+13443	7861	torte
+13481	7879	vertebra
+13550	7921	robot
+13554	7925	envy
+13555	7925	begrudge
+13558	7928	circus
+13684	7990	quadrans
+13685	7991	quarter
+13773	8038	fox
+13779	8043	combat
+13780	8043	fray
+13789	8049	blessing
+13844	8079	devotion
+13845	8079	commitment
+13846	8080	return
+13977	8159	cost-cutting
+13978	8160	cut
+13979	8161	cut
+13980	8161	slash
+13981	8162	cutting
+13982	8163	fell
+13983	8164	prune
+14000	8173	greatly
+14001	8173	much
+14002	8173	very
+14003	8173	amain
+14004	8173	big time
+14005	8173	extremely
+14071	8208	apparently
+14072	8208	seemingly
+14073	8208	colourably colorably
+14074	8208	ostensibly
+14075	8208	outwardly
+14076	8208	prima facie
+14078	8210	estate
+14079	8210	property
+14080	8210	possession
+14081	8210	casa
+14099	8224	eleven
+14167	8261	forthwith
+14168	8261	right away
+14330	8361	troupe
+14383	8387	deliberately
+14384	8387	intentionally
+14665	8566	three hundred
+14686	8578	sixty
+14831	8657	negatively
+14832	8658	touch
+14951	8738	from above
+15034	8785	expression
+15251	8913	decently
+15252	8913	respectably
+15269	8924	li
+15336	8966	premonition
+15337	8966	feeling
+15428	9016	half
+15843	9272	guild
+15844	9273	guild house
+16002	9360	firmly
+16003	9360	hard
+16004	9361	firmly
+16005	9361	sternly
+16006	9362	hard
+16110	9435	dish
+16111	9435	course
+16123	9443	manually
+16221	9503	pink
+16222	9504	rouge
+16223	9504	blusher
+16245	9520	bounce
+16246	9521	copy
+16247	9522	imprint
+16248	9523	reflection
+16378	9592	politely
+16379	9592	civilly
+16380	9592	courteously
+16381	9592	nicely
+16382	9592	suavely
+16396	9599	seeing
+16397	9599	viewing
+16398	9599	watching
+16443	9631	dominion
+16444	9632	reign
+16450	9634	talking
+16452	9636	translation
+16499	9662	franc
+16669	9768	privately
+16820	9860	nonsense
+16943	9934	shred
+16944	9934	scrap
+16945	9934	tatter
+16946	9934	snatch
+16947	9935	snippet
+17543	10289	wisely
+17544	10289	sagely
+17680	10371	adjust
+17681	10371	set
+17682	10372	attitude
+17683	10373	setting
+17764	10421	L/S
+17765	10421	LS
+17766	10421	leading seaman
+17767	10422	checkmate
+17768	10423	matt
+17789	10434	emotionally
+18403	10804	blather
+18404	10804	chatter
+18405	10804	idle talk
+18452	10836	gun cannon
+18580	10917	karate
+18868	11094	emptily
+18869	11095	hollowly
+18870	11095	meaninglessly
+19013	11185	sweetly
+19134	11258	impress
+19135	11258	appeal
+19203	11295	blond
+19367	11399	temporarily
+19368	11399	provisionally
+19399	11413	sumptuous
+19400	11413	magnificent
+19401	11413	stately
+19513	11470	interest
+19514	11470	make curious
+19634	11542	ha
+20113	11821	gram
+20114	11822	gram
+20115	11822	gramme
+20145	11842	cover
+20420	12005	catch
+20421	12006	fishing
+21187	12472	entourage
+21715	12796	skillet
+21716	12796	stewer
+21723	12802	before
+21724	12803	forward
+21725	12803	forwards
+21726	12803	fwd
+21748	12815	rye
+21993	12955	enrich
+22198	13073	destiny
+22199	13074	share
+22935	13492	adorn
+22936	13492	deck
+22937	13492	decorate
+22938	13492	embellish
+22939	13493	deck out
+22940	13493	overdress
+22941	13494	tune
+22942	13494	trim
+25746	15191	sit
+25747	15192	sit position
