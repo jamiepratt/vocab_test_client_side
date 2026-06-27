@@ -699,6 +699,65 @@
          :tables (count (:tables manifest))
          :row-counts row-counts}))))
 
+(defn- sentence-question-candidates-sql []
+  (str "WITH candidate_examples AS ("
+       "SELECT e.example_sentence_id, "
+       "e.sentence, "
+       "s.surface_form AS target_surface, "
+       "e.lemma_id, "
+       "e.lemma_subtlex_pos_id, "
+       "p.lemma, "
+       "p.subtlex_pos, "
+       "l.total_frequency_sn_sum_rank AS lemma_inventory_rank, "
+       "r.surface_avg_zipf_freq_sn_rank AS surface_difficulty_rank, "
+       "e.word_translation AS correct_translation, "
+       "(SELECT count(*) FROM " (qtable "surface_form_lemma_links") " link "
+       "WHERE link.surface_form_id = e.surface_form_id "
+       "AND link.lemma_id = e.lemma_id) AS lemma_pos_link_count "
+       "FROM " (qtable "example_sentences") " e "
+       "JOIN " (qtable "surface_forms") " s "
+       "ON s.surface_form_id = e.surface_form_id "
+       "JOIN " (qtable "lemmas") " l "
+       "ON l.lemma_id = e.lemma_id "
+       "JOIN " (qtable "lemma_subtlex_pos") " p "
+       "ON p.lemma_subtlex_pos_id = e.lemma_subtlex_pos_id "
+       "JOIN " (qtable "surface_form_lemma_frequency_ranks") " r "
+       "ON r.surface_form_id = e.surface_form_id "
+       "AND r.lemma_id = e.lemma_id "
+       "WHERE r.surface_avg_zipf_freq_sn_rank >= ? "
+       "ORDER BY r.surface_avg_zipf_freq_sn_rank, e.example_sentence_id "
+       "LIMIT ?) "
+       "SELECT candidate_examples.*, "
+       "'default' AS distractor_source, "
+       "d.distractor_translation, "
+       "d.import_order AS distractor_order "
+       "FROM candidate_examples "
+       "JOIN " (qtable "lemma_pos_distractors") " d "
+       "ON d.lemma_subtlex_pos_id = candidate_examples.lemma_subtlex_pos_id "
+       "AND d.is_default "
+       "UNION ALL "
+       "SELECT candidate_examples.*, "
+       "'assignment' AS distractor_source, "
+       "d.distractor_translation, "
+       "d.import_order AS distractor_order "
+       "FROM candidate_examples "
+       "JOIN " (qtable "example_sentence_distractor_assignments") " a "
+       "ON a.example_sentence_id = candidate_examples.example_sentence_id "
+       "JOIN " (qtable "lemma_pos_distractors") " d "
+       "ON d.lemma_pos_distractor_id = a.lemma_pos_distractor_id "
+       "ORDER BY surface_difficulty_rank, example_sentence_id, distractor_source, distractor_order"))
+
+(defn sentence-question-candidate-rows [{:keys [surface-rank-start candidate-limit]}]
+  (let [database-url (or (System/getenv "DATABASE_URL")
+                         (fail "DATABASE_URL is required." {:status 503}))
+        jdbc-url (database-url->jdbc-url database-url)]
+    (with-open [conn (jdbc/get-connection {:connection-uri jdbc-url})]
+      (jdbc/execute! conn
+                     [(sentence-question-candidates-sql)
+                      surface-rank-start
+                      candidate-limit]
+                     {:builder-fn rs/as-unqualified-kebab-maps}))))
+
 (defn- database-url-env []
   (or (System/getenv "DATABASE_URL")
       (fail "DATABASE_URL is required." {})))
