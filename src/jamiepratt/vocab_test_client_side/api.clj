@@ -2,7 +2,11 @@
   (:require
    [clojure.data.json :as json]
    [clojure.string :as str]
-   [jamiepratt.vocab-test-client-side.questions :as questions]))
+   [jamiepratt.vocab-test-client-side.db :as db]
+   [jamiepratt.vocab-test-client-side.questions :as questions])
+  (:import
+   [java.net URLDecoder]
+   [java.nio.charset StandardCharsets]))
 
 (def default-allowed-origins
   #{"http://localhost:8000"
@@ -44,11 +48,49 @@
 (defn not-found-response [request]
   (json-response request 404 {:error "Not found"}))
 
-(defn handler [{:keys [request-method uri] :as request}]
-  (case request-method
-    :options (no-content-response request)
-    :get (case uri
-           "/healthz" (json-response request 200 {:status "ok"})
-           "/api/questions" (json-response request 200 (questions/all))
-           (not-found-response request))
-    (not-found-response request)))
+(defn- url-decode [value]
+  (URLDecoder/decode (str value) (.name StandardCharsets/UTF_8)))
+
+(defn- query-params [request]
+  (if-let [query-string (not-empty (:query-string request))]
+    (into {}
+          (map (fn [part]
+                 (let [[raw-key raw-value] (str/split part #"=" 2)]
+                   [(url-decode raw-key) (url-decode (or raw-value ""))])))
+          (remove str/blank? (str/split query-string #"&")))
+    {}))
+
+(defn- sentence-question-block [sentence-question-rows request]
+  (let [params (query-params request)
+        block-request (questions/block-request params)
+        rows (sentence-question-rows block-request)]
+    (questions/sentence-block params rows)))
+
+(defn- exception-status [e]
+  (or (:status (ex-data e)) 500))
+
+(defn- sentence-question-block-response [request sentence-question-rows]
+  (try
+    (json-response request 200
+                   (sentence-question-block sentence-question-rows request))
+    (catch clojure.lang.ExceptionInfo e
+      (json-response request (exception-status e)
+                     {:error (ex-message e)}))))
+
+(defn make-handler
+  ([] (make-handler {}))
+  ([{:keys [sentence-question-rows]
+     :or {sentence-question-rows db/sentence-question-candidate-rows}}]
+   (fn [{:keys [request-method uri] :as request}]
+     (case request-method
+       :options (no-content-response request)
+       :get (case uri
+              "/healthz" (json-response request 200 {:status "ok"})
+              "/api/questions" (json-response request 200 (questions/all))
+              "/api/sentence-question-blocks"
+              (sentence-question-block-response request sentence-question-rows)
+              (not-found-response request))
+       (not-found-response request)))))
+
+(def handler
+  (make-handler))
