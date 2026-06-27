@@ -35,8 +35,26 @@
 (defn band-style-class [band-id style-key]
   (get-in band-styles [band-id style-key]))
 
+(defn random-hex [length]
+  (apply str (repeatedly length #(.toString (rand-int 16) 16))))
+
+(defn fallback-anonymous-session-id []
+  (let [variant-chars "89ab"]
+    (str (random-hex 8) "-"
+         (random-hex 4) "-"
+         "4" (random-hex 3) "-"
+         (.charAt variant-chars (rand-int 4)) (random-hex 3) "-"
+         (random-hex 12))))
+
+(defn anonymous-session-id []
+  (let [crypto (.-crypto js/window)]
+    (if (and crypto (.-randomUUID crypto))
+      (.randomUUID crypto)
+      (fallback-anonymous-session-id))))
+
 (defn initial-state []
   {:screen :start
+   :anonymous-session-id (anonymous-session-id)
    :selected-level :absolute-beginner
    :question-block nil
    :adaptive-block nil
@@ -52,6 +70,8 @@
    :feedback nil
    :continuation-message nil
    :item-started-at-ms nil
+   :answer-event-submission-error nil
+   :answer-event-submission-failures 0
    :results-data nil})
 
 (defonce app-state
@@ -189,6 +209,61 @@
          "&block="
          block)))
 
+(defn answer-event-url []
+  (str (api-base-url) "/api/answer-events"))
+
+(defn event-id-value [value]
+  (if (keyword? value)
+    (name value)
+    (str value)))
+
+(defn answer-event-payload [anonymous-session-id answer]
+  {:anonymous-session-id anonymous-session-id
+   :test-block-id (event-id-value (:test-block-id answer))
+   :target-lemma-id (:lemma-id answer)
+   :target-surface-form-id (:target-surface-form-id answer)
+   :candidate-rank (:candidate-rank answer)
+   :inventory-stratum (:inventory-stratum answer)
+   :lemma-rank (:lemma-rank answer)
+   :surface-difficulty-rank (:surface-difficulty-rank answer)
+   :calibrated-difficulty (:calibrated-difficulty answer)
+   :item-type (:item-type answer)
+   :choice-count (:choice-count answer)
+   :guess-rate (:guess-rate answer)
+   :selected-answer (:selected-answer answer)
+   :correct (:correct? answer)
+   :response-time-ms (:response-time-ms answer)
+   :attention-check-status (or (:attention-check-status answer)
+                               "not-attention-check")})
+
+(defn answer-event-error-message [error]
+  (or (some-> error .-message)
+      (str error)))
+
+(defn note-answer-event-submission-failure! [event error]
+  (let [message (answer-event-error-message error)]
+    (.warn js/console "Answer event submission failed" (clj->js {:event event
+                                                                 :error message}))
+    (swap! app-state
+           (fn [state]
+             (-> state
+                 (assoc :answer-event-submission-error {:message message
+                                                        :event event})
+                 (update :answer-event-submission-failures (fnil inc 0)))))))
+
+(defn submit-answer-event! [anonymous-session-id answer]
+  (let [event (answer-event-payload anonymous-session-id answer)]
+    (-> (js/fetch (answer-event-url)
+                  (clj->js {:method "POST"
+                            :headers {"Content-Type" "application/json"}
+                            :body (.stringify js/JSON (clj->js event))}))
+        (.then (fn [response]
+                 (when-not (.-ok response)
+                   (throw (js/Error. (str "Answer event submission failed: "
+                                          (.-status response)))))))
+        (.catch (fn [error]
+                  (note-answer-event-submission-failure! event error))))))
+
 (defn answer-options [question]
   (into [{:label (:correct-translation question)
           :result :correct}]
@@ -271,52 +346,58 @@
             :message (str "Correct answer: " (:correct-translation question))}))
 
 (defn record-answer [question choices choice]
-  (swap! app-state
-         (fn [{:keys [answer-locked? current-question-index answers
-                      session-questions item-started-at-ms question-block] :as state}]
-           (if answer-locked?
-             state
-             (let [answered-at-ms (now-ms)
-                   result (:result choice)
-                   correct-answer (:correct-translation question)
-                   answer {:question-index current-question-index
-                           :item-id (:item-id question)
-                           :sentence (:sentence question)
-                           :target-surface (:target-surface question)
-                           :highlight-span (:highlight-span question)
-                           :lemma-id (:lemma-id question)
-                           :lemma-pos-id (:lemma-pos-id question)
-                           :candidate-rank (:surface-difficulty-rank question)
-                           :inventory-stratum (:fixed-stratum question)
-                           :lemma-rank (:lemma-inventory-rank question)
-                           :surface-difficulty-rank (:surface-difficulty-rank question)
-                           :item-type (:item-type question)
-                           :choice-count (:choice-count question)
-                           :guess-rate (:guess-rate question)
-                           :choices (mapv :label choices)
-                           :selected-answer (:label choice)
-                           :selected (:label choice)
-                           :correct-answer correct-answer
-                           :correct correct-answer
-                           :correct? (= :correct result)
-                           :result result
-                           :response-time-ms (when item-started-at-ms
-                                               (- answered-at-ms item-started-at-ms))
-                           :answered-at-ms answered-at-ms
-                           :test-block-id (or (:adaptive-block-id question-block)
-                                              (:block question-block))
-                           :api-block (:block question-block)
-                           :adaptive-block-id (:adaptive-block-id question-block)
-                           :requested-level (:requested-level question-block)
-                           :level (:level question-block)
-                           :band (:band question)
-                           :word (:target-surface question)}
-                   next-answers (conj answers answer)]
-               (assoc state
-                      :answers next-answers
-                      :answer-locked? true
-                      :feedback (feedback-for choice question)
-                      :results-data (scoring/summarize-results session-questions next-answers)))))))
+  (let [submitted-answer (atom nil)]
+    (swap! app-state
+           (fn [{:keys [answer-locked? current-question-index answers
+                        session-questions item-started-at-ms question-block] :as state}]
+             (if answer-locked?
+               state
+               (let [answered-at-ms (now-ms)
+                     result (:result choice)
+                     correct-answer (:correct-translation question)
+                     answer {:question-index current-question-index
+                             :item-id (:item-id question)
+                             :sentence (:sentence question)
+                             :target-surface (:target-surface question)
+                             :target-surface-form-id (:target-surface-form-id question)
+                             :highlight-span (:highlight-span question)
+                             :lemma-id (:lemma-id question)
+                             :lemma-pos-id (:lemma-pos-id question)
+                             :candidate-rank (:surface-difficulty-rank question)
+                             :inventory-stratum (:fixed-stratum question)
+                             :lemma-rank (:lemma-inventory-rank question)
+                             :surface-difficulty-rank (:surface-difficulty-rank question)
+                             :item-type (:item-type question)
+                             :choice-count (:choice-count question)
+                             :guess-rate (:guess-rate question)
+                             :choices (mapv :label choices)
+                             :selected-answer (:label choice)
+                             :selected (:label choice)
+                             :correct-answer correct-answer
+                             :correct correct-answer
+                             :correct? (= :correct result)
+                             :result result
+                             :response-time-ms (when item-started-at-ms
+                                                 (- answered-at-ms item-started-at-ms))
+                             :answered-at-ms answered-at-ms
+                             :attention-check-status "not-attention-check"
+                             :test-block-id (or (:adaptive-block-id question-block)
+                                                (:block question-block))
+                             :api-block (:block question-block)
+                             :adaptive-block-id (:adaptive-block-id question-block)
+                             :requested-level (:requested-level question-block)
+                             :level (:level question-block)
+                             :band (:band question)
+                             :word (:target-surface question)}
+                     next-answers (conj answers answer)]
+                 (reset! submitted-answer answer)
+                 (assoc state
+                        :answers next-answers
+                        :answer-locked? true
+                        :feedback (feedback-for choice question)
+                        :results-data (scoring/summarize-results session-questions next-answers))))))
+    (when-let [answer @submitted-answer]
+      (submit-answer-event! (:anonymous-session-id @app-state) answer))))
 
 (defn continuation-message [decision]
   (case (:action decision)

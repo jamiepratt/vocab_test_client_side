@@ -31,7 +31,7 @@
     (cond-> {"Vary" "Origin"}
       (contains? (allowed-origins) origin)
       (assoc "Access-Control-Allow-Origin" origin
-             "Access-Control-Allow-Methods" "GET, OPTIONS"
+             "Access-Control-Allow-Methods" "GET, POST, OPTIONS"
              "Access-Control-Allow-Headers" "Content-Type"))))
 
 (defn json-response [request status body]
@@ -47,6 +47,24 @@
 
 (defn not-found-response [request]
   (json-response request 404 {:error "Not found"}))
+
+(defn- request-body-string [request]
+  (let [body (:body request)]
+    (cond
+      (nil? body) ""
+      (string? body) body
+      :else (slurp body))))
+
+(defn- read-json-body [request]
+  (try
+    (let [body (json/read-str (request-body-string request))]
+      (when-not (map? body)
+        (throw (ex-info "JSON body must be an object." {:status 400})))
+      body)
+    (catch clojure.lang.ExceptionInfo e
+      (throw e))
+    (catch Exception _
+      (throw (ex-info "Malformed JSON" {:status 400})))))
 
 (defn- url-decode [value]
   (URLDecoder/decode (str value) (.name StandardCharsets/UTF_8)))
@@ -67,7 +85,10 @@
     (questions/sentence-block params rows)))
 
 (defn- exception-status [e]
-  (or (:status (ex-data e)) 500))
+  (let [data (ex-data e)]
+    (or (:status data)
+        (when (:field data) 400)
+        500)))
 
 (defn- sentence-question-block-response [request sentence-question-rows]
   (try
@@ -77,10 +98,21 @@
       (json-response request (exception-status e)
                      {:error (ex-message e)}))))
 
+(defn- answer-event-response [request answer-event-writer]
+  (try
+    (let [event (read-json-body request)
+          result (answer-event-writer event)]
+      (json-response request 201
+                     {:answer-event-id (:answer-event-id result)}))
+    (catch clojure.lang.ExceptionInfo e
+      (json-response request (exception-status e)
+                     {:error (ex-message e)}))))
+
 (defn make-handler
   ([] (make-handler {}))
-  ([{:keys [sentence-question-rows]
-     :or {sentence-question-rows db/sentence-question-candidate-rows}}]
+  ([{:keys [sentence-question-rows answer-event-writer]
+     :or {sentence-question-rows db/sentence-question-candidate-rows
+          answer-event-writer db/record-answer-event!}}]
    (fn [{:keys [request-method uri] :as request}]
      (case request-method
        :options (no-content-response request)
@@ -90,6 +122,9 @@
               "/api/sentence-question-blocks"
               (sentence-question-block-response request sentence-question-rows)
               (not-found-response request))
+       :post (case uri
+               "/api/answer-events" (answer-event-response request answer-event-writer)
+               (not-found-response request))
        (not-found-response request)))))
 
 (def handler

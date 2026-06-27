@@ -132,6 +132,7 @@
         {:item {:item-id (item-id row)
                 :sentence (:sentence row)
                 :target-surface (:target-surface row)
+                :target-surface-form-id (:target-surface-form-id row)
                 :highlight-span span
                 :lemma-id (:lemma-id row)
                 :lemma-pos-id (:lemma-subtlex-pos-id row)

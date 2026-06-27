@@ -32,6 +32,7 @@ type SentenceItem = {
   "item-id": string;
   sentence: string;
   "target-surface": string;
+  "target-surface-form-id": number;
   "highlight-span": { start: number; end: number };
   "lemma-id": number;
   "lemma-pos-id": number;
@@ -92,6 +93,7 @@ function sentenceItem(index: number, overrides: {
     "item-id": `example-sentence:${index + 1}`,
     sentence,
     "target-surface": target,
+    "target-surface-form-id": 2000 + index,
     "highlight-span": targetSpan(sentence, target),
     "lemma-id": index + 1,
     "lemma-pos-id": 1000 + index,
@@ -144,6 +146,17 @@ async function routeSentenceBlock(page: Page, block = sentenceBlockFixture()) {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify(block),
+    });
+  });
+}
+
+async function routeAnswerEvents(page: Page, status = 201, answerEvents: unknown[] = []) {
+  await page.route(/\/api\/answer-events$/, async (route) => {
+    answerEvents.push(route.request().postDataJSON());
+    await route.fulfill({
+      status,
+      contentType: "application/json",
+      body: JSON.stringify(status < 400 ? { "answer-event-id": answerEvents.length } : { error: "forced failure" }),
     });
   });
 }
@@ -325,6 +338,7 @@ async function expectThemeSwitcher(page: Page) {
 export async function runAppSmoke(page: Page) {
   await page.setViewportSize({ width: 390, height: 844 });
   await routeSentenceBlock(page);
+  await routeAnswerEvents(page);
   await page.addInitScript(() => {
     Math.random = () => 0;
     localStorage.removeItem("vocab-theme");
@@ -536,6 +550,7 @@ export async function runHighEstimateRegression(page: Page) {
   const requestedBlocks: string[] = [];
 
   await page.setViewportSize({ width: 390, height: 844 });
+  await routeAnswerEvents(page);
   await page.route(/\/api\/sentence-question-blocks(\?.*)?$/, async (route) => {
     const url = new URL(route.request().url());
     const requestedBlock = url.searchParams.get("block") ?? "0";
@@ -607,4 +622,58 @@ export async function runApiQuestionLoading(page: Page) {
   });
   expect(requestedUrl).toContain("/api/sentence-question-blocks");
   expect(requestedUrl).toContain("level=a1");
+}
+
+export async function runAnswerEventSubmissionFailure(page: Page) {
+  const answerEvents: unknown[] = [];
+  let sawWarning = false;
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await routeSentenceBlock(page);
+  await routeAnswerEvents(page, 500, answerEvents);
+  page.on("console", (message) => {
+    if (message.type() === "warning" && message.text().includes("Answer event submission failed")) {
+      sawWarning = true;
+    }
+  });
+  await page.addInitScript(() => {
+    Math.random = () => 0;
+    localStorage.removeItem("vocab-theme");
+    localStorage.removeItem("vocab-design");
+  });
+
+  await page.goto("/index.html");
+  await page.getByRole("button", { name: "Begin Test" }).click();
+  await page.getByRole("button", { name: "cat", exact: true }).click();
+
+  await expect(page.getByRole("button", { name: "Next" })).toBeVisible();
+  await expect.poll(() => answerEvents.length).toBe(1);
+  await expect.poll(() => sawWarning).toBe(true);
+
+  const event = answerEvents[0] as Record<string, unknown>;
+  expect(event["anonymous-session-id"]).toMatch(
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+  );
+  expect(event["test-block-id"]).toBe("pre-a1");
+  expect(event["target-lemma-id"]).toBe(1);
+  expect(event["target-surface-form-id"]).toBe(2000);
+  expect(event["candidate-rank"]).toBe(1);
+  expect(event["inventory-stratum"]).toBe(1);
+  expect(event["lemma-rank"]).toBe(1);
+  expect(event["surface-difficulty-rank"]).toBe(1);
+  expect(event["item-type"]).toBe("sentence-context-lemma");
+  expect(event["choice-count"]).toBe(5);
+  expect(event["guess-rate"]).toBe(0.2);
+  expect(event["selected-answer"]).toBe("cat");
+  expect(event.correct).toBe(true);
+  expect(event["attention-check-status"]).toBe("not-attention-check");
+
+  await page.getByRole("button", { name: "Next" }).click();
+  await expectSentenceQuestion(page, {
+    scored: 1,
+    item: 2,
+    sentence: "Codziennie piję wodę po treningu.",
+    target: "piję",
+    choices: ["I sleep", "I walk", "I read", "I wait", "I drink"],
+  });
 }

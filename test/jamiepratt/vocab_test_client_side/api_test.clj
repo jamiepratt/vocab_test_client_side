@@ -2,15 +2,37 @@
   (:require
    [clojure.data.json :as json]
    [clojure.test :refer [deftest is testing]]
-   [jamiepratt.vocab-test-client-side.api :as api]))
+   [jamiepratt.vocab-test-client-side.api :as api]
+   [jamiepratt.vocab-test-client-side.db :as db]))
 
 (defn- json-body [response]
   (json/read-str (:body response)))
+
+(defn- json-request-body [body]
+  (java.io.StringReader. (json/write-str body)))
+
+(def valid-answer-event
+  {"anonymous-session-id" "123e4567-e89b-12d3-a456-426614174000"
+   "test-block-id" "adaptive-block-0"
+   "target-lemma-id" 11
+   "target-surface-form-id" 22
+   "candidate-rank" 33
+   "inventory-stratum" 1
+   "lemma-rank" 44
+   "surface-difficulty-rank" 55
+   "item-type" "sentence-context-lemma"
+   "choice-count" 5
+   "guess-rate" 0.2
+   "selected-answer" "cat"
+   "correct" true
+   "response-time-ms" 1234
+   "attention-check-status" "not-attention-check"})
 
 (def base-sentence-row
   {:example-sentence-id 101
    :sentence "Kot pije wodę."
    :target-surface "Kot"
+   :target-surface-form-id 202
    :lemma-id 11
    :lemma-subtlex-pos-id 111
    :lemma "kot"
@@ -78,6 +100,7 @@
       (is (= {"item-id" "example-sentence:101"
               "sentence" "Kot pije wodę."
               "target-surface" "Kot"
+              "target-surface-form-id" 202
               "highlight-span" {"start" 0 "end" 3}
               "lemma-id" 11
               "lemma-pos-id" 111
@@ -90,7 +113,8 @@
               "choice-count" 5
               "guess-rate" 0.2}
              (select-keys item
-                          ["item-id" "sentence" "target-surface" "highlight-span"
+                          ["item-id" "sentence" "target-surface" "target-surface-form-id"
+                           "highlight-span"
                            "lemma-id" "lemma-pos-id" "lemma-inventory-rank"
                            "surface-difficulty-rank" "fixed-stratum"
                            "correct-translation" "distractors" "item-type"
@@ -221,3 +245,62 @@
     (is (= 80 (count (set (map #(get % "item-id") items)))))
     (is (every? #(= "sentence-context-lemma" (get % "item-type")) items))
     (is (every? #(= 5 (get % "choice-count")) items))))
+
+(deftest answer-event-post-stores-anonymous-calibration-data
+  (let [recorded (atom nil)
+        handler (api/make-handler
+                 {:answer-event-writer
+                  (fn [event]
+                    (reset! recorded (db/validate-answer-event! event))
+                    {:answer-event-id 7})})
+        response (handler {:request-method :post
+                           :uri "/api/answer-events"
+                           :headers {"origin" "http://localhost:8000"
+                                     "content-type" "application/json"}
+                           :body (json-request-body valid-answer-event)})
+        body (json-body response)]
+    (testing "HTTP contract"
+      (is (= 201 (:status response)))
+      (is (= "application/json; charset=utf-8"
+             (get-in response [:headers "Content-Type"])))
+      (is (= "http://localhost:8000"
+             (get-in response [:headers "Access-Control-Allow-Origin"])))
+      (is (= "GET, POST, OPTIONS"
+             (get-in response [:headers "Access-Control-Allow-Methods"])))
+      (is (= {"answer-event-id" 7} body)))
+    (testing "validated anonymous answer-event payload"
+      (is (= "123e4567-e89b-12d3-a456-426614174000"
+             (:anonymous-session-id @recorded)))
+      (is (= 11 (:target-lemma-id @recorded)))
+      (is (= 22 (:target-surface-form-id @recorded)))
+      (is (= "sentence-context-lemma" (:item-type @recorded)))
+      (is (= "not-attention-check" (:attention-check-status @recorded))))))
+
+(deftest answer-event-post-rejects-malformed-payloads
+  (let [calls (atom 0)
+        handler (api/make-handler
+                 {:answer-event-writer
+                  (fn [event]
+                    (swap! calls inc)
+                    (db/validate-answer-event! event)
+                    {:answer-event-id 1})})]
+    (testing "invalid JSON does not reach the writer"
+      (let [response (handler {:request-method :post
+                               :uri "/api/answer-events"
+                               :headers {"origin" "http://localhost:8000"}
+                               :body (java.io.StringReader. "{")})
+            body (json-body response)]
+        (is (= 400 (:status response)))
+        (is (= "Malformed JSON" (get body "error")))
+        (is (zero? @calls))))
+    (testing "missing required metadata is rejected as a bad request"
+      (let [response (handler {:request-method :post
+                               :uri "/api/answer-events"
+                               :headers {"origin" "http://localhost:8000"}
+                               :body (json-request-body
+                                      (dissoc valid-answer-event "target-lemma-id"))})
+            body (json-body response)]
+        (is (= 400 (:status response)))
+        (is (= "Answer event is missing target-lemma-id."
+               (get body "error")))
+        (is (= 1 @calls))))))
