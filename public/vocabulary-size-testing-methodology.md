@@ -262,8 +262,8 @@ Bayesian posterior is the planned v1 solution.
 
 Recommended UI:
 
-> Current estimate: about 420 recognised lemmas  
-> Current likely range: 320-520  
+> Current estimate: about 420 recognised lemmas
+> Current likely range: 320-520
 > Answer more items to narrow the range, or stop now.
 
 Do not show more precision than the current interval supports. If the current
@@ -275,8 +275,8 @@ Report estimates as ranges.
 
 Good:
 
-> Estimated recognised Polish lemmas: about 2,700  
-> Likely range: 2,250-3,150  
+> Estimated recognised Polish lemmas: about 2,700
+> Likely range: 2,250-3,150
 > Level band: high B1 / low B2
 
 Avoid:
@@ -290,8 +290,8 @@ For very low estimates, use non-shaming language and avoid implying failure.
 
 Example:
 
-> Estimated recognised Polish lemmas: under 200  
-> Likely range: 0-200  
+> Estimated recognised Polish lemmas: under 200
+> Likely range: 0-200
 > Level band: absolute beginner / pre-A1
 
 ## Sampling Strategy
