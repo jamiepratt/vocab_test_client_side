@@ -879,7 +879,7 @@
 
       <section id="pages">
         <h2>GitHub Pages deployment</h2>
-        <p>This document is static HTML under <code>public/</code>. The existing deploy workflow runs the release build, then copies <code>public/*.html</code> into <code>target/release/public/</code> before uploading the Pages artifact.</p>
+        <p>This document is static HTML under <code>public/</code>. The release build copies <code>public/*.md</code> into <code>target/release/public/</code>, and the deploy workflow copies <code>public/*.html</code> before uploading the artifact.</p>
         <p>Expected deployed file: <code>features-to-implement.html</code>, relative to the Pages site root.</p>
       </section>
     </main>

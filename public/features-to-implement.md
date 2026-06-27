@@ -264,7 +264,7 @@ After many responses, compute which items are easier or harder than frequency pr
 
 ## GitHub Pages deployment
 
-The HTML version is static HTML under `public/`. The existing deploy workflow runs the release build, then copies `public/*.html` into `target/release/public/` before uploading the Pages artifact.
+The HTML version is static HTML under `public/`. The release build copies `public/*.md` into `target/release/public/`, and the deploy workflow copies `public/*.html` before uploading the artifact.
 
 Expected deployed HTML file: `features-to-implement.html`, relative to the Pages site root.
 
