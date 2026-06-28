@@ -431,8 +431,10 @@
                   :results-data (scoring/summarize-results session-questions answers decision)))))
 
 (defn complete-current-block! []
-  (let [{:keys [question-block answers]} @app-state
-        decision (scoring/adaptive-block-decision (:adaptive-block question-block) answers)
+  (let [{:keys [question-block answers completed-blocks]} @app-state
+        decision (scoring/adaptive-block-decision (:adaptive-block question-block)
+                                                  answers
+                                                  completed-blocks)
         next-block-id (:next-block-id decision)]
     (if next-block-id
       (do

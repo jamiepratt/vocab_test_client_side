@@ -49,6 +49,100 @@
            :result result}
           opts)))
 
+(defn scored-answers [block-id stratum correct-count wrong-count dk-count]
+  (vec (concat
+        (repeat correct-count
+                (lemma-answer stratum :correct {:adaptive-block-id block-id}))
+        (repeat wrong-count
+                (lemma-answer stratum :wrong {:adaptive-block-id block-id}))
+        (repeat dk-count
+                (lemma-answer stratum :dk {:adaptive-block-id block-id})))))
+
+(defn posterior-statuses [result]
+  (into {} (map (juxt :id :status) (:posterior-strata result))))
+
+(deftest latent-guessing-keeps-dont-know-sessions-low-guess
+  (let [result (scoring/summarize-results
+                []
+                (scored-answers :pre-a1 1 20 0 60))]
+    (is (< (get-in result [:guessing-posterior :mean]) 0.2))
+    (is (> (:lemma-estimate result) 200))
+    (is (= scoring/scoring-model-version (:scoring-model-version result)))))
+
+(deftest latent-guessing-treats-random-looking-wrongs-as-guessing
+  (let [random-result (scoring/summarize-results
+                       []
+                       (scored-answers :pre-a1 1 16 64 0))]
+    (is (> (get-in random-result [:guessing-posterior :mean]) 0.65))
+    (is (< (:lemma-estimate random-result) 100))))
+
+(deftest mixed-wrong-and-dont-know-estimates-between-clear-cases
+  (let [no-guess-result (scoring/summarize-results
+                         []
+                         (scored-answers :pre-a1 1 16 0 64))
+        mixed-result (scoring/summarize-results
+                      []
+                      (scored-answers :pre-a1 1 16 32 32))
+        random-result (scoring/summarize-results
+                       []
+                       (scored-answers :pre-a1 1 16 64 0))]
+    (is (< (:lemma-estimate random-result)
+           (:lemma-estimate mixed-result)
+           (:lemma-estimate no-guess-result)))))
+
+(deftest random-high-start-does-not-get-lower-prior-credit
+  (let [result (scoring/summarize-results
+                []
+                (scored-answers :b2 5 16 64 0))]
+    (is (= [5] (mapv :id (:posterior-strata result))))
+    (is (= {5 :observed} (posterior-statuses result)))
+    (is (< (:lemma-estimate result) 1000))))
+
+(deftest high-pass-high-start-credits-lower-strata-as-assumed-known
+  (let [result (scoring/summarize-results
+                []
+                (scored-answers :b2 5 80 0 0))]
+    (is (= [1 2 3 4 5] (mapv :id (:posterior-strata result))))
+    (is (= {1 :assumed-known-lower
+            2 :assumed-known-lower
+            3 :assumed-known-lower
+            4 :assumed-known-lower
+            5 :observed}
+           (posterior-statuses result)))
+    (is (> (:lemma-estimate result) 4500))))
+
+(deftest out-of-range-strata-are-capped-for-vocabulary-estimates
+  (let [result (scoring/summarize-results
+                []
+                (scored-answers :c2-plus 12 80 0 0))]
+    (is (= [1 2 3 4 5 6 7 8 9 10]
+           (mapv :id (:posterior-strata result))))
+    (is (<= (:lemma-estimate result) data/lemma-inventory-size))))
+
+(deftest lower-anchor-routing-happens-once-and-avoids-completed-loops
+  (let [moderate-b2 (scored-answers :b2 5 40 0 40)
+        moderate-b1 (into moderate-b2
+                          (scored-answers :b1 4 40 0 40))
+        low-b2 (scored-answers :b2 5 12 0 68)
+        high-b1 (into low-b2
+                      (scored-answers :b1 4 68 0 12))]
+    (is (= :route-lower
+           (:action (scoring/adaptive-block-decision
+                     (data/adaptive-block :b2)
+                     moderate-b2
+                     []))))
+    (is (= :report
+           (:action (scoring/adaptive-block-decision
+                     (data/adaptive-block :b1)
+                     moderate-b1
+                     [{:id :b2}]))))
+    (let [decision (scoring/adaptive-block-decision
+                    (data/adaptive-block :b1)
+                    high-b1
+                    [{:id :b2}])]
+      (is (= :report (:action decision)))
+      (is (nil? (:next-block-id decision))))))
+
 (deftest reports-stable-lemma-likely-ranges
   (let [answers (vec (concat (repeat 16 (lemma-answer 1 :correct))
                              (repeat 4 (lemma-answer 1 :dk))
@@ -63,7 +157,7 @@
     (is (<= 0 lower (:lemma-estimate first-result) upper data/lemma-inventory-size))
     (is (< (:lemma-estimate first-result) data/lemma-inventory-size))))
 
-(deftest adjusts-for-forced-choice-guessing
+(deftest does-not-force-guessing-penalty-without-wrong-evidence
   (let [binary-result (scoring/summarize-results
                        []
                        (vec (repeat 20 (lemma-answer 1 :correct
@@ -73,10 +167,11 @@
                               (vec (repeat 20 (lemma-answer 1 :correct
                                                             {:choice-count 5
                                                              :guess-rate 0.2}))))]
-    (is (< (:lemma-estimate forced-choice-result)
-           (:lemma-estimate binary-result)))
-    (is (< (get-in forced-choice-result [:likely-range :lower])
-           (get-in binary-result [:likely-range :lower])))))
+    (is (<= (:lemma-estimate forced-choice-result)
+            (:lemma-estimate binary-result)))
+    (is (<= (- (:lemma-estimate binary-result)
+               (:lemma-estimate forced-choice-result))
+            25))))
 
 (deftest reports-borderline-level-band-when-range-crosses-boundary
   (let [answers (vec (concat (repeat 24 (lemma-answer 1 :correct
