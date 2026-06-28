@@ -29,6 +29,7 @@
     --text-5xl--line-height: 1;
     --text-6xl: 3.75rem;
     --text-6xl--line-height: 1;
+    --font-weight-normal: 400;
     --font-weight-semibold: 600;
     --font-weight-bold: 700;
     --leading-tight: 1.25;
@@ -360,6 +361,10 @@
     --tw-font-weight: var(--font-weight-bold);
     font-weight: var(--font-weight-bold);
   }
+  .font-normal {
+    --tw-font-weight: var(--font-weight-normal);
+    font-weight: var(--font-weight-normal);
+  }
   .font-semibold {
     --tw-font-weight: var(--font-weight-semibold);
     font-weight: var(--font-weight-semibold);
@@ -455,6 +460,11 @@
   .sm\:justify-self-end {
     @media (width >= 40rem) {
       justify-self: flex-end;
+    }
+  }
+  .sm\:p-5 {
+    @media (width >= 40rem) {
+      padding: calc(var(--spacing) * 5);
     }
   }
   .sm\:p-7 {
@@ -555,7 +565,7 @@
   }
   .app-brand {
     color: var(--app-ink);
-    font-size: 15px;
+    font-size: 20px;
     font-weight: 800;
     line-height: 1.15;
     white-space: nowrap;

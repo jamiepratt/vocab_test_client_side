@@ -28,6 +28,16 @@ async function textColor(locator: Locator) {
   return locator.evaluate((element) => getComputedStyle(element).color);
 }
 
+const pendingLiveEstimateText =
+  "Not enough questions answered to make an estimate yet, answer at least 30 questions and estimate is updated live as you answer each question.";
+
+const dontKnowButtonName =
+  "don't know (don't guess for a more accurate estimate, press this if unsure)";
+
+function dontKnowButton(page: Page) {
+  return page.getByRole("button", { name: dontKnowButtonName, exact: true });
+}
+
 type SentenceItem = {
   "item-id": string;
   sentence: string;
@@ -178,9 +188,36 @@ async function expectProgress(page: Page, scored: number) {
   await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuemax", String(total));
 }
 
+async function expectProgressBelowQuizStatus(page: Page) {
+  const status = page.getByLabel("Quiz status");
+  const progress = page.getByRole("progressbar");
+
+  const statusBox = await status.boundingBox();
+  const progressBox = await progress.boundingBox();
+
+  expect(statusBox).not.toBeNull();
+  expect(progressBox).not.toBeNull();
+  expect(progressBox!.y).toBeGreaterThanOrEqual(statusBox!.y + statusBox!.height);
+}
+
+async function expectLiveEstimateBelowQuestionCard(page: Page) {
+  const questionCard = page.locator("section[aria-labelledby='question-heading']");
+  const liveEstimate = page.getByRole("region", { name: "Live estimate" });
+
+  const cardBox = await questionCard.boundingBox();
+  const liveEstimateBox = await liveEstimate.boundingBox();
+
+  expect(cardBox).not.toBeNull();
+  expect(liveEstimateBox).not.toBeNull();
+  expect(liveEstimateBox!.y).toBeGreaterThanOrEqual(cardBox!.y + cardBox!.height);
+  expect(Math.abs(liveEstimateBox!.width - cardBox!.width)).toBeLessThanOrEqual(1);
+  expect(liveEstimateBox!.y - (cardBox!.y + cardBox!.height)).toBeGreaterThanOrEqual(16);
+}
+
 async function expectSentenceQuestion(page: Page, question: {
   scored: number;
   item: number;
+  range?: string;
   sentence: string;
   target: string;
   choices: string[];
@@ -190,8 +227,15 @@ async function expectSentenceQuestion(page: Page, question: {
   const target = page.getByRole("term");
 
   await expectProgress(page, question.scored);
+  await expectProgressBelowQuizStatus(page);
+  await expectLiveEstimateBelowQuestionCard(page);
   await expect(page.getByText(`Item ${question.item} of 80`, { exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { level: 2, name: "What does the highlighted word mean?" })).toBeVisible();
+  if (question.range) {
+    await expect(page.getByText(question.range, { exact: true })).toBeVisible();
+  }
+  const questionHeading = page.getByRole("heading", { level: 2, name: "What does the highlighted word in this sentence mean?" });
+  await expect(questionHeading).toBeVisible();
+  await expect(questionHeading.locator(".app-target-mark")).toHaveText("highlighted");
   await expect(sentence).toContainText(question.sentence);
   await expect(target).toHaveCount(1);
   await expect(target).toHaveText(question.target);
@@ -202,7 +246,7 @@ async function expectSentenceQuestion(page: Page, question: {
     await expect(page.getByRole("button", { name: choice, exact: true })).toBeVisible();
   }
 
-  await expect(page.getByRole("button", { name: "don't know", exact: true })).toBeVisible();
+  await expect(dontKnowButton(page)).toBeVisible();
 }
 
 async function expectChoicesLocked(page: Page, choices: string[]) {
@@ -210,7 +254,7 @@ async function expectChoicesLocked(page: Page, choices: string[]) {
     await expect(page.getByRole("button", { name: choice, exact: true })).toBeDisabled();
   }
 
-  await expect(page.getByRole("button", { name: "don't know", exact: true })).toBeDisabled();
+  await expect(dontKnowButton(page)).toBeDisabled();
 }
 
 async function expectBandBreakdown(page: Page) {
@@ -434,14 +478,19 @@ export async function runAppSmoke(page: Page) {
   await expectSentenceQuestion(page, {
     scored: 0,
     item: 1,
+    range: "0-500",
     sentence: "Kot pije wodę.",
     target: "Kot",
     choices: firstChoices,
   });
+  await expect(page.getByText("0-250", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("heading", { level: 2, name: "Kot" })).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
   await expectComfortableButtons(page);
-  await expect(page.getByLabel("Live estimate")).toContainText("Still calibrating");
+  await expect(page.getByLabel("Live estimate")).toContainText(
+    "Live estimate of how many dictionary forms of words you know",
+  );
+  await expect(page.getByLabel("Live estimate")).toContainText(pendingLiveEstimateText);
 
   await page.getByRole("button", { name: "cat", exact: true }).click();
 
@@ -479,7 +528,7 @@ export async function runAppSmoke(page: Page) {
     choices: thirdChoices,
   });
 
-  await page.getByRole("button", { name: "don't know", exact: true }).click();
+  await dontKnowButton(page).click();
 
   await expect(page.getByText("Correct answer: big / large", { exact: true })).toBeVisible();
   await expectProgress(page, 3);
@@ -491,9 +540,9 @@ export async function runAppSmoke(page: Page) {
   for (let item = 4; item <= 79; item++) {
     await expectProgress(page, item - 1);
     if (item === 30) {
-      await expect(page.getByLabel("Live estimate")).toContainText("Still calibrating");
+      await expect(page.getByLabel("Live estimate")).toContainText(pendingLiveEstimateText);
     }
-    await page.getByRole("button", { name: "don't know", exact: true }).click();
+    await dontKnowButton(page).click();
     await expectProgress(page, item);
     if (item === 30) {
       await expect(page.getByLabel("Live estimate")).toContainText("Current estimate: ");
@@ -518,7 +567,7 @@ export async function runAppSmoke(page: Page) {
     choices: lastChoices,
   });
 
-  await page.getByRole("button", { name: "don't know", exact: true }).click();
+  await dontKnowButton(page).click();
 
   await expect(page.getByText("Correct answer: unyielding / steadfast / indomitable", { exact: true })).toBeVisible();
   await expectProgress(page, 80);
@@ -543,7 +592,7 @@ export async function runAppSmoke(page: Page) {
   await expectNoHorizontalOverflow(page);
 
   await expect(page.getByText("Select the best English meaning")).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "don't know", exact: true })).toHaveCount(0);
+  await expect(dontKnowButton(page)).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Retake" })).toBeVisible();
 
   await page.getByRole("button", { name: "Retake" }).click();
@@ -551,6 +600,7 @@ export async function runAppSmoke(page: Page) {
   await expectSentenceQuestion(page, {
     scored: 0,
     item: 1,
+    range: "0-500",
     sentence: "Kot pije wodę.",
     target: "Kot",
     choices: firstChoices,
@@ -600,6 +650,7 @@ export async function runHighEstimateRegression(page: Page) {
   await expectSentenceQuestion(page, {
     scored: 0,
     item: 1,
+    range: "250-1K",
     sentence: "Trudniejsze słowo pojawia się dalej.",
     target: "Trudniejsze",
     choices: ["easier", "later", "clean", "bright", "more difficult"],

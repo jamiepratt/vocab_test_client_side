@@ -195,6 +195,23 @@
       (<= remaining items) band
       :else (recur (- remaining items) more))))
 
+(defn compact-rank-bound [value]
+  (if (>= value 1000)
+    (if (zero? (mod value 1000))
+      (str (quot value 1000) "K")
+      (str (/ value 1000) "K"))
+    (str value)))
+
+(defn adaptive-block-range-label [adaptive-block-id]
+  (when-let [{:keys [surface-rank-start surface-rank-end]}
+             (data/adaptive-block adaptive-block-id)]
+    (let [lower (if (= 1 surface-rank-start)
+                  0
+                  surface-rank-start)]
+      (str (compact-rank-bound lower)
+           "-"
+           (compact-rank-bound surface-rank-end)))))
+
 (defn normalize-sentence-item [adaptive-block-id index item]
   (assoc item
          :adaptive-block-id adaptive-block-id
@@ -528,16 +545,21 @@
             :class "min-h-12 rounded-md border px-4 py-3 text-left text-sm font-semibold break-words shadow-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 app-choice-button"
             :disabled answer-locked?
             :on-click #(record-answer question choices dont-know-choice)}
-   (:label dont-know-choice)])
+   [:span (:label dont-know-choice)]
+   " "
+   [:span {:class "font-normal app-muted"}
+    "(don't guess for a more accurate estimate, press this if unsure)"]])
 
 (defn live-estimate-panel [results-data]
   (let [live-estimate (or (:live-estimate results-data)
                           {:ready? false
-                           :label "Still calibrating"})]
+                           :label (scoring/pending-live-estimate-label)})]
     [:section {:aria-label "Live estimate"
                :aria-live "polite"
-               :class "grid gap-1 rounded-md app-subtle-bg p-3 text-sm"}
-     [:p {:class "text-xs font-bold uppercase app-muted"} "Live estimate"]
+               :class "app-card app-subtle-bg grid gap-1 p-4 text-sm sm:p-5"
+               :style {:margin-top "20px"}}
+     [:p {:class "text-xs font-bold uppercase app-muted"}
+      "Live estimate of how many dictionary forms of words you know"]
      [:p {:class "font-semibold app-ink-soft"}
       (:label live-estimate)]
      (when (:ready? live-estimate)
@@ -559,6 +581,18 @@
     [:main {:class "app-page"}
      [:section {:aria-labelledby "question-heading"
                 :class "app-card grid gap-5 p-5 sm:gap-6 sm:p-7"}
+      (when continuation-message
+        [:p {:role "status"
+             :class "rounded-md app-subtle-bg p-3 text-sm font-semibold app-ink-soft"}
+         continuation-message])
+      [:div {:role "group"
+             :aria-label "Quiz status"
+             :class "flex flex-wrap items-center justify-between gap-3 text-sm font-semibold app-muted"}
+       [:span (str scored-count " / " total " scored")]
+       [:span (str "Item " current-question-number " of " total)]
+       [:span {:class (str "rounded-full px-3 py-1 text-xs font-bold ring-1 " (band-style-class (:band question) :badge))}
+        (or (adaptive-block-range-label (:adaptive-block-id question))
+            (data/band-labels (:band question)))]]
       [:div {:class "h-2 overflow-hidden rounded-full app-subtle-bg"
              :role "progressbar"
              :aria-valuemin 0
@@ -566,20 +600,12 @@
              :aria-valuenow scored-count}
        [:div {:class "app-progress-fill h-full rounded-full transition-all"
               :style {:width (str progress "%")}}]]
-      (when continuation-message
-        [:p {:role "status"
-             :class "rounded-md app-subtle-bg p-3 text-sm font-semibold app-ink-soft"}
-         continuation-message])
-      [live-estimate-panel results-data]
-      [:div {:class "flex flex-wrap items-center justify-between gap-3 text-sm font-semibold app-muted"}
-       [:span (str scored-count " / " total " scored")]
-       [:span (str "Item " current-question-number " of " total)]
-       [:span {:class (str "rounded-full px-3 py-1 text-xs font-bold ring-1 " (band-style-class (:band question) :badge))}
-        (data/band-labels (:band question))]]
       [:div {:class "grid gap-4 text-center"}
        [:h2 {:id "question-heading"
              :class "text-2xl font-bold leading-tight app-ink sm:text-3xl"}
-        "What does the highlighted word mean?"]
+        "What does the "
+        [:mark {:class "app-target-mark"} "highlighted"]
+        " word in this sentence mean?"]
        [highlighted-sentence question]
        [:p {:class "text-base app-muted"} "Select the best English meaning"]]
       [:div {:class "grid gap-3"
@@ -599,7 +625,8 @@
         [:button {:type "button"
                   :class (str button-class " justify-self-stretch sm:justify-self-end")
                   :on-click next-question}
-         "Next"])]]))
+         "Next"])]
+     [live-estimate-panel results-data]]))
 
 (defn band-result-row [results-data band-id]
   (let [{:keys [answered correct pct]} (get-in results-data [:band-stats band-id])]

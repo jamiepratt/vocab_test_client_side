@@ -96,7 +96,9 @@
                       (vec (repeat 30 (lemma-answer 1 :correct
                                                     {:guess-rate 0}))))]
     (is (= {:ready? false
-            :label "Still calibrating"}
+            :label (str "Not enough questions answered to make an estimate yet, answer at least "
+                        data/live-estimate-min-real-answers
+                        " questions and estimate is updated live as you answer each question.")}
            (:live-estimate early-result)))
     (is (= true (get-in ready-result [:live-estimate :ready?])))
     (is (re-matches #"Current estimate: about [0-9,]+ recognized Polish lemmas"
