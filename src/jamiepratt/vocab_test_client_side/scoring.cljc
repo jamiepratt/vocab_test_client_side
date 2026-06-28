@@ -222,10 +222,15 @@
   (or estimate-label
       (str "about " (format-count lemma-estimate) " recognized Polish lemmas")))
 
+(defn pending-live-estimate-label []
+  (str "Not enough questions answered to make an estimate yet, answer at least "
+       data/live-estimate-min-real-answers
+       " questions and estimate is updated live as you answer each question."))
+
 (defn live-estimate [summary]
   (if (< (:total summary) data/live-estimate-min-real-answers)
     {:ready? false
-     :label "Still calibrating"}
+     :label (pending-live-estimate-label)}
     {:ready? true
      :label (str "Current estimate: " (estimate-display summary))
      :range-label (str "Likely range: " (format-range (:likely-range summary)))}))
