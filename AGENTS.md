@@ -46,6 +46,10 @@ npm run verify
 
 Run `npm run dev` once and keep it running during browser-test development. The app is served at <http://localhost:8000/index.html>; Shadow nREPL uses port `7888`.
 
+When viewing the dev server in the browser, do not reload just to confirm a code change. Shadow auto-recompiles on file changes; rely on the live update unless there is specific evidence the browser state is stale.
+
+Do not run `npm run compile` during browser dev-server iteration. The running Shadow watch already recompiles on file changes, and a separate compile can disrupt the hot-reload client used by the open browser tab.
+
 ## Local SUBTLEX Notes
 
 - When working in `data/subtlex-pl`, also read `data/subtlex-pl/AGENTS.local.md` if it exists. It is local-only and ignored by Git.

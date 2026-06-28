@@ -70,6 +70,9 @@ Prefer multiple-choice or validated known/unknown responses over unsupported
 self-report. Add pseudowords or impossible distractors only as attention checks;
 do not count them as real vocabulary evidence.
 
+Tell users not to guess. The scoring model should initially trust that
+instruction, then infer guessing behaviour from incorrect selected answers.
+
 ## Progressive Band Testing
 
 The first block should cover the selected level plus nearby lower and upper
@@ -84,6 +87,11 @@ new block:
 
 Do not discard previous answers. Combine all answered real items into the final
 estimate.
+
+Do not give vocabulary credit for untested lower strata just because the user
+started at a high selected level. If a high-start block is not a high-confidence
+pass and lower strata have no evidence, add a lower anchor block when available
+instead of reporting a prior-filled estimate.
 
 User-facing wording:
 
@@ -107,6 +115,11 @@ For an 80-item block:
 
 Use the thresholds as product rules, not psychometric truth. They prevent false
 precision at the edges, where an 80-item block cannot distinguish well.
+
+For high-start sessions, `85-100%` correct may also mark lower untested strata as
+assumed known for reporting. Scores below that threshold should not receive
+prior-only credit for lower strata; continue with a lower anchor block if the
+current evidence would otherwise leave the lower range unmeasured.
 
 For the lowest beginner block, `0-15%` correct should not create an impossible
 lower block. Report a floor-range estimate such as `0-100`, `0-150`, or
@@ -232,29 +245,52 @@ For known/unknown or otherwise validated binary recognition items:
 - after `x_s` recognised out of `n_s` scored real items;
 - posterior: `theta_s ~ Beta(0.5 + x_s, 0.5 + n_s - x_s)`.
 
-For forced-choice multiple-choice items, account for guessing. With `k` choices,
-use `g = 1 / k` unless the item has an `I don't know` option or another
-validated no-guess mechanism. The likelihood is:
+For forced-choice multiple-choice items, model guessing as a hidden session
+behaviour, not as a fixed assumption that every unknown answer is guessed.
 
-- `P(correct | theta_s) = g + (1 - g) * theta_s`;
-- `P(incorrect | theta_s) = (1 - g) * (1 - theta_s)`.
+Let:
 
-This is not conjugate beta. Implement it with a 1D grid, quadrature, or another
-simple numeric posterior update per stratum. If item guess rates vary, multiply
-the per-item likelihoods.
+- `q` = probability the user guesses when they do not know, instead of choosing
+  `I don't know`;
+- prior: `q ~ Beta(0.5, 8.0)`, a strong no-guess prior;
+- `r_i = 1 / k_i`, the random-choice hit rate for item `i`;
+- `theta_s` = known proportion for the item's lemma-inventory stratum.
+
+The response likelihood for an item in stratum `s` is:
+
+- `P(correct_i | theta_s, q) = theta_s + (1 - theta_s) * q * r_i`;
+- `P(wrong_i | theta_s, q) = (1 - theta_s) * q * (1 - r_i)`;
+- `P(dk_i | theta_s, q) = (1 - theta_s) * (1 - q)`.
+
+This keeps early correct answers close to known evidence when the user follows
+instructions. Incorrect selected answers raise posterior mass for `q`, which
+discounts correct multiple-choice answers as possible lucky guesses and widens
+the estimate range.
+
+This is not conjugate beta. Implement it with deterministic grids or quadrature:
+
+- retain a theta grid per stratum;
+- add a session-level `q` grid;
+- multiply item likelihoods in log space;
+- normalise with log-sum-exp;
+- report the posterior for vocabulary size and for `q`.
 
 To produce the live vocabulary-size interval:
 
-1. Draw samples from each stratum posterior.
-2. Compute `known_lemmas = sum(W_s * theta_s_sample)` across the reported range.
-3. Use the posterior median or mean as the point estimate.
-4. Use the 2.5th and 97.5th percentiles as the 95% credible range.
+1. Combine the joint posterior over `q` and observed stratum `theta_s` values.
+2. Compute `known_lemmas = sum(W_s * theta_s_sample)` across reported strata.
+3. Add lower unobserved strata only when they are explicitly marked assumed known
+   by a high-confidence pass.
+4. Use the posterior median or mean as the point estimate.
+5. Use the 2.5th and 97.5th percentiles as the 95% credible range.
 
 Use a fixed random seed or deterministic quantile approximation so the displayed
 range does not jitter between page renders.
 
-For untested strata inside the reported range, the prior remains wide. This is
-acceptable: it should visibly keep the range wide until enough evidence arrives.
+For untested strata inside the reported range, avoid prior-only vocabulary
+credit. Either gather evidence with another block, mark lower strata as assumed
+known after a high-confidence pass, or omit those strata from the estimate and
+make the range visibly broad.
 
 This matters because users may stop when the displayed range looks good. Repeated
 peeking makes ordinary fixed-sample confidence intervals overconfident; the
@@ -339,7 +375,7 @@ Every scored answer should be retained with:
 - lemma inventory rank;
 - surface-form difficulty rank or calibrated item difficulty;
 - item type and number of choices;
-- guess rate used by the scoring model;
+- random-choice hit rate for the item;
 - selected answer;
 - correctness;
 - response time;
@@ -347,6 +383,10 @@ Every scored answer should be retained with:
 
 The final estimate should use all scored real items from the session, including
 items from blocks that were later judged too easy or too hard.
+
+The scoring output should retain model metadata: scoring model version,
+posterior vocabulary centre/range, reported strata and whether each was observed
+or assumed known, plus the posterior centre/range for session guessing `q`.
 
 ## Precision Limits
 
@@ -364,7 +404,10 @@ uncertainty bands, not exact measurements.
 - Keep internal scoring lemma-based.
 - Rank lemma inventory with link-apportioned linear `freq.sn.sum`; present items
   by exact surface-form frequency/rank.
+- Use a latent session-level guessing posterior with a strong no-guess prior.
 - Use Bayesian posterior credible ranges for live progress and final estimates.
+- Do not award lower-stratum prior credit after high-start selection unless the
+  user has a high-confidence pass or a lower anchor block supplies evidence.
 - Treat each answer as evidence, even when a follow-up block is needed.
 - Prefer continuing the current test over asking users to restart.
 - Make uncertainty visible in the result UI.
