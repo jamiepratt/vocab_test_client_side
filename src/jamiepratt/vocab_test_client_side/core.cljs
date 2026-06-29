@@ -473,11 +473,11 @@
            :class "text-4xl font-bold leading-tight app-ink sm:text-5xl"}
       "Polish Passive Vocabulary Size Test"]
      [:p {:class "app-copy max-w-2xl text-base leading-7"}
-      "Anchored low, ranging wide."]]
+      "Passive vocabulary means words you can recognize when reading or listening, even if you would not use them yourself yet. This test estimates how many Polish word meanings you recognize in sentences."]]
     [:div {:class "app-soft-panel grid gap-4 rounded-md border p-4 text-sm leading-6"}
      [:p [:strong {:class "font-semibold app-ink"} "Format: "]
       "You'll see a Polish sentence. Choose the highlighted word's English meaning."]
-     [:p "Pick a starting point; the level is only a prior for the first sentence block."]
+     [:p "Choose the level that feels closest to your Polish right now. This only helps pick the first few questions."]
      [:fieldset {:class "grid gap-3"
                  :role "radiogroup"
                  :aria-label "Starting level"}
@@ -486,8 +486,6 @@
        (for [option data/level-options]
          ^{:key (:id option)}
          [level-option {:selected-level selected-level} option])]]
-     [:p [:strong {:class "font-semibold app-ink"} "Don't guess. "]
-      "Pick \"don't know\" if unsure; it makes the estimate accurate."]
      [:p (str data/sentence-block-size " sentence-context items. ~12 minutes.")]]
     (when questions-error
       [:p {:role "alert"

@@ -194,6 +194,24 @@
     (is (= 8161 (:surface-rank-start @seen-request)))
     (is (= 320 (:candidate-limit @seen-request)))))
 
+(deftest sentence-question-block-c2-starts-inside-available-inventory
+  (let [seen-request (atom nil)
+        handler (api/make-handler
+                 {:sentence-question-rows
+                  (fn [request]
+                    (reset! seen-request request)
+                    [])})
+        response (handler {:request-method :get
+                           :uri "/api/sentence-question-blocks"
+                           :query-string "level=C2&block=0"
+                           :headers {}})
+        body (json-body response)]
+    (is (= 200 (:status response)))
+    (is (= "C2" (get body "level")))
+    (is (= 8001 (get body "surface-rank-start")))
+    (is (= 8080 (get body "surface-rank-end")))
+    (is (= 8001 (:surface-rank-start @seen-request)))))
+
 (deftest sentence-question-block-allows-absolute-beginner-alias
   (let [handler (api/make-handler
                  {:sentence-question-rows (fn [_] [])})

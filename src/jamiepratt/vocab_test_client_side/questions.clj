@@ -18,7 +18,7 @@
    "b1" {:level "B1" :surface-rank-start 2001}
    "b2" {:level "B2" :surface-rank-start 4001}
    "c1" {:level "C1" :surface-rank-start 8001}
-   "c2" {:level "C2" :surface-rank-start 12001}})
+   "c2" {:level "C2" :surface-rank-start 8001}})
 
 (defn- parse-long-param [value default]
   (if (str/blank? value)
