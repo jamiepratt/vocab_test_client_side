@@ -88,6 +88,11 @@
         default-auto-scroll-delay-ms))
     default-auto-scroll-delay-ms))
 
+(defn configured-auto-scroll-behavior []
+  (if (zero? (configured-auto-scroll-delay-ms))
+    "auto"
+    "smooth"))
+
 (defn initial-state []
   {:screen :start
    :anonymous-session-id (anonymous-session-id)
@@ -102,6 +107,7 @@
    :current-question-index 0
    :question-choices []
    :scroll-delay-ms (configured-auto-scroll-delay-ms)
+   :scroll-behavior (configured-auto-scroll-behavior)
    :answers []
    :answer-locked? false
    :feedback nil
@@ -266,10 +272,15 @@
 
 (defn schedule-auto-scroll!
   ([target-id]
-   (schedule-auto-scroll! target-id (:scroll-delay-ms @app-state)))
+   (schedule-auto-scroll! target-id
+                          (:scroll-delay-ms @app-state)
+                          (:scroll-behavior @app-state)))
   ([target-id delay-ms]
+   (schedule-auto-scroll! target-id delay-ms (:scroll-behavior @app-state)))
+  ([target-id delay-ms behavior]
    (clear-auto-scroll!)
    (let [delay-ms (or delay-ms default-auto-scroll-delay-ms)
+         behavior (or behavior "smooth")
          cancelled? (atom false)
          timeout-id (atom nil)
          raf-id (atom nil)
@@ -290,7 +301,7 @@
                (finish!))
              (scroll! []
                (when-not @cancelled?
-                 (if (scroll-to-target! target-id "smooth")
+                 (if (scroll-to-target! target-id behavior)
                    (finish!)
                    (reset! timeout-id (js/setTimeout scroll! 50)))))]
        (reset! auto-scroll-cleanup #(do
