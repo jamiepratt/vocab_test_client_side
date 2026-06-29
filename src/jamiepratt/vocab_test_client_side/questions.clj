@@ -84,7 +84,7 @@
   (let [correct-key (canonical-translation correct)]
     (filterv #(= correct-key (canonical-translation %)) distractors)))
 
-(defn- fixed-stratum [lemma-inventory-rank]
+(defn- inventory-stratum [lemma-inventory-rank]
   (inc (quot (dec (long lemma-inventory-rank)) 1000)))
 
 (defn- sentence-item [rows]
@@ -113,7 +113,8 @@
                               {:duplicates duplicate-correct})}
 
       :else
-      (let [choice-count (inc (count effective-distractors))]
+      (let [choice-count (inc (count effective-distractors))
+            stratum-id (inventory-stratum (:lemma-inventory-rank row))]
         {:item {:item-id (item-id row)
                 :sentence (:sentence row)
                 :target-surface (:target-surface row)
@@ -123,7 +124,8 @@
                 :lemma-pos-id (:lemma-subtlex-pos-id row)
                 :lemma-inventory-rank (:lemma-inventory-rank row)
                 :surface-difficulty-rank (:surface-difficulty-rank row)
-                :fixed-stratum (fixed-stratum (:lemma-inventory-rank row))
+                :inventory-stratum stratum-id
+                :fixed-stratum stratum-id
                 :correct-translation (:correct-translation row)
                 :distractors effective-distractors
                 :item-type item-type

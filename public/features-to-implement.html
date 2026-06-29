@@ -483,9 +483,9 @@
           <li>Reagent/Shadow app served by <code>public/index.html</code> with Test, Features, and methodology routes.</li>
           <li>Sentence-context questions load from <code>/api/sentence-question-blocks</code>, backed by database example sentences and optional configured API base URL.</li>
           <li>Test uses 80 Polish sentence-context lemma items per block, with adaptive continuation when the first block is outside the informative range.</li>
-          <li>Each quiz item shows a Polish sentence with one highlighted target form, band badge, progress bar, English choices, and <code>don't know</code>.</li>
-          <li>Answering locks choices, shows immediate feedback, reveals the correct answer for misses, then enables Next.</li>
-          <li>Results show accuracy, answered/wrong/don't know counts, accuracy by frequency band, words to review, estimated recognized Polish lemmas, likely range, approximate level band, and Retake.</li>
+          <li>Each quiz item shows a Polish sentence with one highlighted target form, served rank window, progress bar, English choices, and <code>don't know</code>.</li>
+          <li>Answering locks choices, shows immediate feedback, and reveals the correct answer for misses.</li>
+          <li>Results show accuracy, answered/wrong/don't know counts, accuracy by frequency bucket, words to review, estimated recognized Polish lemmas, likely range, approximate level, and Retake.</li>
           <li>Methodology pages explain sentence-context vocabulary-size measurement and the staged path toward calibrated adaptive testing.</li>
         </ul>
       </section>
@@ -502,7 +502,7 @@
         <h2>User experience</h2>
         <div class="sample" aria-label="Current sentence question mockup">
           <p class="sentence"><mark>Kot</mark> pije wodę.</p>
-          <p><span class="status ok">0-250</span></p>
+          <p><span class="status ok">1-250</span></p>
           <div class="choices" aria-label="Current answer choices">
             <span class="choice">dog</span>
             <span class="choice">bird</span>
@@ -514,7 +514,7 @@
         </div>
         <ul>
           <li>Show visible progress as <code>current / 80</code> plus an accessible progress bar.</li>
-          <li>Show the current frequency band without exposing scoring internals.</li>
+          <li>Show the current served rank window without exposing scoring internals.</li>
           <li>Include <code>don't know</code> on every item and tell users not to guess.</li>
           <li>Lock answer buttons after a choice.</li>
           <li>Show immediate correct/incorrect feedback.</li>
@@ -612,7 +612,7 @@
               <td>Recognition is scored against the lemma.</td>
             </tr>
             <tr>
-              <td>Fixed stratum</td>
+              <td>Inventory stratum</td>
               <td><code>1</code></td>
               <td>Lemma-inventory bin used for posterior estimates.</td>
             </tr>
@@ -638,7 +638,7 @@
             <h3>Implemented baseline</h3>
             <ul>
               <li>80-item sentence-context multiple-choice blocks.</li>
-              <li>Visible band labels, progress, and live estimate readiness.</li>
+              <li>Visible rank-window labels, progress, and live estimate readiness.</li>
               <li>Sentence-question data from the API.</li>
               <li>Immediate feedback, review list, recognized-lemma estimate, and methodology routes.</li>
             </ul>
@@ -672,7 +672,7 @@
             <ul>
               <li>Estimate known lemmas, not known word forms.</li>
               <li>Show a center estimate plus lower and upper range.</li>
-              <li>Attach a confidence or reliability label from answer count, band coverage, checks, and timing.</li>
+              <li>Attach a confidence or reliability label from answer count, rank-bucket coverage, checks, and timing.</li>
             </ul>
           </article>
           <article class="card">
@@ -680,7 +680,7 @@
             <ul>
               <li>Recompute provisional estimate and uncertainty after each locked answer.</li>
               <li>Show confidence such as Low, Medium, High, or a precision score.</li>
-              <li>Enable <code>Show results now</code> after minimum item count and band coverage are met.</li>
+              <li>Enable <code>Show results now</code> after minimum item count and rank-bucket coverage are met.</li>
               <li>Record early-finished sessions with item count, confidence level, and wider range.</li>
             </ul>
           </article>
@@ -739,8 +739,8 @@
             <tr>
               <td>3. Initial scoring and results</td>
               <td><span class="status ok">Done</span></td>
-              <td>Stratum posterior estimate, likely range, review list, level band.</td>
-              <td>Result page reports range and band breakdown.</td>
+              <td>Stratum posterior estimate, likely range, review list, approximate level.</td>
+              <td>Result page reports range and frequency-bucket breakdown.</td>
             </tr>
             <tr>
               <td>4. Telemetry export</td>
@@ -800,6 +800,7 @@
   "lemma-pos-id": 111,
   "lemma-inventory-rank": 42,
   "surface-difficulty-rank": 17,
+  "inventory-stratum": 1,
   "fixed-stratum": 1,
   "correct-translation": "cat",
   "distractors": ["dog", "bird", "fish", "tree"],
@@ -833,7 +834,7 @@
         <pre><code>{
   "answered": 32,
   "minimum_items_met": true,
-  "band_coverage_met": true,
+  "rank_bucket_coverage_met": true,
   "can_finish": true,
   "estimate": {
     "center": 850,
@@ -865,8 +866,8 @@
         <h2>Initial sampling rule</h2>
         <p>Before calibration, assume word difficulty equals frequency difficulty. Compensate for that rough assumption by starting with 80 test items, including extra calibration items, and sampling across the frequency curve.</p>
         <ol>
-          <li>Choose a broad set of frequency bands.</li>
-          <li>Sample several words or lemmas from each band.</li>
+          <li>Choose a broad set of rank buckets.</li>
+          <li>Sample several words or lemmas from each bucket.</li>
           <li>Use one visible item per word or lemma per session.</li>
           <li>Randomize item order enough to reduce fatigue effects.</li>
           <li>Reserve some claimed-known answers for meaning checks once sentence mode exists.</li>
@@ -881,7 +882,7 @@
         <h2>Open questions</h2>
         <ul>
           <li>What confidence labels and range widths are honest enough for early finish?</li>
-          <li>What minimum item count and band coverage are required before <code>Show results now</code> appears?</li>
+          <li>What minimum item count and rank-bucket coverage are required before <code>Show results now</code> appears?</li>
           <li>Should low confidence hide early finish or allow it with a stronger warning?</li>
           <li>What percentage of yes answers should receive meaning checks?</li>
           <li>Should a failed meaning check reduce trust globally or only score that item as unknown?</li>

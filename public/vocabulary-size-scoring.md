@@ -8,6 +8,16 @@ The score estimates how many Polish lemmas a learner recognizes in sentence
 context. It reports a point estimate plus a likely range. It should not imply an
 exact vocabulary count.
 
+## Glossary
+
+- Surface-rank window: the exact 80 surface-form difficulty ranks served for a
+  question block.
+- Frequency bucket: a broad reporting bucket derived from
+  `surface-difficulty-rank`, used for result breakdowns and review labels.
+- Lemma-inventory stratum: a 1,000-lemma scoring bin derived from
+  `lemma_inventory_rank`.
+- Approximate level: a coarse label derived from the recognized-lemma estimate.
+
 ## Inventory
 
 The reporting inventory contains 10,000 Polish lemmas. It is divided into
@@ -15,16 +25,16 @@ The reporting inventory contains 10,000 Polish lemmas. It is divided into
 
 | Stratum | Lemma ranks |
 | ---: | --- |
-| 1 | 0-1,000 |
-| 2 | 1,000-2,000 |
-| 3 | 2,000-3,000 |
-| 4 | 3,000-4,000 |
-| 5 | 4,000-5,000 |
-| 6 | 5,000-6,000 |
-| 7 | 6,000-7,000 |
-| 8 | 7,000-8,000 |
-| 9 | 8,000-9,000 |
-| 10 | 9,000-10,000 |
+| 1 | 1-1,000 |
+| 2 | 1,001-2,000 |
+| 3 | 2,001-3,000 |
+| 4 | 3,001-4,000 |
+| 5 | 4,001-5,000 |
+| 6 | 5,001-6,000 |
+| 7 | 6,001-7,000 |
+| 8 | 7,001-8,000 |
+| 9 | 8,001-9,000 |
+| 10 | 9,001-10,000 |
 
 Every scored real item belongs to one fixed lemma-inventory stratum.
 
@@ -71,7 +81,7 @@ Final result copy:
 
 > Estimated recognized Polish lemmas: about N
 > Likely range: lower-upper
-> Approximate level band: label
+> Approximate level: label
 
 Avoid:
 
@@ -84,7 +94,7 @@ current floor result reports:
 
 - estimate label: `under 200`;
 - likely range: `0-200`;
-- level band: `Absolute beginner / pre-A1`.
+- approximate level: `Absolute beginner / pre-A1`.
 
 This should be framed as a broad starting estimate, not a failure.
 

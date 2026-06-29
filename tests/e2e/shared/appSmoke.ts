@@ -36,6 +36,8 @@ const instantScrollUrl = "/index.html?scrollDelayMs=0#/";
 const dontKnowButtonName =
   "don't know (don't guess for a more accurate estimate, press this if unsure)";
 
+const lazyRouteTimeout = 15000;
+
 function dontKnowButton(scope: Page | Locator) {
   return scope.getByRole("button", { name: dontKnowButtonName, exact: true });
 }
@@ -67,6 +69,7 @@ type SentenceItem = {
   "lemma-pos-id": number;
   "lemma-inventory-rank": number;
   "surface-difficulty-rank": number;
+  "inventory-stratum": number;
   "fixed-stratum": number;
   "correct-translation": string;
   distractors: string[];
@@ -128,6 +131,7 @@ function sentenceItem(index: number, overrides: {
     "lemma-pos-id": 1000 + index,
     "lemma-inventory-rank": index + 1,
     "surface-difficulty-rank": index + 1,
+    "inventory-stratum": Math.floor(index / 1000) + 1,
     "fixed-stratum": Math.floor(index / 1000) + 1,
     "correct-translation": correct,
     distractors,
@@ -277,32 +281,32 @@ async function expectChoicesLocked(scope: Locator, choices: string[]) {
   await expect(dontKnowButton(scope)).toBeDisabled();
 }
 
-async function expectBandBreakdown(page: Page) {
-  const breakdown = page.getByRole("region", { name: "Accuracy by frequency band" });
-  const expectedBands = [
-    ["0-250", "1/12 (8%)"],
-    ["250-500", "0/16 (0%)"],
-    ["500-1K", "0/18 (0%)"],
-    ["1K-2K", "0/16 (0%)"],
-    ["2K-3.5K", "0/10 (0%)"],
-    ["3.5K+", "0/8 (0%)"],
+async function expectFrequencyBucketBreakdown(page: Page) {
+  const breakdown = page.getByRole("region", { name: "Accuracy by frequency bucket" });
+  const expectedBuckets = [
+    ["1-250", "1/80 (1%)"],
+    ["251-500", "0/0 (0%)"],
+    ["501-1K", "0/0 (0%)"],
+    ["1,001-2K", "0/0 (0%)"],
+    ["2,001-3.5K", "0/0 (0%)"],
+    ["3,501+", "0/0 (0%)"],
   ];
 
   await expect(breakdown).toBeVisible();
 
-  for (const [band, score] of expectedBands) {
-    const row = breakdown.getByRole("listitem").filter({ hasText: band });
+  for (const [bucket, score] of expectedBuckets) {
+    const row = breakdown.getByRole("listitem").filter({ hasText: bucket });
     await expect(row).toContainText(score);
   }
 
-  const bandColors = await Promise.all(
-    expectedBands.map(([band]) => {
-      const label = breakdown.getByRole("listitem").filter({ hasText: band }).locator("span").first();
+  const bucketColors = await Promise.all(
+    expectedBuckets.map(([bucket]) => {
+      const label = breakdown.getByRole("listitem").filter({ hasText: bucket }).locator("span").first();
       return textColor(label);
     }),
   );
 
-  expect(new Set(bandColors).size).toBe(expectedBands.length);
+  expect(new Set(bucketColors).size).toBe(expectedBuckets.length);
 }
 
 async function expectReviewList(page: Page) {
@@ -310,11 +314,11 @@ async function expectReviewList(page: Page) {
 
   await expect(review).toBeVisible();
   await expect(review.getByRole("listitem")).toHaveCount(79);
-  await expect(review.getByRole("listitem").filter({ hasText: "piję" })).toContainText("0-250");
+  await expect(review.getByRole("listitem").filter({ hasText: "piję" })).toContainText("1-250");
   await expect(review.getByRole("listitem").filter({ hasText: "piję" })).toContainText("I drink");
   await expect(review.getByRole("listitem").filter({ hasText: "Duży" })).toContainText("big / large");
-  await expect(review.getByRole("listitem").filter({ hasText: "słowo13" })).toContainText("250-500");
-  await expect(review.getByRole("listitem").filter({ hasText: "Niezłomny" })).toContainText("3.5K+");
+  await expect(review.getByRole("listitem").filter({ hasText: "słowo13" })).toContainText("1-250");
+  await expect(review.getByRole("listitem").filter({ hasText: "Niezłomny" })).toContainText("1-250");
   await expect(review.getByRole("listitem").filter({ hasText: "Niezłomny" })).toContainText("unyielding / steadfast / indomitable");
 }
 
@@ -324,6 +328,10 @@ async function expectPublicMarkdown(page: Page, path: string, requiredText: stri
 
   expect(response.ok()).toBe(true);
   expect(body).toContain(requiredText);
+}
+
+async function expectLazyRouteHeading(page: Page, level: 1 | 2, name: string) {
+  await expect(page.getByRole("heading", { level, name })).toBeVisible({ timeout: lazyRouteTimeout });
 }
 
 async function openNavMenu(page: Page, className: string) {
@@ -427,7 +435,7 @@ async function expectQuickPreset(page: Page) {
 }
 
 async function expectCurrentTestingPage(page: Page) {
-  await expect(page.getByRole("heading", { level: 1, name: "Current vocabulary size testing" })).toBeVisible();
+  await expectLazyRouteHeading(page, 1, "Current vocabulary size testing");
   await expectQuickPreset(page);
   await expectAccordionState(
     page,
@@ -465,7 +473,7 @@ async function expectCurrentTestingPage(page: Page) {
 }
 
 async function expectCurrentScoringPage(page: Page) {
-  await expect(page.getByRole("heading", { level: 1, name: "Current vocabulary size scoring" })).toBeVisible();
+  await expectLazyRouteHeading(page, 1, "Current vocabulary size scoring");
   await expectQuickPreset(page);
   await expectAccordionState(
     page,
@@ -473,7 +481,7 @@ async function expectCurrentScoringPage(page: Page) {
     ["Guessing handling", "Very low and uneven results", "Scoring model details"],
   );
   await expect(page.getByRole("region", { name: "Example live estimate" })).toContainText("Likely range: 1,050-1,900");
-  await expect(page.getByRole("article", { name: "Example final result" })).toContainText("Approximate level band: A2");
+  await expect(page.getByRole("article", { name: "Example final result" })).toContainText("Approximate level: A2");
 
   await page.getByRole("button", { name: /Guide/ }).click();
   await expectAccordionState(
@@ -565,7 +573,7 @@ export async function runAppSmoke(page: Page) {
 
   await page.getByRole("link", { name: "Adaptive methodology" }).click();
   await expect(page).toHaveURL(/#\/adaptive-methodology$/);
-  await expect(page.getByRole("heading", { level: 1, name: "Adaptive vocabulary size testing from a frequency list" })).toBeVisible();
+  await expectLazyRouteHeading(page, 1, "Adaptive vocabulary size testing from a frequency list");
   await expect(page.getByRole("tab", { name: "Beginner" })).toHaveAttribute("aria-selected", "true");
   await expect(page.getByText("Do not start with a short fully adaptive test.")).toBeVisible();
   await page.getByRole("tab", { name: "Advanced" }).click();
@@ -579,7 +587,7 @@ export async function runAppSmoke(page: Page) {
 
   await page.getByRole("link", { name: "Features" }).click();
   await expect(page).toHaveURL(/#\/features$/);
-  await expect(page.getByRole("heading", { level: 1, name: "Vocabulary test features to implement" })).toBeVisible();
+  await expectLazyRouteHeading(page, 1, "Vocabulary test features to implement");
   await expect(page.getByRole("heading", { level: 2, name: "Current app snapshot" })).toBeVisible();
   const currentSnapshot = page.locator("#current");
   await expect(currentSnapshot.getByText("Sentence-context questions load from")).toBeVisible();
@@ -590,12 +598,12 @@ export async function runAppSmoke(page: Page) {
 
   await page.goto("/adaptive-vocabulary-testing.html");
   await expect(page).toHaveURL(/index\.html#\/adaptive-methodology$/);
-  await expect(page.getByRole("heading", { level: 1, name: "Adaptive vocabulary size testing from a frequency list" })).toBeVisible();
+  await expectLazyRouteHeading(page, 1, "Adaptive vocabulary size testing from a frequency list");
   await expectMainNav(page, "Adaptive methodology");
 
   await page.goto("/features-to-implement.html");
   await expect(page).toHaveURL(/index\.html#\/features$/);
-  await expect(page.getByRole("heading", { level: 1, name: "Vocabulary test features to implement" })).toBeVisible();
+  await expectLazyRouteHeading(page, 1, "Vocabulary test features to implement");
   await expectMainNav(page, "Features");
 
   await page.goto(instantScrollUrl);
@@ -620,12 +628,12 @@ export async function runAppSmoke(page: Page) {
   await expectSentenceQuestion(page, {
     scored: 0,
     item: 1,
-    range: "0-500",
+    range: "1-80",
     sentence: "Kot pije wodę.",
     target: "Kot",
     choices: firstChoices,
   });
-  await expect(page.getByText("0-250", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("1-250", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("heading", { level: 2, name: "Kot" })).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
   await expectComfortableButtons(page);
@@ -722,11 +730,11 @@ export async function runAppSmoke(page: Page) {
   await expect(page.getByText("Estimated recognized Polish lemmas", { exact: true })).toBeVisible();
   await expect(page.getByText("under 200", { exact: true })).toBeVisible();
   await expect(page.getByText("Likely range: 0-200", { exact: true })).toBeVisible();
-  await expect(page.getByText("Approximate level band: Absolute beginner / pre-A1", { exact: true })).toBeVisible();
+  await expect(page.getByText("Approximate level: Absolute beginner / pre-A1", { exact: true })).toBeVisible();
   await expect(page.getByText("Estimated passive vocabulary", { exact: true })).toHaveCount(0);
   await expect(page.getByText("within +/-150 words", { exact: false })).toHaveCount(0);
   await expect(page.getByText("This test scores recognition of Polish lemmas in sentence context.", { exact: false })).toBeVisible();
-  await expectBandBreakdown(page);
+  await expectFrequencyBucketBreakdown(page);
   await expectReviewList(page);
   await expectNoHorizontalOverflow(page);
 
@@ -739,7 +747,7 @@ export async function runAppSmoke(page: Page) {
   await expectSentenceQuestion(page, {
     scored: 0,
     item: 1,
-    range: "0-500",
+    range: "1-80",
     sentence: "Kot pije wodę.",
     target: "Kot",
     choices: firstChoices,
@@ -753,7 +761,7 @@ export async function runAppSmoke(page: Page) {
 
 export async function runHighEstimateRegression(page: Page) {
   const block = sentenceBlockFixture();
-  const harderBlock = sentenceBlockFixture({ block: 1, rankStart: 250, rankEnd: 1000 });
+  const harderBlock = sentenceBlockFixture({ block: 1, rankStart: 81, rankEnd: 160 });
   harderBlock.items[0] = sentenceItem(80, {
     sentence: "Trudniejsze słowo pojawia się dalej.",
     target: "Trudniejsze",
@@ -793,7 +801,7 @@ export async function runHighEstimateRegression(page: Page) {
   await expectSentenceQuestion(page, {
     scored: 0,
     item: 1,
-    range: "250-1K",
+    range: "81-160",
     sentence: "Trudniejsze słowo pojawia się dalej.",
     target: "Trudniejsze",
     choices: ["easier", "later", "clean", "bright", "more difficult"],

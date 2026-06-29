@@ -139,14 +139,15 @@
 
 (def lemma-inventory-strata
   (mapv (fn [index]
-          (let [start (* index lemma-stratum-size)
-                end (min lemma-inventory-size
-                         (+ start lemma-stratum-size))]
+          (let [start-rank (inc (* index lemma-stratum-size))
+                end-rank (min lemma-inventory-size
+                              (+ (* index lemma-stratum-size)
+                                 lemma-stratum-size))]
             {:id (inc index)
-             :start start
-             :end end
-             :width (- end start)
-             :label (str start "-" end)}))
+             :start start-rank
+             :end end-rank
+             :width (inc (- end-rank start-rank))
+             :label (str start-rank "-" end-rank)}))
         (range (quot lemma-inventory-size lemma-stratum-size))))
 
 (def lemma-inventory-strata-by-id
@@ -159,7 +160,7 @@
          (inc (quot (dec (long lemma-inventory-rank))
                     lemma-stratum-size)))))
 
-(def level-bands
+(def estimate-levels
   [{:id :pre-a1
     :label "Absolute beginner / pre-A1"
     :lower 0
@@ -189,42 +190,45 @@
     :lower 8000
     :upper lemma-inventory-size}])
 
-(def bands
-  [{:id :B1
-    :label "0-250"
-    :summary "Band 1 - top 250 (sanity) - 12 words"}
-   {:id :B2
-    :label "250-500"
-    :summary "Band 2 - 250-500 (your estimate) - 16 words"}
-   {:id :B3
-    :label "500-1K"
-    :summary "Band 3 - 500-1,000 - 18 words"}
-   {:id :B4
-    :label "1K-2K"
-    :summary "Band 4 - 1,000-2,000 - 16 words"}
-   {:id :B5
-    :label "2K-3.5K"
-    :summary "Band 5 - 2,000-3,500 - 10 words"}
-   {:id :B6
-    :label "3.5K+"
-    :summary "Band 6 - 3,500+ (ceiling) - 8 words"}])
+(def frequency-buckets
+  [{:id :rank-1-250
+    :rank-start 1
+    :rank-end 250
+    :label "1-250"}
+   {:id :rank-251-500
+    :rank-start 251
+    :rank-end 500
+    :label "251-500"}
+   {:id :rank-501-1000
+    :rank-start 501
+    :rank-end 1000
+    :label "501-1K"}
+   {:id :rank-1001-2000
+    :rank-start 1001
+    :rank-end 2000
+    :label "1,001-2K"}
+   {:id :rank-2001-3500
+    :rank-start 2001
+    :rank-end 3500
+    :label "2,001-3.5K"}
+   {:id :rank-3501-plus
+    :rank-start 3501
+    :rank-end nil
+    :label "3,501+"}])
 
-(def band-labels
-  (into {} (map (juxt :id :label) bands)))
+(def frequency-bucket-labels
+  (into {} (map (juxt :id :label) frequency-buckets)))
 
-(def ordered-band-ids
-  (mapv :id bands))
+(def ordered-frequency-bucket-ids
+  (mapv :id frequency-buckets))
 
-(def block-band-profile
-  [{:band :B1
-    :items 12}
-   {:band :B2
-    :items 16}
-   {:band :B3
-    :items 18}
-   {:band :B4
-    :items 16}
-   {:band :B5
-    :items 10}
-   {:band :B6
-    :items 8}])
+(defn frequency-bucket-id-for-rank [rank]
+  (when (and (number? rank)
+             (pos? rank))
+    (let [rank (long rank)]
+      (some (fn [{:keys [id rank-start rank-end]}]
+              (when (and (<= rank-start rank)
+                         (or (nil? rank-end)
+                             (<= rank rank-end)))
+                id))
+            frequency-buckets))))

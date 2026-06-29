@@ -99,6 +99,7 @@
               "lemma-pos-id" 111
               "lemma-inventory-rank" 42
               "surface-difficulty-rank" 17
+              "inventory-stratum" 1
               "fixed-stratum" 1
               "correct-translation" "cat"
               "distractors" ["dog" "bird" "fish" "tree"]
@@ -109,7 +110,8 @@
                           ["item-id" "sentence" "target-surface" "target-surface-form-id"
                            "highlight-span"
                            "lemma-id" "lemma-pos-id" "lemma-inventory-rank"
-                           "surface-difficulty-rank" "fixed-stratum"
+                           "surface-difficulty-rank" "inventory-stratum"
+                           "fixed-stratum"
                            "correct-translation" "distractors" "item-type"
                            "choice-count" "guess-rate"]))))))
 

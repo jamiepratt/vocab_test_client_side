@@ -9,7 +9,7 @@
    :adaptive-block-id (:adaptive-block-id question)
    :item-type (:item-type question)
    :word (:word question)
-   :band (:band question)
+   :frequency-bucket (:frequency-bucket question)
    :selected (case result
                :correct (:correct question)
                :wrong "wrong answer"
@@ -22,7 +22,7 @@
           {:question-index index
            :adaptive-block-id block-id
            :item-type "sentence-context-lemma"
-           :band :B1
+           :frequency-bucket :rank-1-250
            :result (if (< index correct-count) :correct :dk)})
         (range 80)))
 
@@ -31,7 +31,7 @@
           {:question-index index
            :adaptive-block-id block-id
            :item-type "sentence-context-lemma"
-           :band :B1
+           :frequency-bucket :rank-1-250
            :word (str (name block-id) "-" index)
            :correct (str "meaning-" index)})
         (range 80)))
@@ -173,13 +173,23 @@
                (:lemma-estimate forced-choice-result))
             25))))
 
-(deftest reports-borderline-level-band-when-range-crosses-boundary
+(deftest maps-surface-ranks-to-frequency-buckets
+  (is (= :rank-1-250 (data/frequency-bucket-id-for-rank 1)))
+  (is (= :rank-1-250 (data/frequency-bucket-id-for-rank 250)))
+  (is (= :rank-251-500 (data/frequency-bucket-id-for-rank 251)))
+  (is (= :rank-501-1000 (data/frequency-bucket-id-for-rank 1000)))
+  (is (= :rank-1001-2000 (data/frequency-bucket-id-for-rank 1001)))
+  (is (= :rank-2001-3500 (data/frequency-bucket-id-for-rank 3500)))
+  (is (= :rank-3501-plus (data/frequency-bucket-id-for-rank 3501)))
+  (is (nil? (data/frequency-bucket-id-for-rank 0))))
+
+(deftest reports-borderline-estimate-level-when-range-crosses-boundary
   (let [answers (vec (concat (repeat 24 (lemma-answer 1 :correct
                                                       {:guess-rate 0}))
                              (repeat 16 (lemma-answer 1 :dk))))
         result (scoring/summarize-results [] answers)]
     (is (= "borderline: Absolute beginner / pre-A1 to A1"
-           (:level-band result)))))
+           (:estimate-level result)))))
 
 (deftest gates-live-estimate-until-enough-real-answers
   (let [early-result (scoring/summarize-results
@@ -211,7 +221,7 @@
                 decision)]
     (is (= "under 200" (:estimate-label result)))
     (is (= {:lower 0 :upper 200} (:likely-range result)))
-    (is (= "Absolute beginner / pre-A1" (:level-band result)))
+    (is (= "Absolute beginner / pre-A1" (:estimate-level result)))
     (is (< (:lemma-estimate result) 200))))
 
 (deftest summarizes-low-score-results
@@ -281,7 +291,7 @@
                         :adaptive-block-id :pre-a1-plus
                         :item-type "attention-check"
                         :vocabulary-evidence? false
-                        :band :B1
+                        :frequency-bucket :rank-1-250
                         :result :correct}
         answers (conj (into (block-answers :pre-a1 80)
                             (block-answers :pre-a1-plus 40))

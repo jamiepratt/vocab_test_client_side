@@ -172,7 +172,7 @@
     [:p "Wrong: 17"]
     [:p "Don't know: 24"]]
    [:p {:class "break-words text-base font-semibold app-ink-soft"}
-    "Approximate level band: A2"]])
+    "Approximate level: A2"]])
 
 (def testing-sections
   [{:id :testing-measures

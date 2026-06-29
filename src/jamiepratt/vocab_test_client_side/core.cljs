@@ -6,34 +6,34 @@
    [reagent.dom.client :as rdom]
    [shadow.lazy :as lazy]))
 
-(def band-styles
-  {:B1 {:bar "band-bar band-b1"
-        :badge "band-badge band-b1"
-        :panel "band-panel band-b1"
-        :text "band-text band-b1"}
-   :B2 {:bar "band-bar band-b2"
-        :badge "band-badge band-b2"
-        :panel "band-panel band-b2"
-        :text "band-text band-b2"}
-   :B3 {:bar "band-bar band-b3"
-        :badge "band-badge band-b3"
-        :panel "band-panel band-b3"
-        :text "band-text band-b3"}
-   :B4 {:bar "band-bar band-b4"
-        :badge "band-badge band-b4"
-        :panel "band-panel band-b4"
-        :text "band-text band-b4"}
-   :B5 {:bar "band-bar band-b5"
-        :badge "band-badge band-b5"
-        :panel "band-panel band-b5"
-        :text "band-text band-b5"}
-   :B6 {:bar "band-bar band-b6"
-        :badge "band-badge band-b6"
-        :panel "band-panel band-b6"
-        :text "band-text band-b6"}})
+(def frequency-bucket-styles
+  {:rank-1-250 {:bar "band-bar band-b1"
+                :badge "band-badge band-b1"
+                :panel "band-panel band-b1"
+                :text "band-text band-b1"}
+   :rank-251-500 {:bar "band-bar band-b2"
+                  :badge "band-badge band-b2"
+                  :panel "band-panel band-b2"
+                  :text "band-text band-b2"}
+   :rank-501-1000 {:bar "band-bar band-b3"
+                   :badge "band-badge band-b3"
+                   :panel "band-panel band-b3"
+                   :text "band-text band-b3"}
+   :rank-1001-2000 {:bar "band-bar band-b4"
+                    :badge "band-badge band-b4"
+                    :panel "band-panel band-b4"
+                    :text "band-text band-b4"}
+   :rank-2001-3500 {:bar "band-bar band-b5"
+                    :badge "band-badge band-b5"
+                    :panel "band-panel band-b5"
+                    :text "band-text band-b5"}
+   :rank-3501-plus {:bar "band-bar band-b6"
+                    :badge "band-badge band-b6"
+                    :panel "band-panel band-b6"
+                    :text "band-text band-b6"}})
 
-(defn band-style-class [band-id style-key]
-  (get-in band-styles [band-id style-key]))
+(defn frequency-bucket-style-class [bucket-id style-key]
+  (get-in frequency-bucket-styles [bucket-id style-key]))
 
 (defn random-hex [length]
   (apply str (repeatedly length #(.toString (rand-int 16) 16))))
@@ -315,35 +315,20 @@
 (defn now-ms []
   (.now js/Date))
 
-(defn block-index-band [index]
-  (loop [remaining (inc index)
-         [{:keys [band items]} & more] data/block-band-profile]
-    (cond
-      (nil? band) (last data/ordered-band-ids)
-      (<= remaining items) band
-      :else (recur (- remaining items) more))))
+(defn rank-bound-label [value]
+  (scoring/format-count value))
 
-(defn compact-rank-bound [value]
-  (if (>= value 1000)
-    (if (zero? (mod value 1000))
-      (str (quot value 1000) "K")
-      (str (/ value 1000) "K"))
-    (str value)))
-
-(defn adaptive-block-range-label [adaptive-block-id]
-  (when-let [{:keys [surface-rank-start surface-rank-end]}
-             (data/adaptive-block adaptive-block-id)]
-    (let [lower (if (= 1 surface-rank-start)
-                  0
-                  surface-rank-start)]
-      (str (compact-rank-bound lower)
-           "-"
-           (compact-rank-bound surface-rank-end)))))
+(defn rank-window-label [surface-rank-start surface-rank-end]
+  (when (and surface-rank-start surface-rank-end)
+    (str (rank-bound-label surface-rank-start)
+         "-"
+         (rank-bound-label surface-rank-end))))
 
 (defn normalize-sentence-item [adaptive-block-id index item]
   (assoc item
          :adaptive-block-id adaptive-block-id
-         :band (block-index-band index)
+         :frequency-bucket (data/frequency-bucket-id-for-rank
+                            (:surface-difficulty-rank item))
          :question-number (inc index)))
 
 (defn sentence-block-url [{:keys [request]}]
@@ -521,7 +506,8 @@
                              :lemma-id (:lemma-id question)
                              :lemma-pos-id (:lemma-pos-id question)
                              :candidate-rank (:surface-difficulty-rank question)
-                             :inventory-stratum (:fixed-stratum question)
+                             :inventory-stratum (or (:inventory-stratum question)
+                                                    (:fixed-stratum question))
                              :lemma-rank (:lemma-inventory-rank question)
                              :surface-difficulty-rank (:surface-difficulty-rank question)
                              :item-type (:item-type question)
@@ -544,7 +530,7 @@
                              :adaptive-block-id (:adaptive-block-id question-block)
                              :requested-level (:requested-level question-block)
                              :level (:level question-block)
-                             :band (:band question)
+                             :frequency-bucket (:frequency-bucket question)
                              :word (:target-surface question)}
                      next-answers (conj answers answer)
                      last-question? (= current-question-index (dec (count questions)))]
@@ -775,7 +761,8 @@
                      (:adaptive-block-id %))
                  answers)))
 
-(defn quiz-status-card [{:keys [questions current-question-index answers continuation-message] :as state}]
+(defn quiz-status-card [{:keys [questions current-question-index answers
+                                continuation-message question-block] :as state}]
   (let [question (or (nth questions current-question-index nil)
                      (last (:session-questions state)))
         scored-count (if question
@@ -796,11 +783,13 @@
             :class "flex flex-wrap items-center justify-between gap-3 font-semibold app-muted"}
       [:span (str scored-count " / " total " scored")]
       [:span (str "Item " current-question-number " of " total)]
-      (when question
+      (when question-block
         [:span {:class (str "rounded-full px-3 py-1 text-xs font-bold ring-1 "
-                            (band-style-class (:band question) :badge))}
-         (or (adaptive-block-range-label (:adaptive-block-id question))
-             (data/band-labels (:band question)))])]
+                            (frequency-bucket-style-class
+                             (:frequency-bucket question)
+                             :badge))}
+         (rank-window-label (:surface-rank-start question-block)
+                            (:surface-rank-end question-block))])]
      [:div {:class "h-2 overflow-hidden rounded-full app-subtle-bg"
             :role "progressbar"
             :aria-valuemin 0
@@ -878,20 +867,24 @@
     (when (= :results screen)
       [results-screen state])]])
 
-(defn band-result-row [results-data band-id]
-  (let [{:keys [answered correct pct]} (get-in results-data [:band-stats band-id])]
-    [:li {:class "grid min-w-0 gap-2 rounded-md border app-border p-3 text-sm sm:grid-cols-[5rem_1fr_6rem] sm:items-center"}
-     [:span {:class (str "font-bold " (band-style-class band-id :text))} (data/band-labels band-id)]
+(defn frequency-bucket-result-row [results-data bucket-id]
+  (let [{:keys [answered correct pct]}
+        (get-in results-data [:frequency-bucket-stats bucket-id])]
+    [:li {:class "grid min-w-0 gap-2 rounded-md border app-border p-3 text-sm sm:grid-cols-[7rem_1fr_6rem] sm:items-center"}
+     [:span {:class (str "font-bold " (frequency-bucket-style-class bucket-id :text))}
+      (data/frequency-bucket-labels bucket-id)]
      [:div {:class "h-2 overflow-hidden rounded-full app-subtle-bg"
             :aria-hidden true}
-      [:div {:class (str "h-full rounded-full " (band-style-class band-id :bar))
+      [:div {:class (str "h-full rounded-full " (frequency-bucket-style-class bucket-id :bar))
              :style {:width (str pct "%")}}]]
      [:span {:class "font-semibold app-muted"}
       (str correct "/" answered " (" pct "%)")]]))
 
-(defn review-answer-row [{:keys [band word correct]}]
+(defn review-answer-row [{:keys [frequency-bucket word correct]}]
   [:li {:class "grid min-w-0 gap-1 rounded-md border app-border p-3 text-sm sm:grid-cols-3 sm:items-center"}
-   [:span {:class (str "font-bold " (band-style-class band :text))} (data/band-labels band)]
+   [:span {:class (str "font-bold "
+                       (frequency-bucket-style-class frequency-bucket :text))}
+    (data/frequency-bucket-labels frequency-bucket)]
    [:span {:class "break-words font-semibold app-ink"} word]
    [:span {:class "break-words app-muted"} correct]])
 
@@ -924,15 +917,15 @@
     [:p (str "Answered: " (:answered results-data))]
     [:p (str "Wrong: " (:wrong results-data))]
     [:p (str "Don't know: " (:dk results-data))]]
-   [:section {:aria-labelledby "band-results-heading"
+   [:section {:aria-labelledby "frequency-bucket-results-heading"
               :class "grid gap-3"}
-    [:h2 {:id "band-results-heading"
+    [:h2 {:id "frequency-bucket-results-heading"
           :class "text-lg font-bold app-ink"}
-     "Accuracy by frequency band"]
+     "Accuracy by frequency bucket"]
     [:ul {:class "grid gap-2"}
-     (for [band-id data/ordered-band-ids]
-       ^{:key band-id}
-       [band-result-row results-data band-id])]]
+     (for [bucket-id data/ordered-frequency-bucket-ids]
+       ^{:key bucket-id}
+       [frequency-bucket-result-row results-data bucket-id])]]
    [review-section (:review-answers results-data)]
    [:section {:aria-labelledby "estimate-heading"
               :class "grid gap-4 border-t app-border pt-6"}
@@ -940,8 +933,9 @@
      [:h2 {:id "estimate-heading"
            :class "text-lg font-bold app-ink"}
       "Vocabulary estimate"]
-     [:p {:class "rounded-full px-3 py-1 text-xs font-bold ring-1 app-subtle-bg app-ink-soft"}
-      (str "Level band: " (:level-band results-data))]]
+     [:p {:class "rounded-full px-3 py-1 text-xs font-bold ring-1 app-subtle-bg app-ink-soft"
+          :aria-label (str "Approximate level: " (:estimate-level results-data))}
+      (:estimate-level results-data)]]
     [:div {:class "app-accent-panel grid gap-1 rounded-md border p-4"}
      [:p {:class "text-xs font-bold uppercase app-muted"}
       "Estimated recognized Polish lemmas"]
@@ -950,7 +944,7 @@
      [:p {:class "text-sm font-semibold app-ink-soft"}
       (str "Likely range: " (scoring/format-range (:likely-range results-data)))]]
     [:p {:class "break-words text-base font-semibold app-ink-soft"}
-     (str "Approximate level band: " (:level-band results-data))]
+     (str "Approximate level: " (:estimate-level results-data))]
     [:p {:class "break-words text-base leading-7 app-muted"}
      "Likely ranges are broad for short tests and narrow as more sentence-context evidence is added."]
     [:p {:class "break-words rounded-md app-subtle-bg p-3 text-sm leading-6 app-muted"}
@@ -1084,18 +1078,18 @@
      "launch-test"
      "Stage 1: long stratified launch test"
      [:p {:class "text-sm leading-6 app-muted"}
-      "Before calibration exists, the test samples broadly across frequency bands rather than adapting too early."]
+      "Before calibration exists, the test samples broadly across frequency buckets rather than adapting too early."]
      [:div {:class "app-soft-panel grid gap-2 rounded-md border p-4 text-sm leading-6"}
       [:p "60-80 real words"]
       [:p "5-10 quality checks"]
-      [:p "Several frequency bands"]
+      [:p "Several frequency buckets"]
       [:p "Randomized order"]
       [:p "Occasional meaning checks after claimed-known answers"]]]
     [methodology-section
      "scoring"
      "Stage 1 scoring"
      [:p {:class "text-sm leading-6 app-muted"}
-      "Use frequency-band scoring: calculate hit rate per band, correct overclaiming with fake-word false alarms, clamp corrected hit rate to 0-1, then sum band size times corrected hit rate."]
+      "Use frequency-bucket scoring: calculate hit rate per bucket, correct overclaiming with fake-word false alarms, clamp corrected hit rate to 0-1, then sum bucket size times corrected hit rate."]
      [:p {:class "rounded-md app-subtle-bg p-3 text-sm leading-6 app-muted"}
       "This score is provisional. It can be useful to the learner, but the uncertainty range should be wide."]]
     [methodology-section
@@ -1168,6 +1162,10 @@
     :features [lazy-page-screen route]
     [test-screen state]))
 
+(defn preload-lazy-pages! []
+  (doseq [route (keys lazy-pages)]
+    (load-lazy-page! route)))
+
 (defn app []
   (let [state @app-state
         route @current-route
@@ -1188,4 +1186,5 @@
     (reset! resize-listener-registered? true)
     (.addEventListener js/window "resize" refresh-layout-measurements!))
   (reset! current-route (route-from-location))
+  (preload-lazy-pages!)
   (rdom/render @root [app]))

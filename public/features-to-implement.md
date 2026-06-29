@@ -9,9 +9,9 @@ Tags: Static HTML, GitHub Pages ready, Sentence context, Lemma scoring, Vocabula
 - Reagent/Shadow app served by `public/index.html` with Test, Features, and methodology routes.
 - Sentence-context questions load from `/api/sentence-question-blocks`, backed by database example sentences and optional configured API base URL.
 - Test uses 80 Polish sentence-context lemma items per block, with adaptive continuation when the first block is outside the informative range.
-- Each quiz item shows a Polish sentence with one highlighted target form, band badge, progress bar, English choices, and `don't know`.
-- Answering locks choices, shows immediate feedback, reveals the correct answer for misses, then enables Next.
-- Results show accuracy, answered/wrong/don't know counts, accuracy by frequency band, words to review, estimated recognized Polish lemmas, likely range, approximate level band, and Retake.
+- Each quiz item shows a Polish sentence with one highlighted target form, served rank window, progress bar, English choices, and `don't know`.
+- Answering locks choices, shows immediate feedback, and reveals the correct answer for misses.
+- Results show accuracy, answered/wrong/don't know counts, accuracy by frequency bucket, words to review, estimated recognized Polish lemmas, likely range, approximate level, and Retake.
 - Methodology pages explain sentence-context vocabulary-size measurement and the staged path toward calibrated adaptive testing.
 
 ## Goal
@@ -28,7 +28,7 @@ Current question:
 >
 > highlighted: **Kot**
 >
-> 0-250
+> 1-250
 
 Choices:
 
@@ -42,7 +42,7 @@ Choices:
 Current requirements:
 
 - Show visible progress as `current / 80` plus an accessible progress bar.
-- Show the current frequency band without exposing scoring internals.
+- Show the current served rank window without exposing scoring internals.
 - Include `don't know` on every item and tell users not to guess.
 - Lock answer buttons after a choice.
 - Show immediate correct/incorrect feedback.
@@ -68,7 +68,7 @@ Current scoring uses sentence-context lemma items grouped into fixed lemma-inven
 | Sentence | `Kot pije wodę.` | User-visible context. |
 | Target surface | `Kot` | Highlighted form the learner answers about. |
 | Lemma id | `11` | Recognition is scored against the lemma. |
-| Fixed stratum | `1` | Lemma-inventory bin used for posterior estimates. |
+| Inventory stratum | `1` | Lemma-inventory bin used for posterior estimates. |
 | Correct answer | `cat` | Recognized item when selected. |
 | Distractors | `dog`, `bird`, `fish`, `tree` | Plausible alternatives. |
 
@@ -79,12 +79,12 @@ Sentence-based scoring counts lemmas, not every observed surface form. If the se
 ### Implemented baseline
 
 - 80-item sentence-context multiple-choice blocks.
-- Visible band labels, progress, and live estimate readiness.
+- Visible rank-window labels, progress, and live estimate readiness.
 - Sentence-question data from the API.
 - Immediate feedback and locked answers.
-- Banded result breakdown.
+- Frequency-bucket result breakdown.
 - Words-to-review list.
-- Recognized-lemma estimate, likely range, level band, and methodology routes.
+- Recognized-lemma estimate, likely range, approximate level, and methodology routes.
 
 ### Sentence item bank
 
@@ -108,14 +108,14 @@ Sentence-based scoring counts lemmas, not every observed surface form. If the se
 
 - Estimate known lemmas, not known word forms.
 - Show a center estimate plus lower and upper range.
-- Attach a confidence or reliability label from answer count, band coverage, checks, and timing.
+- Attach a confidence or reliability label from answer count, rank-bucket coverage, checks, and timing.
 
 ### Progressive confidence and early finish
 
 - Recompute the provisional estimate and uncertainty after each locked answer.
 - Show user-facing confidence such as `Low`, `Medium`, `High`, or a percentage-like precision score.
 - Explain the tradeoff in-product: continue for a tighter estimate, or finish now for a wider range.
-- Enable `Show results now` after minimum item count and band-coverage rules are met.
+- Enable `Show results now` after minimum item count and rank-bucket coverage rules are met.
 - Record early-finished sessions with item count, confidence level, and wider uncertainty range.
 
 ### Calibration data
@@ -149,7 +149,7 @@ Sentence-based scoring counts lemmas, not every observed surface form. If the se
 |---|---|---|---|
 | 1. Sentence-context test route | Done | 80 sentence items, answer choices, `don't know`, progress, feedback, retake. | Browser flow works end to end from `#/`. |
 | 2. Structured item loading | Done | Sentence-question blocks served through `/api/sentence-question-blocks`. | App can load questions from local or configured API base URL. |
-| 3. Initial scoring and results | Done | Stratum posterior estimate, likely range, review list, level band. | Result page reports range and band breakdown. |
+| 3. Initial scoring and results | Done | Stratum posterior estimate, likely range, review list, approximate level. | Result page reports range and frequency-bucket breakdown. |
 | 4. Telemetry export | Done | Persist anonymized response events for calibration. | Each event has item id, response, timing, ranks, and scoring metadata. |
 | 5. Estimate range | Done | Add lower/center/upper estimate and live readiness. | Result page shows range, not only a single estimate. |
 | 6. Progressive confidence and early finish | New | Show live estimate confidence during the quiz and allow finishing early. | User can stop after minimum evidence and results show early-stop confidence/range. |
@@ -172,6 +172,7 @@ Current sentence item:
   "lemma-pos-id": 111,
   "lemma-inventory-rank": 42,
   "surface-difficulty-rank": 17,
+  "inventory-stratum": 1,
   "fixed-stratum": 1,
   "correct-translation": "cat",
   "distractors": ["dog", "bird", "fish", "tree"],
@@ -213,7 +214,7 @@ Future live progress estimate:
 {
   "answered": 32,
   "minimum_items_met": true,
-  "band_coverage_met": true,
+  "rank_bucket_coverage_met": true,
   "can_finish": true,
   "estimate": {
     "center": 850,
@@ -249,8 +250,8 @@ Future saved result:
 
 Before calibration, assume word difficulty equals frequency difficulty. Compensate for that rough assumption by starting with 80 test items, including extra calibration items, and sampling across the frequency curve.
 
-1. Choose a broad set of frequency bands.
-2. Sample several words or lemmas from each band.
+1. Choose a broad set of rank buckets.
+2. Sample several words or lemmas from each bucket.
 3. Use one visible item per word or lemma per session.
 4. Randomize item order enough to reduce fatigue effects.
 5. Reserve some claimed-known answers for meaning checks once sentence mode exists.
@@ -263,7 +264,7 @@ After many responses, compute which items are easier or harder than frequency pr
 ## Open questions
 
 - What confidence labels and range widths are honest enough for early finish?
-- What minimum item count and band coverage are required before `Show results now` appears?
+- What minimum item count and rank-bucket coverage are required before `Show results now` appears?
 - Should low confidence hide early finish or allow it with a stronger warning?
 - What percentage of yes answers should receive meaning checks?
 - Should a failed meaning check reduce trust globally or only score that item as unknown?

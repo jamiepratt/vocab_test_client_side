@@ -6,15 +6,15 @@ Checked on June 29, 2026 against the local dev app at `http://localhost:8000/ind
 
 All start-level selections load the first quiz item successfully. No selection showed `Could not load sentence questions`.
 
-| Selection | Browser result | Visible range | First sentence |
+| Selection | Browser result | Served surface-rank window | First sentence |
 | --- | --- | --- | --- |
-| Absolute beginner / pre-A1 | Pass | `0-500` | `On tego nie zrobił.` |
-| A1 | Pass | `0-2K` | `Przyszedł mimo deszczu.` |
-| A2 | Pass | `500-3K` | `Przyjdę akurat po pracy.` |
-| B1 | Pass | `1K-5K` | `Słyszałem nowe wieści rano.` |
-| B2 | Pass | `2K-8K` | `Ja przysięgam że mówię prawdę.` |
-| C1 | Pass | `3K-10K` | `Nie zgolił brody od miesiąca.` |
-| C2 | Pass | `5K-10K` | `Nie zgolił brody od miesiąca.` |
+| Absolute beginner / pre-A1 | Pass | `1-80` | `On tego nie zrobił.` |
+| A1 | Pass | `401-480` | `Przyszedł mimo deszczu.` |
+| A2 | Pass | `1,001-1,080` | `Przyjdę akurat po pracy.` |
+| B1 | Pass | `2,001-2,080` | `Słyszałem nowe wieści rano.` |
+| B2 | Pass | `4,001-4,080` | `Ja przysięgam że mówię prawdę.` |
+| C1 | Pass | `8,001-8,080` | `Nie zgolił brody od miesiąca.` |
+| C2 | Pass | `8,001-8,080` | `Nie zgolił brody od miesiąca.` |
 
 ## Notes
 

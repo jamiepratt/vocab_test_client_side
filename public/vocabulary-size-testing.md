@@ -10,6 +10,17 @@ Learners are the first audience: the test should feel clear, low-pressure, and
 useful for placement or progress. Teachers can use the same output, but teacher
 interpretation should not change the learner-facing instructions.
 
+## Glossary
+
+- Surface-rank window: the exact 80 surface-form difficulty ranks served for one
+  question block.
+- Frequency bucket: a broad reporting bucket derived from each item's
+  `surface-difficulty-rank`.
+- Lemma-inventory stratum: a 1,000-lemma scoring bin derived from
+  `lemma_inventory_rank`.
+- Approximate level: the coarse result label derived from the recognized-lemma
+  estimate.
+
 ## What Is Measured
 
 The score estimates recognized Polish lemmas, not productive vocabulary and not
@@ -22,7 +33,7 @@ Each real item stores:
 - target surface form id;
 - lemma inventory rank;
 - surface-form difficulty rank;
-- fixed lemma-inventory stratum;
+- inventory stratum, with `fixed-stratum` kept as a compatibility alias;
 - item type;
 - choice count and random-choice hit rate;
 - selected answer and correctness.
@@ -95,7 +106,27 @@ The implementation keeps both ranks:
 - `lemma_inventory_rank` controls the vocabulary-size denominator and scoring
   stratum.
 
-## Current Block Spans
+## Current Served Windows
+
+The API serves 80-rank windows. For `block=0`, current starting-level windows
+are:
+
+| Starting level | Served surface-rank window |
+| --- | ---: |
+| Absolute beginner / pre-A1 | 1-80 |
+| A1 | 401-480 |
+| A2 | 1,001-1,080 |
+| B1 | 2,001-2,080 |
+| B2 | 4,001-4,080 |
+| C1 | 8,001-8,080 |
+| C2 | 8,001-8,080 |
+
+Continuation requests add another 80-rank window for the same starting prior.
+
+## Nominal Starting-Level Coverage
+
+These broader spans are product coverage labels for the adaptive blocks, not the
+exact window served by a single API request:
 
 | Block | Surface-form difficulty span |
 | --- | ---: |

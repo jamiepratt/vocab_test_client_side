@@ -1,5 +1,10 @@
 # Progressive vocabulary test methodology
 
+Historical note: this prototype methodology predates the current
+`latent-guessing-v1` scoring model. It uses "frequency band" for what the
+current product calls frequency buckets and should not be treated as the current
+scoring contract.
+
 This is the rollout plan for a vocabulary-size test that starts before item calibration exists, improves from live response data, and ends as a short adaptive test.
 
 The core bet:

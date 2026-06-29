@@ -17,22 +17,40 @@
 (defn clamp [lower upper n]
   (min upper (max lower n)))
 
-(defn empty-band-stats []
-  (into {} (map (fn [band-id]
-                  [band-id {:answered 0
-                            :correct 0
-                            :wrong 0
-                            :dk 0
-                            :proportion 0
-                            :pct 0}])
-                data/ordered-band-ids)))
+(defn empty-frequency-bucket-stats []
+  (into {} (map (fn [bucket-id]
+                  [bucket-id {:answered 0
+                              :correct 0
+                              :wrong 0
+                              :dk 0
+                              :proportion 0
+                              :pct 0}])
+                data/ordered-frequency-bucket-ids)))
 
-(defn add-band-answer [stats {:keys [band result]}]
-  (if (contains? stats band)
-    (-> stats
-        (update-in [band :answered] inc)
-        (update-in [band result] inc))
-    stats))
+(defn add-frequency-bucket-answer [stats {:keys [frequency-bucket band result]}]
+  (let [bucket-id (or frequency-bucket band)]
+    (if (contains? stats bucket-id)
+      (-> stats
+          (update-in [bucket-id :answered] inc)
+          (update-in [bucket-id result] inc))
+      stats)))
+
+;; Compatibility for old in-memory/prototype answers that only stored :band.
+(def legacy-display-band-strata
+  {:B1 1
+   :B2 1
+   :B3 1
+   :B4 2
+   :B5 3
+   :B6 4})
+
+(defn answer-stratum-id [{:keys [inventory-stratum fixed-stratum lemma-rank
+                                 lemma-inventory-rank band]}]
+  (or inventory-stratum
+      fixed-stratum
+      (data/lemma-inventory-stratum-id lemma-rank)
+      (data/lemma-inventory-stratum-id lemma-inventory-rank)
+      (legacy-display-band-strata band)))
 
 (def real-item-types
   #{nil
@@ -63,22 +81,6 @@
   (mapv (fn [index]
           (/ (+ index 0.5) guessing-grid-size))
         (range guessing-grid-size)))
-
-(def legacy-band-strata
-  {:B1 1
-   :B2 1
-   :B3 1
-   :B4 2
-   :B5 3
-   :B6 4})
-
-(defn answer-stratum-id [{:keys [inventory-stratum fixed-stratum lemma-rank
-                                 lemma-inventory-rank band]}]
-  (or inventory-stratum
-      fixed-stratum
-      (data/lemma-inventory-stratum-id lemma-rank)
-      (data/lemma-inventory-stratum-id lemma-inventory-rank)
-      (legacy-band-strata band)))
 
 (defn capped-stratum-id [stratum-id]
   (when (and (number? stratum-id)
@@ -345,32 +347,32 @@
        :guessing-posterior (:guessing-posterior latent-posterior)
        :posterior-strata stratum-summaries})))
 
-(defn level-band-for-count [lemma-count]
-  (or (some (fn [{:keys [lower upper] :as band}]
+(defn estimate-level-for-count [lemma-count]
+  (or (some (fn [{:keys [lower upper] :as level}]
               (when (and (>= lemma-count lower)
                          (< lemma-count upper))
-                band))
-            data/level-bands)
-      (last data/level-bands)))
+                level))
+            data/estimate-levels)
+      (last data/estimate-levels)))
 
 (defn crossed-level-boundary? [{:keys [lower upper]} boundary]
   (and (< lower boundary)
        (> upper boundary)))
 
-(defn level-band-label [lemma-estimate likely-range]
-  (let [lower-band (level-band-for-count (:lower likely-range))
-        upper-band (level-band-for-count (:upper likely-range))
-        boundaries (map :lower (rest data/level-bands))
+(defn estimate-level-label [lemma-estimate likely-range]
+  (let [lower-level (estimate-level-for-count (:lower likely-range))
+        upper-level (estimate-level-for-count (:upper likely-range))
+        boundaries (map :lower (rest data/estimate-levels))
         borderline? (some (partial crossed-level-boundary? likely-range)
                           boundaries)]
     (if (and borderline?
-             (not= (:id lower-band) (:id upper-band)))
-      (str "borderline: " (:label lower-band) " to " (:label upper-band))
-      (:label (level-band-for-count lemma-estimate)))))
+             (not= (:id lower-level) (:id upper-level)))
+      (str "borderline: " (:label lower-level) " to " (:label upper-level))
+      (:label (estimate-level-for-count lemma-estimate)))))
 
-(defn with-level-band [summary]
-  (assoc summary :level-band (level-band-label (:lemma-estimate summary)
-                                               (:likely-range summary))))
+(defn with-estimate-level [summary]
+  (assoc summary :estimate-level (estimate-level-label (:lemma-estimate summary)
+                                                       (:likely-range summary))))
 
 (defn estimate-display [{:keys [estimate-label lemma-estimate]}]
   (or estimate-label
@@ -446,20 +448,20 @@
             :correct-rate correct-rate
             :accuracy-pct (round-value (* 100 correct-rate))))))
 
-(defn with-band-proportions [stats]
+(defn with-frequency-bucket-proportions [stats]
   (into {}
-        (map (fn [[band-id {:keys [answered correct] :as stat}]]
+        (map (fn [[bucket-id {:keys [answered correct] :as stat}]]
                (let [proportion (if (pos? answered)
                                   (/ correct answered)
                                   0)]
-                 [band-id (assoc stat
-                                 :proportion proportion
-                                 :pct (round-value (* 100 proportion)))]))
+                 [bucket-id (assoc stat
+                                   :proportion proportion
+                                   :pct (round-value (* 100 proportion)))]))
              stats)))
 
-(defn band-stats-for [answers]
-  (with-band-proportions
-    (reduce add-band-answer (empty-band-stats) answers)))
+(defn frequency-bucket-stats-for [answers]
+  (with-frequency-bucket-proportions
+    (reduce add-frequency-bucket-answer (empty-frequency-bucket-stats) answers)))
 
 (defn summarize-results
   ([questions answers]
@@ -471,8 +473,8 @@
          dk (count (filter #(= :dk (:result %)) evidence-answers))
          wrong (count (filter #(= :wrong (:result %)) evidence-answers))
          review-answers (filterv #(not= :correct (:result %)) evidence-answers)
-         band-stats (band-stats-for evidence-answers)
-         posterior (with-level-band
+         frequency-bucket-stats (frequency-bucket-stats-for evidence-answers)
+         posterior (with-estimate-level
                      (posterior-summary evidence-answers adaptive-decision))]
      (with-live-estimate
        (merge posterior
@@ -484,7 +486,7 @@
                :accuracy-pct (if (pos? total)
                                (round-value (* 100 (/ correct total)))
                                0)
-               :band-stats band-stats
+               :frequency-bucket-stats frequency-bucket-stats
                :review-answers review-answers
                :estimate-label (or (:estimate-label posterior)
                                    (:estimate-label adaptive-decision))

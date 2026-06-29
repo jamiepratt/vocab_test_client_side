@@ -53,7 +53,9 @@
        [:p {:class "eyebrow"} "Vocabulary measurement"]
        [:h1 "Adaptive vocabulary size testing from a frequency list"]
        [:p {:class "dek"}
-        "Staged method: start with a longer frequency-band test, learn real item difficulty, re-score old sessions, then move to a short adaptive test."]
+        "Staged method: start with a longer frequency-bucket test, learn real item difficulty, re-score old sessions, then move to a short adaptive test."]
+       [:p {:class "dek"}
+        "Historical prototype note: embedded sections may still use older frequency-band wording; current scoring docs use frequency buckets, lemma-inventory strata, and approximate level."]
        [:div {:class "tabs"
               :role "tablist"
               :aria-label "Explanation level"}
