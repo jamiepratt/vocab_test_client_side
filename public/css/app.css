@@ -736,66 +736,37 @@
   .app-live-estimate {
     box-shadow: 0 10px 24px rgb(23 32 38 / 8%);
   }
-  .app-switch {
-    position: relative;
-    display: flex;
+  .app-auto-scroll-control {
+    display: grid;
     min-height: 48px;
-    align-items: center;
-    gap: 12px;
+    gap: 8px;
     border: 1px solid var(--app-line);
     border-radius: 8px;
     background: var(--app-surface);
     padding: 10px 12px;
     color: var(--app-ink);
-    cursor: pointer;
-    font-size: 0.875rem;
-    font-weight: 760;
     box-shadow: 0 8px 20px rgb(23 32 38 / 8%);
   }
-  .app-switch input {
-    position: absolute;
-    inset: 0;
+  .app-auto-scroll-label {
+    color: var(--app-muted);
+    font-size: 0.75rem;
+    font-weight: 760;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+  .app-auto-scroll-select {
     width: 100%;
-    height: 100%;
-    opacity: 0;
-    cursor: pointer;
-  }
-  .app-switch-track {
-    display: inline-flex;
-    width: 46px;
-    height: 26px;
-    flex: 0 0 auto;
-    align-items: center;
+    min-height: 36px;
     border: 1px solid var(--app-line);
-    border-radius: 999px;
+    border-radius: 8px;
     background: var(--app-surface-2);
-    padding: 2px;
-    pointer-events: none;
-    transition: background-color 140ms ease, border-color 140ms ease;
+    color: var(--app-ink);
+    font-size: 0.875rem;
+    font-weight: 760;
   }
-  .app-switch-thumb {
-    display: block;
-    width: 20px;
-    height: 20px;
-    border-radius: 999px;
-    background: var(--app-muted);
-    transition: transform 140ms ease, background-color 140ms ease;
-  }
-  .app-switch input:checked + .app-switch-track {
-    border-color: var(--app-accent);
-    background: var(--app-accent);
-  }
-  .app-switch input:checked + .app-switch-track .app-switch-thumb {
-    background: var(--app-on-accent);
-    transform: translateX(20px);
-  }
-  .app-switch:has(input:focus-visible) {
+  .app-auto-scroll-select:focus-visible {
     outline: 2px solid var(--app-accent);
     outline-offset: 2px;
-  }
-  .app-switch-label {
-    line-height: 1.2;
-    pointer-events: none;
   }
   .app-eyebrow {
     color: var(--app-accent-text);

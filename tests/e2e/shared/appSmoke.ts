@@ -641,7 +641,17 @@ export async function runAppSmoke(page: Page) {
     "Live estimate of how many dictionary forms of words you know",
   );
   await expect(page.getByLabel("Live estimate")).toContainText(pendingLiveEstimateText);
-  await expect(page.getByRole("switch", { name: "Immediate auto-scroll" })).not.toBeChecked();
+  const autoScroll = page.getByRole("combobox", { name: "Auto-scroll behavior" });
+  await expect(autoScroll).toHaveValue("0");
+  await expect(autoScroll.locator("option")).toHaveText([
+    "New question immediately",
+    "Review correct answer for 3 seconds",
+    "Review correct answer for 5 seconds",
+    "Review correct answer for 10 seconds",
+  ]);
+  await autoScroll.selectOption("3000");
+  await expect(autoScroll).toHaveValue("3000");
+  await autoScroll.selectOption("0");
 
   await answerCurrentQuestion(page, "cat");
 
@@ -659,9 +669,6 @@ export async function runAppSmoke(page: Page) {
     choices: secondChoices,
   });
 
-  await page.getByRole("switch", { name: "Immediate auto-scroll" }).click();
-  await expect(page.getByRole("switch", { name: "Immediate auto-scroll" })).toBeChecked();
-
   await answerCurrentQuestion(page, "I sleep");
 
   await expect(questionCard(page, 2).getByText("Correct answer: I drink", { exact: true })).toBeVisible();
@@ -676,10 +683,6 @@ export async function runAppSmoke(page: Page) {
     target: "Duży",
     choices: thirdChoices,
   });
-
-  await page.waitForTimeout(500);
-  await page.getByRole("switch", { name: "Immediate auto-scroll" }).click();
-  await expect(page.getByRole("switch", { name: "Immediate auto-scroll" })).not.toBeChecked();
 
   await dontKnowButton(activeQuestionCard(page)).click();
 
