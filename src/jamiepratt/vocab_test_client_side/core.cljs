@@ -1,10 +1,12 @@
 (ns jamiepratt.vocab-test-client-side.core
   (:require
    [jamiepratt.vocab-test-client-side.data :as data]
+   [jamiepratt.vocab-test-client-side.pages.adaptive-methodology :as adaptive-methodology]
+   [jamiepratt.vocab-test-client-side.pages.current :as current]
+   [jamiepratt.vocab-test-client-side.pages.features :as features]
    [jamiepratt.vocab-test-client-side.scoring :as scoring]
    [reagent.core :as r]
-   [reagent.dom.client :as rdom]
-   [shadow.lazy :as lazy]))
+   [reagent.dom.client :as rdom]))
 
 (def frequency-bucket-styles
   {:rank-1-250 {:bar "band-bar band-b1"
@@ -126,18 +128,15 @@
     :href "#/"}
    {:id :features
     :label "Features"
-    :href "#/features"
-    :lazy? true}])
+    :href "#/features"}])
 
 (def current-routes
   [{:id :current-testing
     :label "Testing"
-    :href "#/current/testing"
-    :lazy? true}
+    :href "#/current/testing"}
    {:id :current-scoring
     :label "Scoring"
-    :href "#/current/scoring"
-    :lazy? true}])
+    :href "#/current/scoring"}])
 
 (def theory-routes
   [{:id :methodology
@@ -145,8 +144,7 @@
     :href "#/methodology"}
    {:id :adaptive-methodology
     :label "Adaptive methodology"
-    :href "#/adaptive-methodology"
-    :lazy? true}])
+    :href "#/adaptive-methodology"}])
 
 (def routes
   (vec (concat primary-routes current-routes theory-routes)))
@@ -193,28 +191,6 @@
   (try
     (.setItem js/localStorage theme-storage-key (name theme-id))
     (catch :default _ nil)))
-
-(def lazy-pages
-  {:adaptive-methodology
-   #_{:clj-kondo/ignore [:unresolved-namespace]}
-   (lazy/loadable jamiepratt.vocab-test-client-side.pages.adaptive-methodology/page)
-   :features
-   #_{:clj-kondo/ignore [:unresolved-namespace]}
-   (lazy/loadable jamiepratt.vocab-test-client-side.pages.features/page)
-   :current-testing
-   #_{:clj-kondo/ignore [:unresolved-namespace]}
-   (lazy/loadable jamiepratt.vocab-test-client-side.pages.current/testing-page)
-   :current-scoring
-   (lazy/loadable jamiepratt.vocab-test-client-side.pages.current/scoring-page)})
-
-(defonce lazy-page-components
-  (r/atom {}))
-
-(defonce lazy-page-loading
-  (atom #{}))
-
-(defonce lazy-page-errors
-  (r/atom {}))
 
 (defonce route-listener-registered?
   (atom false))
@@ -319,21 +295,6 @@
 
 (def button-class
   "app-primary-button sm:w-auto")
-
-(defn load-lazy-page! [route]
-  (when-let [loadable (get lazy-pages route)]
-    (when-not (or (contains? @lazy-page-components route)
-                  (contains? @lazy-page-loading route))
-      (swap! lazy-page-loading conj route)
-      (lazy/load
-       loadable
-       (fn [component]
-         (swap! lazy-page-components assoc route component)
-         (swap! lazy-page-errors dissoc route)
-         (swap! lazy-page-loading disj route))
-       (fn [_]
-         (swap! lazy-page-errors assoc route "Could not load this page.")
-         (swap! lazy-page-loading disj route))))))
 
 (defn api-base-url []
   (let [config (aget js/window "VOCAB_CONFIG")]
@@ -506,7 +467,7 @@
     :correct {:kind :correct
               :selected (:label choice)
               :message "Correct"}
-    :dk {:kind :wrong
+    :dk {:kind :dk
          :selected (:label choice)
          :message (str "Correct answer: " (:correct-translation question))}
     :wrong {:kind :wrong
@@ -532,6 +493,7 @@
                      answer {:question-index current-question-index
                              :item-id (:item-id question)
                              :sentence (:sentence question)
+                             :sentence-translation (:sentence-translation question)
                              :target-surface (:target-surface question)
                              :target-surface-form-id (:target-surface-form-id question)
                              :highlight-span (:highlight-span question)
@@ -687,6 +649,9 @@
                       (and answer-locked? selected-answer? (= :wrong selected-result))
                       "app-choice-wrong"
 
+                      answer-locked?
+                      "app-choice-disabled"
+
                       :else
                       "app-choice-button")]
     [:button {:type "button"
@@ -716,15 +681,33 @@
        " "
        sentence])))
 
-(defn dont-know-button [question choices answer-locked?]
-  [:button {:type "button"
-            :class "min-h-12 rounded-md border px-4 py-3 text-left text-sm font-semibold break-words shadow-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 app-choice-button"
-            :disabled answer-locked?
-            :on-click #(record-answer question choices dont-know-choice)}
-   [:span (:label dont-know-choice)]
-   " "
-   [:span {:class "font-normal app-muted"}
-    "(don't guess for a more accurate estimate, press this if unsure)"]])
+(defn sentence-translation [question]
+  (when-let [translation (not-empty (:sentence-translation question))]
+    [:p {:role "group"
+         :aria-label "English translation"
+         :class "app-sentence-translation"}
+     translation]))
+
+(defn dont-know-button [question choices answer-locked? feedback]
+  (let [selected-dk? (= (:label dont-know-choice) (:selected feedback))
+        base-class "min-h-12 rounded-md border px-4 py-3 text-left text-sm font-semibold break-words shadow-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+        state-class (cond
+                      (and answer-locked? selected-dk?)
+                      "app-choice-dk"
+
+                      answer-locked?
+                      "app-choice-disabled"
+
+                      :else
+                      "app-choice-button")]
+    [:button {:type "button"
+              :class (str base-class " " state-class)
+              :disabled answer-locked?
+              :on-click #(record-answer question choices dont-know-choice)}
+     [:span (:label dont-know-choice)]
+     " "
+     [:span {:class "font-normal app-muted"}
+      "(don't guess for a more accurate estimate, press this if unsure)"]]))
 
 (defn live-estimate-panel [results-data]
   (let [live-estimate (or (:live-estimate results-data)
@@ -747,7 +730,7 @@
       {:kind :correct
        :selected (:selected-answer answer)
        :message "Correct"}
-      {:kind :wrong
+      {:kind (:result answer)
        :selected (:selected-answer answer)
        :message (str "Correct answer: " (:correct-answer answer))})))
 
@@ -855,7 +838,8 @@
        [:mark {:class "app-target-mark"} "highlighted"]
        " word in this sentence mean?"]
       [highlighted-sentence question]
-      [:p {:class "text-base app-muted"} "Select the best English meaning"]]
+      (when locked?
+        [sentence-translation question])]
      [:div {:class "grid gap-3"
             :role "group"
             :aria-label "Answer choices"}
@@ -863,10 +847,11 @@
         ^{:key (:label choice)}
         [choice-button question choices locked? feedback choice])]
      [:div {:class "grid gap-2 border-t app-border pt-4"}
-      [dont-know-button question choices locked?]]
+      [dont-know-button question choices locked? feedback]]
      (when feedback
-       [:p {:class (if (= :correct (:kind feedback))
-                     "app-feedback-success rounded-md p-3 text-sm font-semibold"
+       [:p {:class (case (:kind feedback)
+                     :correct "app-feedback-success rounded-md p-3 text-sm font-semibold"
+                     :dk "app-feedback-dk rounded-md p-3 text-sm font-semibold"
                      "app-feedback-error rounded-md p-3 text-sm font-semibold")}
         (:message feedback)])]))
 
@@ -1173,20 +1158,6 @@
           :class "app-accent-text font-bold underline underline-offset-4"}
       "progressive-vocabulary-testing-methodology.md"]]]])
 
-(defn lazy-page-screen [route]
-  (if-let [component (get @lazy-page-components route)]
-    [component]
-    (do
-      (load-lazy-page! route)
-      [:main {:class "app-page"}
-       [:section {:class "app-card grid gap-3 p-5 sm:p-7"}
-        (if-let [message (get @lazy-page-errors route)]
-          [:p {:role "alert"
-               :class "app-feedback-error rounded-md p-3 text-sm font-semibold"}
-           message]
-          [:p {:class "text-sm font-semibold app-muted"}
-           "Loading..."])]])))
-
 (defn test-screen [state]
   (case (:screen state)
     :quiz [quiz-screen state]
@@ -1195,16 +1166,12 @@
 
 (defn routed-screen [route state]
   (case route
-    :current-testing [lazy-page-screen route]
-    :current-scoring [lazy-page-screen route]
+    :current-testing [current/testing-page]
+    :current-scoring [current/scoring-page]
     :methodology [methodology-screen]
-    :adaptive-methodology [lazy-page-screen route]
-    :features [lazy-page-screen route]
+    :adaptive-methodology [adaptive-methodology/page]
+    :features [features/page]
     [test-screen state]))
-
-(defn preload-lazy-pages! []
-  (doseq [route (keys lazy-pages)]
-    (load-lazy-page! route)))
 
 (defn app []
   (let [state @app-state
@@ -1226,5 +1193,4 @@
     (reset! resize-listener-registered? true)
     (.addEventListener js/window "resize" refresh-layout-measurements!))
   (reset! current-route (route-from-location))
-  (preload-lazy-pages!)
   (rdom/render @root [app]))

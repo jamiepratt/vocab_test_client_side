@@ -853,6 +853,12 @@
     font-weight: 740;
     line-height: 1.55;
   }
+  .app-sentence-translation {
+    color: var(--app-muted);
+    font-size: 0.98rem;
+    font-weight: 620;
+    line-height: 1.5;
+  }
   .app-target-mark {
     border-radius: 6px;
     background: var(--app-accent-soft);
@@ -869,6 +875,19 @@
     background: var(--app-accent-soft);
     outline: 2px solid var(--app-accent);
     outline-offset: 2px;
+  }
+  .app-choice-disabled {
+    border-color: var(--app-line);
+    @supports (color: color-mix(in lab, red, red)) {
+      border-color: color-mix(in srgb, var(--app-line) 72%, transparent);
+    }
+    background: var(--app-surface-2);
+    @supports (color: color-mix(in lab, red, red)) {
+      background: color-mix(in srgb, var(--app-surface-2) 42%, var(--app-surface));
+    }
+    color: var(--app-muted);
+    cursor: default;
+    opacity: 0.72;
   }
   .app-accent-text {
     color: var(--app-accent-text);
@@ -894,6 +913,13 @@
     }
     color: #166534;
   }
+  .app-feedback-dk {
+    background: #f59e0b;
+    @supports (color: color-mix(in lab, red, red)) {
+      background: color-mix(in srgb, #f59e0b 10%, var(--app-surface));
+    }
+    color: #92400e;
+  }
   .app-choice-correct {
     border-color: #059669;
     background: #22c55e;
@@ -910,8 +936,19 @@
     }
     color: #991b1b;
   }
+  .app-choice-dk {
+    border-color: #f59e0b;
+    background: #f59e0b;
+    @supports (color: color-mix(in lab, red, red)) {
+      background: color-mix(in srgb, #f59e0b 10%, var(--app-surface));
+    }
+    color: #92400e;
+  }
   .app-frame[data-theme="dark"] .app-feedback-error, .app-frame[data-theme="dark"] .app-choice-wrong {
     color: #fca5a5;
+  }
+  .app-frame[data-theme="dark"] .app-feedback-dk, .app-frame[data-theme="dark"] .app-choice-dk {
+    color: #fbbf24;
   }
   .app-frame[data-theme="dark"] .app-feedback-success, .app-frame[data-theme="dark"] .app-choice-correct {
     color: #86efac;

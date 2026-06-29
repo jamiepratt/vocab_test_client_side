@@ -866,6 +866,7 @@
   (str "WITH candidate_examples AS ("
        "SELECT e.example_sentence_id, "
        "e.sentence, "
+       "e.sentence_translation, "
        "s.surface_form AS target_surface, "
        "e.surface_form_id AS target_surface_form_id, "
        "e.lemma_id, "

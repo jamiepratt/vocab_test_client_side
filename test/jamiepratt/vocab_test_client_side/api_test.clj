@@ -31,6 +31,7 @@
 (def base-sentence-row
   {:example-sentence-id 101
    :sentence "Kot pije wodę."
+   :sentence-translation "The cat drinks water."
    :target-surface "Kot"
    :target-surface-form-id 202
    :lemma-id 11
@@ -92,6 +93,7 @@
       (is (= [] (get body "invalid-items")))
       (is (= {"item-id" "example-sentence:101"
               "sentence" "Kot pije wodę."
+              "sentence-translation" "The cat drinks water."
               "target-surface" "Kot"
               "target-surface-form-id" 202
               "highlight-span" {"start" 0 "end" 3}
@@ -107,7 +109,8 @@
               "choice-count" 5
               "guess-rate" 0.2}
              (select-keys item
-                          ["item-id" "sentence" "target-surface" "target-surface-form-id"
+                          ["item-id" "sentence" "sentence-translation"
+                           "target-surface" "target-surface-form-id"
                            "highlight-span"
                            "lemma-id" "lemma-pos-id" "lemma-inventory-rank"
                            "surface-difficulty-rank" "inventory-stratum"

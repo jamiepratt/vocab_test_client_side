@@ -117,6 +117,7 @@
             stratum-id (inventory-stratum (:lemma-inventory-rank row))]
         {:item {:item-id (item-id row)
                 :sentence (:sentence row)
+                :sentence-translation (:sentence-translation row)
                 :target-surface (:target-surface row)
                 :target-surface-form-id (:target-surface-form-id row)
                 :highlight-span span

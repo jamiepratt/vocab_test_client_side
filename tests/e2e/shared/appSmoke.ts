@@ -28,6 +28,19 @@ async function textColor(locator: Locator) {
   return locator.evaluate((element) => getComputedStyle(element).color);
 }
 
+async function cssValue(locator: Locator, property: string) {
+  return locator.evaluate((element, propertyName) => getComputedStyle(element).getPropertyValue(propertyName), property);
+}
+
+function colorChannels(color: string) {
+  return (color.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number);
+}
+
+function redDominance(color: string) {
+  const [red, green, blue] = colorChannels(color);
+  return red - Math.max(green, blue);
+}
+
 const pendingLiveEstimateText =
   "Not enough questions answered to make an estimate yet, answer at least 30 questions and estimate is updated live as you answer each question.";
 
@@ -62,6 +75,7 @@ async function answerCurrentQuestion(page: Page, answer: string) {
 type SentenceItem = {
   "item-id": string;
   sentence: string;
+  "sentence-translation": string;
   "target-surface": string;
   "target-surface-form-id": number;
   "highlight-span": { start: number; end: number };
@@ -81,18 +95,21 @@ type SentenceItem = {
 const starterItems = [
   {
     sentence: "Kot pije wodę.",
+    translation: "The cat drinks water.",
     target: "Kot",
     correct: "cat",
     distractors: ["dog", "bird", "fish", "tree"],
   },
   {
     sentence: "Codziennie piję wodę po treningu.",
+    translation: "I drink water every day after training.",
     target: "piję",
     correct: "I drink",
     distractors: ["I sleep", "I walk", "I read", "I wait"],
   },
   {
     sentence: "Duży dom stoi przy rzece.",
+    translation: "A big house stands by the river.",
     target: "Duży",
     correct: "big / large",
     distractors: ["small", "fast", "heavy", "quiet"],
@@ -106,6 +123,7 @@ function targetSpan(sentence: string, target: string) {
 
 function sentenceItem(index: number, overrides: {
   sentence?: string;
+  translation?: string;
   target?: string;
   correct?: string;
   distractors?: string[];
@@ -113,6 +131,7 @@ function sentenceItem(index: number, overrides: {
   const starter = starterItems[index];
   const target = overrides.target ?? starter?.target ?? `słowo${index + 1}`;
   const sentence = overrides.sentence ?? starter?.sentence ?? `To jest ${target} w krótkim zdaniu.`;
+  const translation = overrides.translation ?? starter?.translation ?? `This is ${target} in a short sentence.`;
   const correct = overrides.correct ?? starter?.correct ?? `meaning-${index + 1}`;
   const distractors = overrides.distractors ?? starter?.distractors ?? [
     `wrong-a-${index + 1}`,
@@ -124,6 +143,7 @@ function sentenceItem(index: number, overrides: {
   return {
     "item-id": `example-sentence:${index + 1}`,
     sentence,
+    "sentence-translation": translation,
     "target-surface": target,
     "target-surface-form-id": 2000 + index,
     "highlight-span": targetSpan(sentence, target),
@@ -162,6 +182,7 @@ function sentenceBlockFixture(overrides: {
       if (block === 0 && index === 79) {
         return sentenceItem(index, {
           sentence: "Niezłomny duch pomaga jej dalej pracować.",
+          translation: "Her unyielding spirit helps her keep working.",
           target: "Niezłomny",
           correct: "unyielding / steadfast / indomitable",
           distractors: ["fragile / weak", "flexible", "hesitant", "temporary"],
@@ -247,6 +268,7 @@ async function expectSentenceQuestion(page: Page, question: {
 }) {
   const card = activeQuestionCard(page);
   const sentence = card.getByRole("group", { name: "Polish sentence" });
+  const translation = card.getByRole("group", { name: "English translation" });
   const answers = card.getByRole("group", { name: "Answer choices" });
   const target = card.getByRole("term");
 
@@ -261,9 +283,10 @@ async function expectSentenceQuestion(page: Page, question: {
   await expect(questionHeading).toBeVisible();
   await expect(questionHeading.locator(".app-target-mark")).toHaveText("highlighted");
   await expect(sentence).toContainText(question.sentence);
+  await expect(translation).toHaveCount(0);
   await expect(target).toHaveCount(1);
   await expect(target).toHaveText(question.target);
-  await expect(card.getByText("Select the best English meaning")).toBeVisible();
+  await expect(card.getByText("Select the best English meaning")).toHaveCount(0);
   await expect(answers.getByRole("button")).toHaveText(question.choices);
 
   for (const choice of question.choices) {
@@ -279,6 +302,22 @@ async function expectChoicesLocked(scope: Locator, choices: string[]) {
   }
 
   await expect(dontKnowButton(scope)).toBeDisabled();
+}
+
+async function expectAnsweredTranslation(scope: Locator, translationText: string) {
+  const translation = scope.getByRole("group", { name: "English translation" });
+
+  await expect(translation).toBeVisible();
+  await expect(translation).toHaveText(translationText);
+  await expect(translation.locator("mark")).toHaveCount(0);
+  await expect(translation.getByRole("term")).toHaveCount(0);
+}
+
+async function expectWrongAnswerStrongerThanDontKnow(wrongButton: Locator, dkButton: Locator) {
+  const wrongBorder = await cssValue(wrongButton, "border-color");
+  const dkBorder = await cssValue(dkButton, "border-color");
+
+  expect(redDominance(wrongBorder)).toBeGreaterThan(redDominance(dkBorder));
 }
 
 async function expectFrequencyBucketBreakdown(page: Page) {
@@ -657,6 +696,7 @@ export async function runAppSmoke(page: Page) {
 
   await expect(questionCards(page)).toHaveCount(2);
   await expect(questionCard(page, 1).getByText("Correct", { exact: true })).toBeVisible();
+  await expectAnsweredTranslation(questionCard(page, 1), "The cat drinks water.");
   await expectProgress(page, 1);
   await expectChoicesLocked(questionCard(page, 1), firstChoices);
 
@@ -672,6 +712,7 @@ export async function runAppSmoke(page: Page) {
   await answerCurrentQuestion(page, "I sleep");
 
   await expect(questionCard(page, 2).getByText("Correct answer: I drink", { exact: true })).toBeVisible();
+  await expectAnsweredTranslation(questionCard(page, 2), "I drink water every day after training.");
   await expectProgress(page, 2);
   await expectChoicesLocked(questionCard(page, 2), secondChoices);
 
@@ -687,6 +728,11 @@ export async function runAppSmoke(page: Page) {
   await dontKnowButton(activeQuestionCard(page)).click();
 
   await expect(questionCard(page, 3).getByText("Correct answer: big / large", { exact: true })).toBeVisible();
+  await expectAnsweredTranslation(questionCard(page, 3), "A big house stands by the river.");
+  await expectWrongAnswerStrongerThanDontKnow(
+    questionCard(page, 2).getByRole("button", { name: "I sleep", exact: true }),
+    dontKnowButton(questionCard(page, 3)),
+  );
   await expectProgress(page, 3);
   await expectChoicesLocked(questionCard(page, 3), thirdChoices);
 
@@ -721,6 +767,7 @@ export async function runAppSmoke(page: Page) {
   await dontKnowButton(activeQuestionCard(page)).click();
 
   await expect(questionCard(page, 80).getByText("Correct answer: unyielding / steadfast / indomitable", { exact: true })).toBeVisible();
+  await expectAnsweredTranslation(questionCard(page, 80), "Her unyielding spirit helps her keep working.");
   await expectProgress(page, 80);
   await expectChoicesLocked(questionCard(page, 80), lastChoices);
   await expect(questionCards(page)).toHaveCount(80);
