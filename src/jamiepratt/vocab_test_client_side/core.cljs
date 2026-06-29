@@ -111,6 +111,16 @@
     :href "#/features"
     :lazy? true}])
 
+(def current-routes
+  [{:id :current-testing
+    :label "Testing"
+    :href "#/current/testing"
+    :lazy? true}
+   {:id :current-scoring
+    :label "Scoring"
+    :href "#/current/scoring"
+    :lazy? true}])
+
 (def theory-routes
   [{:id :methodology
     :label "Progressive methodology"
@@ -121,7 +131,7 @@
     :lazy? true}])
 
 (def routes
-  (vec (concat primary-routes theory-routes)))
+  (vec (concat primary-routes current-routes theory-routes)))
 
 (def theme-options
   [{:id :light
@@ -154,6 +164,9 @@
 (defonce current-theme
   (r/atom (stored-theme)))
 
+(defonce current-menu-open?
+  (r/atom false))
+
 (defonce theory-menu-open?
   (r/atom false))
 
@@ -169,7 +182,12 @@
    (lazy/loadable jamiepratt.vocab-test-client-side.pages.adaptive-methodology/page)
    :features
    #_{:clj-kondo/ignore [:unresolved-namespace]}
-   (lazy/loadable jamiepratt.vocab-test-client-side.pages.features/page)})
+   (lazy/loadable jamiepratt.vocab-test-client-side.pages.features/page)
+   :current-testing
+   #_{:clj-kondo/ignore [:unresolved-namespace]}
+   (lazy/loadable jamiepratt.vocab-test-client-side.pages.current/testing-page)
+   :current-scoring
+   (lazy/loadable jamiepratt.vocab-test-client-side.pages.current/scoring-page)})
 
 (defonce lazy-page-components
   (r/atom {}))
@@ -943,44 +961,57 @@
              :on-click begin-test}
     "Retake"]])
 
-(defn active-theory-route [route]
-  (some #(when (= route (:id %)) %) theory-routes))
+(defn active-menu-route [route menu-routes]
+  (some #(when (= route (:id %)) %) menu-routes))
 
-(defn close-theory-menu! []
+(defn close-nav-menus! []
+  (reset! current-menu-open? false)
   (reset! theory-menu-open? false))
 
 (defn nav-link [current-route {:keys [id label href]}]
   [:a {:href href
        :aria-controls "page-content"
        :aria-current (when (= current-route id) "page")
-       :on-click #(close-theory-menu!)
+       :on-click #(close-nav-menus!)
        :class "app-menu-link"}
    label])
 
-(defn theory-link [current-route {:keys [id label href]}]
+(defn dropdown-link [current-route {:keys [id label href]}]
   [:a {:href href
        :aria-controls "page-content"
        :aria-current (when (= current-route id) "page")
-       :on-click #(close-theory-menu!)
+       :on-click #(close-nav-menus!)
        :class "app-dropdown-link"}
    label])
 
-(defn theory-menu [current-route]
-  (let [active-route (active-theory-route current-route)
+(defn dropdown-menu [current-route {:keys [summary routes open-state class]}]
+  (let [active-route (active-menu-route current-route routes)
         active? (boolean active-route)
         summary-label (if active-route
-                        (str "Theory › " (:label active-route))
-                        "Theory")]
-    [:details {:class "app-theory-menu"
-               :open @theory-menu-open?
-               :on-toggle #(reset! theory-menu-open? (.-open (.-currentTarget %)))}
+                        (str summary " › " (:label active-route))
+                        summary)]
+    [:details {:class (str "app-theory-menu " class)
+               :open @open-state
+               :on-toggle #(reset! open-state (.-open (.-currentTarget %)))}
      [:summary {:class "app-menu-summary"
                 :aria-current (when active? "page")}
       summary-label]
      [:div {:class "app-dropdown"}
-      (for [route theory-routes]
+      (for [route routes]
         ^{:key (:id route)}
-        [theory-link current-route route])]]))
+        [dropdown-link current-route route])]]))
+
+(defn current-menu [current-route]
+  [dropdown-menu current-route {:summary "Current"
+                                :routes current-routes
+                                :open-state current-menu-open?
+                                :class "app-current-menu"}])
+
+(defn theory-menu [current-route]
+  [dropdown-menu current-route {:summary "Theory"
+                                :routes theory-routes
+                                :open-state theory-menu-open?
+                                :class "app-methodology-menu"}])
 
 (defn theme-button [selected-id {:keys [id label]}]
   [:button {:type "button"
@@ -1007,6 +1038,7 @@
      (for [route primary-routes]
        ^{:key (:id route)}
        [nav-link current-route route])
+     [current-menu current-route]
      [theory-menu current-route]]
     [theme-switcher selected-theme]]])
 
@@ -1129,6 +1161,8 @@
 
 (defn routed-screen [route state]
   (case route
+    :current-testing [lazy-page-screen route]
+    :current-scoring [lazy-page-screen route]
     :methodology [methodology-screen]
     :adaptive-methodology [lazy-page-screen route]
     :features [lazy-page-screen route]
@@ -1148,7 +1182,7 @@
   (when-not @route-listener-registered?
     (reset! route-listener-registered? true)
     (.addEventListener js/window "hashchange" #(do
-                                                 (close-theory-menu!)
+                                                 (close-nav-menus!)
                                                  (reset! current-route (route-from-location)))))
   (when-not @resize-listener-registered?
     (reset! resize-listener-registered? true)

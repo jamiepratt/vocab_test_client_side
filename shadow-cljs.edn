@@ -13,6 +13,9 @@
     :adaptive-methodology
     {:entries [jamiepratt.vocab-test-client-side.pages.adaptive-methodology]
      :depends-on #{:main}}
+    :current
+    {:entries [jamiepratt.vocab-test-client-side.pages.current]
+     :depends-on #{:main}}
     :features
     {:entries [jamiepratt.vocab-test-client-side.pages.features]
      :depends-on #{:main}}}}
@@ -25,6 +28,9 @@
    {:main {:init-fn jamiepratt.vocab-test-client-side.core/init}
     :adaptive-methodology
     {:entries [jamiepratt.vocab-test-client-side.pages.adaptive-methodology]
+     :depends-on #{:main}}
+    :current
+    {:entries [jamiepratt.vocab-test-client-side.pages.current]
      :depends-on #{:main}}
     :features
     {:entries [jamiepratt.vocab-test-client-side.pages.features]

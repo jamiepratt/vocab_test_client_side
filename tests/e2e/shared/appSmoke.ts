@@ -326,9 +326,9 @@ async function expectPublicMarkdown(page: Page, path: string, requiredText: stri
   expect(body).toContain(requiredText);
 }
 
-async function openTheoryMenu(page: Page) {
+async function openNavMenu(page: Page, className: string) {
   const nav = page.getByRole("navigation", { name: "Main" });
-  const menu = nav.locator("details.app-theory-menu");
+  const menu = nav.locator(`details.${className}`);
   const isOpen = await menu.evaluate((element) => (element as HTMLDetailsElement).open);
 
   if (!isOpen) {
@@ -338,22 +338,39 @@ async function openTheoryMenu(page: Page) {
   return menu;
 }
 
+async function openCurrentMenu(page: Page) {
+  return openNavMenu(page, "app-current-menu");
+}
+
+async function openTheoryMenu(page: Page) {
+  return openNavMenu(page, "app-methodology-menu");
+}
+
 async function expectMainNav(page: Page, activeLink: string) {
   const nav = page.getByRole("navigation", { name: "Main" });
+  const currentActive = activeLink === "Testing" || activeLink === "Scoring";
   const theoryActive = activeLink === "Progressive methodology" || activeLink === "Adaptive methodology";
-  const theorySummary = nav.locator("summary");
-  const theoryMenu = nav.locator("details.app-theory-menu");
+  const currentSummary = nav.locator("details.app-current-menu summary");
+  const theorySummary = nav.locator("details.app-methodology-menu summary");
+  const currentMenu = nav.locator("details.app-current-menu");
+  const theoryMenu = nav.locator("details.app-methodology-menu");
+  const expectedCurrentLabel = currentActive ? `Current › ${activeLink}` : "Current";
   const expectedTheoryLabel = theoryActive ? `Theory › ${activeLink}` : "Theory";
 
   await expect(nav).toBeVisible();
   await expect(nav.getByRole("link", { name: "Polish Passive Vocabulary Size Test" })).toHaveCount(0);
+  await expect(currentSummary).toHaveText(expectedCurrentLabel);
   await expect(theorySummary).toHaveText(expectedTheoryLabel);
+  expect(await currentMenu.evaluate((element) => (element as HTMLDetailsElement).open)).toBe(false);
   expect(await theoryMenu.evaluate((element) => (element as HTMLDetailsElement).open)).toBe(false);
+  await openCurrentMenu(page);
   await openTheoryMenu(page);
 
   const links = [
     ["Test", "#/"],
     ["Features", "#/features"],
+    ["Testing", "#/current/testing"],
+    ["Scoring", "#/current/scoring"],
     ["Progressive methodology", "#/methodology"],
     ["Adaptive methodology", "#/adaptive-methodology"],
   ] as const;
@@ -365,6 +382,12 @@ async function expectMainNav(page: Page, activeLink: string) {
   }
 
   await expect(nav.getByRole("link", { name: activeLink, exact: true })).toHaveAttribute("aria-current", "page");
+
+  if (currentActive) {
+    await expect(currentSummary).toHaveAttribute("aria-current", "page");
+  } else {
+    await expect(currentSummary).not.toHaveAttribute("aria-current", "page");
+  }
 
   if (theoryActive) {
     await expect(theorySummary).toHaveAttribute("aria-current", "page");
@@ -385,6 +408,87 @@ async function expectMainNav(page: Page, activeLink: string) {
   expect(inactiveStyle.borderWidth).toBeGreaterThanOrEqual(1);
   expect(inactiveStyle.boxShadow).not.toBe("none");
   expect(inactiveStyle.cursor).toBe("pointer");
+}
+
+async function expectAccordionState(page: Page, openNames: string[], closedNames: string[]) {
+  for (const name of openNames) {
+    await expect(page.getByRole("button", { name, exact: true })).toHaveAttribute("aria-expanded", "true");
+  }
+
+  for (const name of closedNames) {
+    await expect(page.getByRole("button", { name, exact: true })).toHaveAttribute("aria-expanded", "false");
+  }
+}
+
+async function expectQuickPreset(page: Page) {
+  await expect(page.getByRole("button", { name: /Quick/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: /Guide/ })).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByRole("button", { name: /Detail/ })).toHaveAttribute("aria-pressed", "false");
+}
+
+async function expectCurrentTestingPage(page: Page) {
+  await expect(page.getByRole("heading", { level: 1, name: "Current vocabulary size testing" })).toBeVisible();
+  await expectQuickPreset(page);
+  await expectAccordionState(
+    page,
+    ["What the test measures", "Choose a starting level"],
+    ["Answer sentence items", "Easier or harder continuation", "Testing methodology details"],
+  );
+  await expect(page.getByRole("radiogroup", { name: "Example starting level" })).toBeVisible();
+
+  await page.getByRole("button", { name: /Guide/ }).click();
+  await expect(page.getByRole("button", { name: /Guide/ })).toHaveAttribute("aria-pressed", "true");
+  await expectAccordionState(
+    page,
+    ["What the test measures", "Choose a starting level", "Answer sentence items", "Easier or harder continuation"],
+    ["Testing methodology details"],
+  );
+  const sampleQuestion = page.getByRole("article", { name: "Example sentence question" });
+  await expect(sampleQuestion).toBeVisible();
+  await expect(sampleQuestion.getByRole("term")).toHaveText("piję");
+
+  await page.getByRole("button", { name: "Answer sentence items", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Answer sentence items", exact: true })).toHaveAttribute("aria-expanded", "false");
+  await expect(page.getByRole("article", { name: "Example sentence question" })).toHaveCount(0);
+
+  await page.getByRole("button", { name: /Detail/ }).click();
+  await expect(page.getByRole("button", { name: /Detail/ })).toHaveAttribute("aria-pressed", "true");
+  await expectAccordionState(
+    page,
+    ["What the test measures", "Choose a starting level", "Answer sentence items", "Easier or harder continuation", "Testing methodology details"],
+    [],
+  );
+  await expect(page.getByRole("link", { name: "vocabulary-size-testing.md" })).toHaveAttribute(
+    "href",
+    "vocabulary-size-testing.md",
+  );
+}
+
+async function expectCurrentScoringPage(page: Page) {
+  await expect(page.getByRole("heading", { level: 1, name: "Current vocabulary size scoring" })).toBeVisible();
+  await expectQuickPreset(page);
+  await expectAccordionState(
+    page,
+    ["What the score means", "Live estimate and final result"],
+    ["Guessing handling", "Very low and uneven results", "Scoring model details"],
+  );
+  await expect(page.getByRole("region", { name: "Example live estimate" })).toContainText("Likely range: 1,050-1,900");
+  await expect(page.getByRole("article", { name: "Example final result" })).toContainText("Approximate level band: A2");
+
+  await page.getByRole("button", { name: /Guide/ }).click();
+  await expectAccordionState(
+    page,
+    ["What the score means", "Live estimate and final result", "Guessing handling", "Very low and uneven results"],
+    ["Scoring model details"],
+  );
+  await expect(page.getByText("under 200", { exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: /Detail/ }).click();
+  await expect(page.getByText("latent-guessing-v1", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "vocabulary-size-scoring.md" })).toHaveAttribute(
+    "href",
+    "vocabulary-size-scoring.md",
+  );
 }
 
 async function expectThemeSwitcher(page: Page) {
@@ -422,9 +526,33 @@ export async function runAppSmoke(page: Page) {
     "/vocabulary-size-testing-methodology.md",
     "Polish Vocabulary Size Testing Methodology",
   );
+  await expectPublicMarkdown(
+    page,
+    "/vocabulary-size-testing.md",
+    "Current Vocabulary Size Testing",
+  );
+  await expectPublicMarkdown(
+    page,
+    "/vocabulary-size-scoring.md",
+    "latent-guessing-v1",
+  );
 
   await expectMainNav(page, "Test");
   await expectThemeSwitcher(page);
+
+  await openCurrentMenu(page);
+  await page.getByRole("link", { name: "Testing", exact: true }).click();
+  await expect(page).toHaveURL(/#\/current\/testing$/);
+  await expectCurrentTestingPage(page);
+  await expectMainNav(page, "Testing");
+
+  await openCurrentMenu(page);
+  await page.getByRole("link", { name: "Scoring", exact: true }).click();
+  await expect(page).toHaveURL(/#\/current\/scoring$/);
+  await expectCurrentScoringPage(page);
+  await expectMainNav(page, "Scoring");
+
+  await openTheoryMenu(page);
   await page.getByRole("link", { name: "Progressive methodology" }).click();
   await expect(page).toHaveURL(/#\/methodology$/);
   await expect(page.getByRole("heading", { level: 1, name: "Progressive vocabulary test methodology" })).toBeVisible();
