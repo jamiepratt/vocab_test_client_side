@@ -52,6 +52,29 @@
       (.randomUUID crypto)
       (fallback-anonymous-session-id))))
 
+(def default-auto-scroll-delay-ms 10000)
+
+(defn location-param [param-name]
+  (let [search-params (js/URLSearchParams. (.-search js/location))
+        hash (.-hash js/location)
+        hash-query-index (.indexOf hash "?")
+        hash-params (when (not= -1 hash-query-index)
+                      (js/URLSearchParams. (subs hash hash-query-index)))]
+    (or (when (.has search-params param-name)
+          (.get search-params param-name))
+        (when (and hash-params (.has hash-params param-name))
+          (.get hash-params param-name)))))
+
+(defn configured-auto-scroll-delay-ms []
+  (if-let [value (or (location-param "scrollDelayMs")
+                     (location-param "scroll-delay-ms"))]
+    (let [parsed (js/parseInt value 10)]
+      (if (and (not (js/isNaN parsed))
+               (<= 0 parsed))
+        parsed
+        default-auto-scroll-delay-ms))
+    default-auto-scroll-delay-ms))
+
 (defn initial-state []
   {:screen :start
    :anonymous-session-id (anonymous-session-id)
@@ -65,6 +88,8 @@
    :questions-error nil
    :current-question-index 0
    :question-choices []
+   :scroll-mode :delayed
+   :scroll-delay-ms (configured-auto-scroll-delay-ms)
    :answers []
    :answer-locked? false
    :feedback nil
@@ -158,8 +183,93 @@
 (defonce route-listener-registered?
   (atom false))
 
+(defonce resize-listener-registered?
+  (atom false))
+
 (defonce root
   (delay (rdom/create-root (.getElementById js/document "app"))))
+
+(def results-panel-id "results-panel")
+
+(defonce auto-scroll-cleanup
+  (atom nil))
+
+(defonce measured-elements
+  (atom {}))
+
+(defn question-card-id [question-index]
+  (str "question-card-" (inc question-index)))
+
+(defn set-layout-height-var! [var-name element]
+  (when element
+    (let [height (.-height (.getBoundingClientRect element))]
+      (when (pos? height)
+        (.setProperty (.-style (.-documentElement js/document))
+                      var-name
+                      (str height "px"))))))
+
+(defn remember-measured-element! [var-name element]
+  (if element
+    (do
+      (swap! measured-elements assoc var-name element)
+      (set-layout-height-var! var-name element))
+    (swap! measured-elements dissoc var-name)))
+
+(defn refresh-layout-measurements! []
+  (doseq [[var-name element] @measured-elements]
+    (set-layout-height-var! var-name element)))
+
+(defn clear-auto-scroll! []
+  (when-let [cleanup @auto-scroll-cleanup]
+    (cleanup))
+  (reset! auto-scroll-cleanup nil))
+
+(defn scroll-to-target! [target-id behavior]
+  (when-let [element (.getElementById js/document target-id)]
+    (.scrollIntoView element (clj->js {:behavior behavior
+                                       :block "start"}))
+    true))
+
+(defn schedule-auto-scroll! [target-id]
+  (clear-auto-scroll!)
+  (let [{:keys [scroll-mode scroll-delay-ms]} @app-state
+        delay-ms (or scroll-delay-ms default-auto-scroll-delay-ms)
+        behavior (if (zero? delay-ms) "auto" "smooth")
+        cancelled? (atom false)
+        timeout-id (atom nil)
+        raf-id (atom nil)
+        cancel-events ["scroll" "wheel" "touchstart" "keydown"]]
+    (letfn [(remove-listeners! []
+              (doseq [event-name cancel-events]
+                (.removeEventListener js/window event-name cancel! false)))
+            (finish! []
+              (when-let [id @timeout-id]
+                (js/clearTimeout id))
+              (when-let [id @raf-id]
+                (js/cancelAnimationFrame id))
+              (remove-listeners!)
+              (reset! auto-scroll-cleanup nil))
+            (cancel! [_]
+              (reset! cancelled? true)
+              (finish!))
+            (scroll! []
+              (when-not @cancelled?
+                (if (scroll-to-target! target-id behavior)
+                  (finish!)
+                  (reset! timeout-id (js/setTimeout scroll! 50)))))]
+      (reset! auto-scroll-cleanup #(do
+                                     (reset! cancelled? true)
+                                     (finish!)))
+      (reset! raf-id
+              (js/requestAnimationFrame
+               (fn []
+                 (if (= :immediate scroll-mode)
+                   (reset! timeout-id (js/setTimeout scroll! 0))
+                   (do
+                     (doseq [event-name cancel-events]
+                       (.addEventListener js/window event-name cancel! false))
+                     (reset! timeout-id
+                             (js/setTimeout scroll! delay-ms))))))))))
 
 (def button-class
   "app-primary-button sm:w-auto")
@@ -296,9 +406,11 @@
 (defn choice-options [question]
   (vec (shuffle (answer-options question))))
 
-(defn load-question-block! [adaptive-block-id continuation-message reset-session?]
+(defn load-question-block! [adaptive-block-id continuation-message reset-session? & [scroll-after-load?]]
   (let [selected-level (:selected-level @app-state)
         adaptive-block (data/adaptive-block adaptive-block-id)]
+    (when reset-session?
+      (clear-auto-scroll!))
     (swap! app-state
            (fn [state]
              (assoc (if reset-session?
@@ -321,22 +433,25 @@
                                        (range)
                                        (:items block))]
                    (if (seq questions)
-                     (swap! app-state
-                            (fn [state]
-                              (assoc state
-                                     :screen :quiz
-                                     :selected-level selected-level
-                                     :question-block question-block
-                                     :adaptive-block adaptive-block
-                                     :questions questions
-                                     :session-questions (into (:session-questions state) questions)
-                                     :questions-loading? false
-                                     :questions-error nil
-                                     :current-question-index 0
-                                     :question-choices (mapv choice-options questions)
-                                     :answer-locked? false
-                                     :feedback nil
-                                     :item-started-at-ms (now-ms))))
+                     (do
+                       (swap! app-state
+                              (fn [state]
+                                (assoc state
+                                       :screen :quiz
+                                       :selected-level selected-level
+                                       :question-block question-block
+                                       :adaptive-block adaptive-block
+                                       :questions questions
+                                       :session-questions (into (:session-questions state) questions)
+                                       :questions-loading? false
+                                       :questions-error nil
+                                       :current-question-index 0
+                                       :question-choices (mapv choice-options questions)
+                                       :answer-locked? false
+                                       :feedback nil
+                                       :item-started-at-ms (now-ms))))
+                       (when scroll-after-load?
+                         (schedule-auto-scroll! (question-card-id (count (:answers @app-state))))))
                      (swap! app-state assoc
                             :questions-loading? false
                             :questions-error "Could not load sentence questions.")))))
@@ -346,6 +461,7 @@
                          :questions-error "Could not load sentence questions."))))))
 
 (defn begin-test []
+  (clear-auto-scroll!)
   (let [selected-level (:selected-level @app-state)
         starting-block (data/starting-block selected-level)]
     (load-question-block! (:id starting-block) nil true)))
@@ -362,12 +478,18 @@
             :selected (:label choice)
             :message (str "Correct answer: " (:correct-translation question))}))
 
+(declare complete-current-block!)
+
 (defn record-answer [question choices choice]
-  (let [submitted-answer (atom nil)]
+  (let [submitted-answer (atom nil)
+        scroll-target-id (atom nil)
+        complete-block? (atom false)]
     (swap! app-state
            (fn [{:keys [answer-locked? current-question-index answers
-                        session-questions item-started-at-ms question-block] :as state}]
-             (if answer-locked?
+                        session-questions item-started-at-ms question-block questions] :as state}]
+             (if (or answer-locked?
+                     (not= (:item-id question)
+                           (:item-id (nth questions current-question-index nil))))
                state
                (let [answered-at-ms (now-ms)
                      result (:result choice)
@@ -406,15 +528,31 @@
                              :level (:level question-block)
                              :band (:band question)
                              :word (:target-surface question)}
-                     next-answers (conj answers answer)]
+                     next-answers (conj answers answer)
+                     last-question? (= current-question-index (dec (count questions)))]
                  (reset! submitted-answer answer)
-                 (assoc state
-                        :answers next-answers
-                        :answer-locked? true
-                        :feedback (feedback-for choice question)
-                        :results-data (scoring/summarize-results session-questions next-answers))))))
+                 (if last-question?
+                   (do
+                     (reset! complete-block? true)
+                     (assoc state
+                            :answers next-answers
+                            :answer-locked? true
+                            :feedback (feedback-for choice question)
+                            :results-data (scoring/summarize-results session-questions next-answers)))
+                   (do
+                     (reset! scroll-target-id (question-card-id (count next-answers)))
+                     (assoc state
+                            :answers next-answers
+                            :current-question-index (inc current-question-index)
+                            :answer-locked? false
+                            :feedback nil
+                            :results-data (scoring/summarize-results session-questions next-answers)
+                            :item-started-at-ms (now-ms))))))))
     (when-let [answer @submitted-answer]
-      (submit-answer-event! (:anonymous-session-id @app-state) answer))))
+      (submit-answer-event! (:anonymous-session-id @app-state) answer)
+      (if @complete-block?
+        (complete-current-block! true)
+        (schedule-auto-scroll! @scroll-target-id)))))
 
 (defn continuation-message [decision]
   (case (:action decision)
@@ -422,15 +560,17 @@
     :route-higher "The first block was too easy, so this test is continuing with harder sentence items."
     nil))
 
-(defn finish-results! [decision]
+(defn finish-results! [decision & [scroll-after-finish?]]
   (swap! app-state
          (fn [{:keys [answers session-questions] :as state}]
            (assoc state
                   :screen :results
                   :continuation-message nil
-                  :results-data (scoring/summarize-results session-questions answers decision)))))
+                  :results-data (scoring/summarize-results session-questions answers decision))))
+  (when scroll-after-finish?
+    (schedule-auto-scroll! results-panel-id)))
 
-(defn complete-current-block! []
+(defn complete-current-block! [& [scroll-after-complete?]]
   (let [{:keys [question-block answers completed-blocks]} @app-state
         decision (scoring/adaptive-block-decision (:adaptive-block question-block)
                                                   answers
@@ -439,8 +579,8 @@
     (if next-block-id
       (do
         (swap! app-state update :completed-blocks conj decision)
-        (load-question-block! next-block-id (continuation-message decision) false))
-      (finish-results! decision))))
+        (load-question-block! next-block-id (continuation-message decision) false scroll-after-complete?))
+      (finish-results! decision scroll-after-complete?))))
 
 (defn next-question []
   (let [{:keys [current-question-index questions]} @app-state]
@@ -556,8 +696,7 @@
                            :label (scoring/pending-live-estimate-label)})]
     [:section {:aria-label "Live estimate"
                :aria-live "polite"
-               :class "app-card app-subtle-bg grid gap-1 p-4 text-sm sm:p-5"
-               :style {:margin-top "20px"}}
+               :class "app-card app-live-estimate app-subtle-bg grid gap-1 p-4 text-sm sm:p-5"}
      [:p {:class "text-xs font-bold uppercase app-muted"}
       "Live estimate of how many dictionary forms of words you know"]
      [:p {:class "font-semibold app-ink-soft"}
@@ -566,67 +705,160 @@
        [:p {:class "app-muted"}
         (:range-label live-estimate)])]))
 
-(defn quiz-screen [{:keys [questions current-question-index question-choices answers answer-locked? feedback continuation-message results-data]}]
-  (let [question (nth questions current-question-index)
-        choices (or (get question-choices current-question-index)
-                    (choice-options question))
-        current-question-number (inc current-question-index)
-        scored-count (count (filter #(= (:adaptive-block-id question)
-                                        (:adaptive-block-id %))
-                                    answers))
-        total (count questions)
-        progress (if (pos? total)
-                   (* 100 (/ scored-count total))
-                   0)]
-    [:main {:class "app-page"}
-     [:section {:aria-labelledby "question-heading"
-                :class "app-card grid gap-5 p-5 sm:gap-6 sm:p-7"}
-      (when continuation-message
-        [:p {:role "status"
-             :class "rounded-md app-subtle-bg p-3 text-sm font-semibold app-ink-soft"}
-         continuation-message])
-      [:div {:role "group"
-             :aria-label "Quiz status"
-             :class "flex flex-wrap items-center justify-between gap-3 text-sm font-semibold app-muted"}
-       [:span (str scored-count " / " total " scored")]
-       [:span (str "Item " current-question-number " of " total)]
-       [:span {:class (str "rounded-full px-3 py-1 text-xs font-bold ring-1 " (band-style-class (:band question) :badge))}
-        (or (adaptive-block-range-label (:adaptive-block-id question))
-            (data/band-labels (:band question)))]]
-      [:div {:class "h-2 overflow-hidden rounded-full app-subtle-bg"
-             :role "progressbar"
-             :aria-valuemin 0
-             :aria-valuemax total
-             :aria-valuenow scored-count}
-       [:div {:class "app-progress-fill h-full rounded-full transition-all"
-              :style {:width (str progress "%")}}]]
-      [:div {:class "grid gap-4 text-center"}
-       [:h2 {:id "question-heading"
-             :class "text-2xl font-bold leading-tight app-ink sm:text-3xl"}
-        "What does the "
-        [:mark {:class "app-target-mark"} "highlighted"]
-        " word in this sentence mean?"]
-       [highlighted-sentence question]
-       [:p {:class "text-base app-muted"} "Select the best English meaning"]]
-      [:div {:class "grid gap-3"
-             :role "group"
-             :aria-label "Answer choices"}
-       (for [choice choices]
-         ^{:key (:label choice)}
-         [choice-button question choices answer-locked? feedback choice])]
-      [:div {:class "grid gap-2 border-t app-border pt-4"}
-       [dont-know-button question choices answer-locked?]]
-      (when feedback
-        [:p {:class (if (= :correct (:kind feedback))
-                      "app-feedback-success rounded-md p-3 text-sm font-semibold"
-                      "app-feedback-error rounded-md p-3 text-sm font-semibold")}
-         (:message feedback)])
-      (when answer-locked?
-        [:button {:type "button"
-                  :class (str button-class " justify-self-stretch sm:justify-self-end")
-                  :on-click next-question}
-         "Next"])]
-     [live-estimate-panel results-data]]))
+(defn answer-feedback [answer]
+  (when answer
+    (if (:correct? answer)
+      {:kind :correct
+       :selected (:selected-answer answer)
+       :message "Correct"}
+      {:kind :wrong
+       :selected (:selected-answer answer)
+       :message (str "Correct answer: " (:correct-answer answer))})))
+
+(defn answered-choices [answer]
+  (mapv (fn [label]
+          {:label label})
+        (:choices answer)))
+
+(defn active-question? [state question-index]
+  (and (= :quiz (:screen state))
+       (= question-index (count (:answers state)))))
+
+(defn card-choices [{:keys [question-choices current-question-index]} question answer active?]
+  (cond
+    answer
+    (answered-choices answer)
+
+    active?
+    (or (get question-choices current-question-index)
+        (choice-options question))
+
+    :else
+    []))
+
+(defn scroll-mode-switch [scroll-mode]
+  [:label {:class "app-switch"}
+   [:input {:type "checkbox"
+            :role "switch"
+            :checked (= :immediate scroll-mode)
+            :aria-label "Immediate auto-scroll"
+            :on-change #(swap! app-state assoc
+                               :scroll-mode
+                               (if (.-checked (.-currentTarget %))
+                                 :immediate
+                                 :delayed))}]
+   [:span {:class "app-switch-track"
+           :aria-hidden true}
+    [:span {:class "app-switch-thumb"}]]
+   [:span {:class "app-switch-label"} "Immediate auto-scroll"]])
+
+(defn block-scored-count [answers question]
+  (count (filter #(= (:adaptive-block-id question)
+                     (:adaptive-block-id %))
+                 answers)))
+
+(defn quiz-status-card [{:keys [questions current-question-index answers continuation-message] :as state}]
+  (let [question (or (nth questions current-question-index nil)
+                     (last (:session-questions state)))
+        scored-count (if question
+                       (block-scored-count answers question)
+                       (count answers))
+        total (max 1 (count questions))
+        current-question-number (min total (inc current-question-index))
+        progress (* 100 (/ scored-count total))]
+    [:section {:aria-label "Quiz status"
+               :ref #(remember-measured-element! "--app-status-offset" %)
+               :class "app-card app-status-card grid gap-3 p-4 text-sm sm:p-5"}
+     (when continuation-message
+       [:p {:role "status"
+            :class "rounded-md app-subtle-bg p-3 font-semibold app-ink-soft"}
+        continuation-message])
+     [:div {:role "group"
+            :aria-label "Quiz status details"
+            :class "flex flex-wrap items-center justify-between gap-3 font-semibold app-muted"}
+      [:span (str scored-count " / " total " scored")]
+      [:span (str "Item " current-question-number " of " total)]
+      (when question
+        [:span {:class (str "rounded-full px-3 py-1 text-xs font-bold ring-1 "
+                            (band-style-class (:band question) :badge))}
+         (or (adaptive-block-range-label (:adaptive-block-id question))
+             (data/band-labels (:band question)))])]
+     [:div {:class "h-2 overflow-hidden rounded-full app-subtle-bg"
+            :role "progressbar"
+            :aria-valuemin 0
+            :aria-valuemax total
+            :aria-valuenow scored-count}
+      [:div {:class "app-progress-fill h-full rounded-full transition-all"
+             :style {:width (str progress "%")}}]]]))
+
+(defn question-card [state question-index question]
+  (let [answer (get (:answers state) question-index)
+        active? (active-question? state question-index)
+        choices (card-choices state question answer active?)
+        locked? (boolean answer)
+        feedback (answer-feedback answer)
+        heading-id (str "question-heading-" (inc question-index))]
+    [:section {:id (question-card-id question-index)
+               :aria-labelledby heading-id
+               :class (str "app-card app-question-card app-flow-target grid gap-5 p-5 sm:gap-6 sm:p-7"
+                           (when locked? " app-question-card-answered"))}
+     [:div {:class "grid gap-4 text-center"}
+      [:h2 {:id heading-id
+            :class "text-2xl font-bold leading-tight app-ink sm:text-3xl"}
+       "What does the "
+       [:mark {:class "app-target-mark"} "highlighted"]
+       " word in this sentence mean?"]
+      [highlighted-sentence question]
+      [:p {:class "text-base app-muted"} "Select the best English meaning"]]
+     [:div {:class "grid gap-3"
+            :role "group"
+            :aria-label "Answer choices"}
+      (for [choice choices]
+        ^{:key (:label choice)}
+        [choice-button question choices locked? feedback choice])]
+     [:div {:class "grid gap-2 border-t app-border pt-4"}
+      [dont-know-button question choices locked?]]
+     (when feedback
+       [:p {:class (if (= :correct (:kind feedback))
+                     "app-feedback-success rounded-md p-3 text-sm font-semibold"
+                     "app-feedback-error rounded-md p-3 text-sm font-semibold")}
+        (:message feedback)])]))
+
+(defn visible-session-questions [{:keys [screen session-questions answers]}]
+  (let [visible-count (if (= :results screen)
+                        (count answers)
+                        (min (count session-questions) (inc (count answers))))]
+    (take visible-count session-questions)))
+
+(declare results-screen)
+
+(defn quiz-screen [{:keys [screen scroll-mode results-data questions-loading? questions-error] :as state}]
+  [:main {:class "app-page app-quiz-page"}
+   [quiz-status-card state]
+   [:div {:class "app-quiz-stack"}
+    (doall
+     (map-indexed
+      (fn [question-index question]
+        ^{:key (str (:adaptive-block-id question) "-" (:item-id question) "-" question-index)}
+        [question-card state question-index question])
+      (visible-session-questions state)))
+    (when (and (= :quiz screen)
+               (seq (:session-questions state))
+               (not questions-loading?)
+               (nil? questions-error))
+      [:div {:class "app-active-controls app-flow-target"}
+       [scroll-mode-switch scroll-mode]
+       [live-estimate-panel results-data]])
+    (when questions-loading?
+      [:section {:id "loading-card"
+                 :class "app-card app-flow-target grid gap-2 p-5 text-sm font-semibold app-muted"}
+       "Loading sentence questions..."])
+    (when questions-error
+      [:p {:role "alert"
+           :class "app-card app-feedback-error rounded-md p-3 text-sm font-semibold"}
+       questions-error])
+    (when (= :results screen)
+      [results-screen state])]])
 
 (defn band-result-row [results-data band-id]
   (let [{:keys [answered correct pct]} (get-in results-data [:band-stats band-id])]
@@ -659,57 +891,57 @@
           [review-answer-row answer])]])))
 
 (defn results-screen [{:keys [results-data]}]
-  [:main {:class "app-page"}
-   [:section {:aria-labelledby "results-heading"
-              :class "app-card app-card-wide grid gap-5 p-5 sm:gap-6 sm:p-7"}
-    [:div {:class "grid gap-2 text-center"}
-     [:h1 {:id "results-heading"
-           :class "text-4xl font-bold leading-tight app-ink"}
-      "Results"]
-     [:p {:class "app-accent-text text-6xl font-bold"}
-      (str (:accuracy-pct results-data) "%")]
-     [:p {:class "text-base font-semibold app-muted"}
-      (str (:correct results-data) " of " (:total results-data) " correct")]]
-    [:div {:class "grid gap-2 text-sm font-semibold app-muted sm:grid-cols-3"}
-     [:p (str "Answered: " (:answered results-data))]
-     [:p (str "Wrong: " (:wrong results-data))]
-     [:p (str "Don't know: " (:dk results-data))]]
-    [:section {:aria-labelledby "band-results-heading"
-               :class "grid gap-3"}
-     [:h2 {:id "band-results-heading"
+  [:section {:id results-panel-id
+             :aria-labelledby "results-heading"
+             :class "app-card app-card-wide app-flow-target grid gap-5 p-5 sm:gap-6 sm:p-7"}
+   [:div {:class "grid gap-2 text-center"}
+    [:h1 {:id "results-heading"
+          :class "text-4xl font-bold leading-tight app-ink"}
+     "Results"]
+    [:p {:class "app-accent-text text-6xl font-bold"}
+     (str (:accuracy-pct results-data) "%")]
+    [:p {:class "text-base font-semibold app-muted"}
+     (str (:correct results-data) " of " (:total results-data) " correct")]]
+   [:div {:class "grid gap-2 text-sm font-semibold app-muted sm:grid-cols-3"}
+    [:p (str "Answered: " (:answered results-data))]
+    [:p (str "Wrong: " (:wrong results-data))]
+    [:p (str "Don't know: " (:dk results-data))]]
+   [:section {:aria-labelledby "band-results-heading"
+              :class "grid gap-3"}
+    [:h2 {:id "band-results-heading"
+          :class "text-lg font-bold app-ink"}
+     "Accuracy by frequency band"]
+    [:ul {:class "grid gap-2"}
+     (for [band-id data/ordered-band-ids]
+       ^{:key band-id}
+       [band-result-row results-data band-id])]]
+   [review-section (:review-answers results-data)]
+   [:section {:aria-labelledby "estimate-heading"
+              :class "grid gap-4 border-t app-border pt-6"}
+    [:div {:class "flex flex-wrap items-center justify-between gap-3"}
+     [:h2 {:id "estimate-heading"
            :class "text-lg font-bold app-ink"}
-      "Accuracy by frequency band"]
-     [:ul {:class "grid gap-2"}
-      (for [band-id data/ordered-band-ids]
-        ^{:key band-id}
-        [band-result-row results-data band-id])]]
-    [review-section (:review-answers results-data)]
-    [:section {:aria-labelledby "estimate-heading"
-               :class "grid gap-4 border-t app-border pt-6"}
-     [:div {:class "flex flex-wrap items-center justify-between gap-3"}
-      [:h2 {:id "estimate-heading"
-            :class "text-lg font-bold app-ink"}
-       "Vocabulary estimate"]
-      [:p {:class "rounded-full px-3 py-1 text-xs font-bold ring-1 app-subtle-bg app-ink-soft"}
-       (str "Level band: " (:level-band results-data))]]
-     [:div {:class "app-accent-panel grid gap-1 rounded-md border p-4"}
-      [:p {:class "text-xs font-bold uppercase app-muted"}
-       "Estimated recognized Polish lemmas"]
-      [:p {:class "app-accent-text break-words text-4xl font-bold"}
-       (scoring/estimate-display results-data)]
-      [:p {:class "text-sm font-semibold app-ink-soft"}
-       (str "Likely range: " (scoring/format-range (:likely-range results-data)))]]
-     [:p {:class "break-words text-base font-semibold app-ink-soft"}
-      (str "Approximate level band: " (:level-band results-data))]
-     [:p {:class "break-words text-base leading-7 app-muted"}
-      "Likely ranges are broad for short tests and narrow as more sentence-context evidence is added."]
-     [:p {:class "break-words rounded-md app-subtle-bg p-3 text-sm leading-6 app-muted"}
-      [:strong {:class "font-semibold app-ink"} "A note on Polish: "]
-      "This test scores recognition of Polish lemmas in sentence context."]]
-    [:button {:type "button"
-              :class button-class
-              :on-click begin-test}
-     "Retake"]]])
+      "Vocabulary estimate"]
+     [:p {:class "rounded-full px-3 py-1 text-xs font-bold ring-1 app-subtle-bg app-ink-soft"}
+      (str "Level band: " (:level-band results-data))]]
+    [:div {:class "app-accent-panel grid gap-1 rounded-md border p-4"}
+     [:p {:class "text-xs font-bold uppercase app-muted"}
+      "Estimated recognized Polish lemmas"]
+     [:p {:class "app-accent-text break-words text-4xl font-bold"}
+      (scoring/estimate-display results-data)]
+     [:p {:class "text-sm font-semibold app-ink-soft"}
+      (str "Likely range: " (scoring/format-range (:likely-range results-data)))]]
+    [:p {:class "break-words text-base font-semibold app-ink-soft"}
+     (str "Approximate level band: " (:level-band results-data))]
+    [:p {:class "break-words text-base leading-7 app-muted"}
+     "Likely ranges are broad for short tests and narrow as more sentence-context evidence is added."]
+    [:p {:class "break-words rounded-md app-subtle-bg p-3 text-sm leading-6 app-muted"}
+     [:strong {:class "font-semibold app-ink"} "A note on Polish: "]
+     "This test scores recognition of Polish lemmas in sentence context."]]
+   [:button {:type "button"
+             :class button-class
+             :on-click begin-test}
+    "Retake"]])
 
 (defn active-theory-route [route]
   (some #(when (= route (:id %)) %) theory-routes))
@@ -766,7 +998,8 @@
      [theme-button selected-id option])])
 
 (defn top-menu [current-route selected-theme]
-  [:header {:class "app-topbar"}
+  [:header {:class "app-topbar"
+            :ref #(remember-measured-element! "--app-topbar-offset" %)}
    [:div {:class "app-topbar-inner"}
     [:div {:class "app-brand"} "Polish Vocabulary"]
     [:nav {:aria-label "Main"
@@ -891,7 +1124,7 @@
 (defn test-screen [state]
   (case (:screen state)
     :quiz [quiz-screen state]
-    :results [results-screen state]
+    :results [quiz-screen state]
     [start-screen state]))
 
 (defn routed-screen [route state]
@@ -917,5 +1150,8 @@
     (.addEventListener js/window "hashchange" #(do
                                                  (close-theory-menu!)
                                                  (reset! current-route (route-from-location)))))
+  (when-not @resize-listener-registered?
+    (reset! resize-listener-registered? true)
+    (.addEventListener js/window "resize" refresh-layout-measurements!))
   (reset! current-route (route-from-location))
   (rdom/render @root [app]))

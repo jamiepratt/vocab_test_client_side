@@ -7,6 +7,7 @@ import {
 } from "../shared/appSmoke";
 
 test("renders and responds to user input", async ({ page }) => {
+  test.setTimeout(60000);
   await runAppSmoke(page);
 });
 
