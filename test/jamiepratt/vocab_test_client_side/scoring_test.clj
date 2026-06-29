@@ -1,6 +1,6 @@
 (ns jamiepratt.vocab-test-client-side.scoring-test
   (:require
-   [clojure.test :refer [deftest is]]
+   [clojure.test :refer [deftest is testing]]
    [jamiepratt.vocab-test-client-side.data :as data]
    [jamiepratt.vocab-test-client-side.scoring :as scoring]))
 
@@ -58,8 +58,317 @@
         (repeat dk-count
                 (lemma-answer stratum :dk {:adaptive-block-id block-id})))))
 
+(defn assert-bounded-estimate [result]
+  (is (<= 0
+          (get-in result [:likely-range :lower])
+          (:lemma-estimate result)
+          (get-in result [:likely-range :upper])
+          data/lemma-inventory-size)))
+
+(defn assert-summary-counts
+  [result {:keys [total correct wrong dk accuracy-pct]}]
+  (is (= total (:total result)))
+  (is (= total (:answered result)))
+  (is (= correct (:correct result)))
+  (is (= wrong (:wrong result)))
+  (is (= dk (:dk result)))
+  (is (= accuracy-pct (:accuracy-pct result)))
+  (is (= (+ wrong dk) (count (:review-answers result))))
+  (is (every? #(not= :correct (:result %)) (:review-answers result)))
+  (assert-bounded-estimate result))
+
+(def zero-band-stats
+  {:B1 {:answered 0 :correct 0 :wrong 0 :dk 0 :proportion 0 :pct 0}
+   :B2 {:answered 0 :correct 0 :wrong 0 :dk 0 :proportion 0 :pct 0}
+   :B3 {:answered 0 :correct 0 :wrong 0 :dk 0 :proportion 0 :pct 0}
+   :B4 {:answered 0 :correct 0 :wrong 0 :dk 0 :proportion 0 :pct 0}
+   :B5 {:answered 0 :correct 0 :wrong 0 :dk 0 :proportion 0 :pct 0}
+   :B6 {:answered 0 :correct 0 :wrong 0 :dk 0 :proportion 0 :pct 0}})
+
+(def pending-live-estimate
+  {:ready? false
+   :label (str "Not enough questions answered to make an estimate yet, answer at least "
+               data/live-estimate-min-real-answers
+               " questions and estimate is updated live as you answer each question.")})
+
 (defn posterior-statuses [result]
   (into {} (map (juxt :id :status) (:posterior-strata result))))
+
+(deftest summarizes-primary-answer-distributions-from-input-counts
+  (doseq [{:keys [label correct wrong dk] :as scenario}
+          [{:label "all don't know"
+            :correct 0
+            :wrong 0
+            :dk 80
+            :accuracy-pct 0}
+           {:label "all correct"
+            :correct 80
+            :wrong 0
+            :dk 0
+            :accuracy-pct 100}
+           {:label "all wrong"
+            :correct 0
+            :wrong 80
+            :dk 0
+            :accuracy-pct 0}
+           {:label "half correct"
+            :correct 40
+            :wrong 0
+            :dk 40
+            :accuracy-pct 50}
+           {:label "20 percent correct"
+            :correct 16
+            :wrong 0
+            :dk 64
+            :accuracy-pct 20}
+           {:label "75 percent correct"
+            :correct 60
+            :wrong 0
+            :dk 20
+            :accuracy-pct 75}
+           {:label "85 percent correct"
+            :correct 68
+            :wrong 0
+            :dk 12
+            :accuracy-pct 85}]]
+    (testing label
+      (assert-summary-counts
+       (scoring/summarize-results
+        []
+        (scored-answers :pre-a1 1 correct wrong dk))
+       (assoc scenario :total 80)))))
+
+(deftest accuracy-percent-rounds-from-answer-ratios
+  (doseq [{:keys [label correct wrong dk expected]}
+          [{:label "one of three rounds down"
+            :correct 1
+            :wrong 0
+            :dk 2
+            :expected 33}
+           {:label "two of three rounds up"
+            :correct 2
+            :wrong 0
+            :dk 1
+            :expected 67}
+           {:label "one of two is exact half"
+            :correct 1
+            :wrong 0
+            :dk 1
+            :expected 50}
+           {:label "zero correct stays zero"
+            :correct 0
+            :wrong 1
+            :dk 2
+            :expected 0}]]
+    (testing label
+      (let [result (scoring/summarize-results
+                    []
+                    (scored-answers :pre-a1 1 correct wrong dk))]
+        (is (= expected (:accuracy-pct result)))
+        (is (= (+ correct wrong dk) (:total result)))
+        (assert-bounded-estimate result)))))
+
+(deftest ignores-non-vocabulary-control-answers
+  (let [real-answers (scored-answers :pre-a1 1 10 5 15)
+        control-answers [{:adaptive-block-id :pre-a1
+                          :item-type "attention-check"
+                          :vocabulary-evidence? false
+                          :result :correct}
+                         {:adaptive-block-id :pre-a1
+                          :item-type "attention-check"
+                          :vocabulary-evidence? false
+                          :result :wrong}
+                         {:adaptive-block-id :pre-a1
+                          :item-type "attention-check"
+                          :vocabulary-evidence? false
+                          :result :dk}]
+        result (scoring/summarize-results
+                []
+                (into real-answers control-answers))]
+    (assert-summary-counts result
+                           {:total 30
+                            :correct 10
+                            :wrong 5
+                            :dk 15
+                            :accuracy-pct 33})))
+
+(deftest handles-empty-answer-sets
+  (let [result (scoring/summarize-results [] [])]
+    (assert-summary-counts result
+                           {:total 0
+                            :correct 0
+                            :wrong 0
+                            :dk 0
+                            :accuracy-pct 0})
+    (is (= [] (:review-answers result)))
+    (is (= "Absolute beginner / pre-A1" (:level-band result)))
+    (is (= {:ready? false
+            :label (str "Not enough questions answered to make an estimate yet, answer at least "
+                        data/live-estimate-min-real-answers
+                        " questions and estimate is updated live as you answer each question.")}
+           (:live-estimate result)))))
+
+(deftest estimates-rise-with-more-correct-evidence
+  (let [correct-counts [0 16 40 60 68 80]
+        estimates (mapv (fn [correct]
+                          (:lemma-estimate
+                           (scoring/summarize-results
+                            []
+                            (scored-answers :pre-a1 1 correct 0 (- 80 correct)))))
+                        correct-counts)]
+    (is (apply <= estimates))))
+
+(deftest wrong-answers-are-not-scored-like-dont-know-answers
+  (let [all-dk-result (scoring/summarize-results
+                       []
+                       (scored-answers :pre-a1 1 0 0 80))
+        all-wrong-result (scoring/summarize-results
+                          []
+                          (scored-answers :pre-a1 1 0 80 0))]
+    (assert-bounded-estimate all-dk-result)
+    (assert-bounded-estimate all-wrong-result)
+    (is (<= (:lemma-estimate all-wrong-result)
+            (:lemma-estimate all-dk-result)))
+    (is (= 0 (:accuracy-pct all-dk-result) (:accuracy-pct all-wrong-result)))
+    (is (= 80 (count (:review-answers all-dk-result))))
+    (is (= 80 (count (:review-answers all-wrong-result))))))
+
+(deftest characterizes-empty-summary-output
+  (is (= {:likely-range {:lower 0 :upper 0}
+          :posterior-strata []
+          :level-band "Absolute beginner / pre-A1"
+          :dk 0
+          :live-estimate pending-live-estimate
+          :wrong 0
+          :total 0
+          :review-answers []
+          :estimate-label nil
+          :lemma-estimate 0
+          :answered 0
+          :accuracy-pct 0
+          :estimate-unit "recognized Polish lemmas"
+          :scoring-model-version "latent-guessing-v1"
+          :guessing-posterior {:mean 0.0659783741987188
+                               :lower 0.006172839506172839
+                               :upper 0.29012345679012347}
+          :adaptive-decision nil
+          :correct 0
+          :band-stats zero-band-stats}
+         (scoring/summarize-results [] []))))
+
+(deftest characterizes-small-mixed-summary-output
+  (let [questions (evidence-questions :pre-a1)
+        answers (mapv answer-for
+                      (range)
+                      questions
+                      [:correct :correct :wrong :dk :correct])]
+    (is (= {:likely-range {:lower 208 :upper 906}
+            :posterior-strata [{:mean 0.5833333916245692
+                                :lower 0.2082294264339152
+                                :upper 0.9064837905236908
+                                :id 1
+                                :status :observed
+                                :width 1000}]
+            :level-band "borderline: Absolute beginner / pre-A1 to A1"
+            :dk 1
+            :live-estimate pending-live-estimate
+            :wrong 1
+            :total 5
+            :review-answers [{:question-index 2
+                              :adaptive-block-id :pre-a1
+                              :item-type "sentence-context-lemma"
+                              :word "pre-a1-2"
+                              :band :B1
+                              :selected "wrong answer"
+                              :correct "meaning-2"
+                              :result :wrong}
+                             {:question-index 3
+                              :adaptive-block-id :pre-a1
+                              :item-type "sentence-context-lemma"
+                              :word "pre-a1-3"
+                              :band :B1
+                              :selected "don't know"
+                              :correct "meaning-3"
+                              :result :dk}]
+            :estimate-label nil
+            :lemma-estimate 583
+            :answered 5
+            :accuracy-pct 60
+            :estimate-unit "recognized Polish lemmas"
+            :scoring-model-version "latent-guessing-v1"
+            :guessing-posterior {:mean 0.1424991469627994
+                                 :lower 0.006172839506172839
+                                 :upper 0.4012345679012346}
+            :adaptive-decision nil
+            :correct 3
+            :band-stats (assoc zero-band-stats
+                               :B1 {:answered 5
+                                    :correct 3
+                                    :wrong 1
+                                    :dk 1
+                                    :proportion 3/5
+                                    :pct 60})}
+           (scoring/summarize-results questions answers)))))
+
+(deftest characterizes-live-ready-all-correct-summary-output
+  (let [questions (evidence-questions :pre-a1)
+        answers (mapv answer-for
+                      (range)
+                      questions
+                      (repeat 30 :correct))]
+    (is (= {:likely-range {:lower 919 :upper 999}
+            :posterior-strata [{:mean 0.982163758438128
+                                :lower 0.9189526184538653
+                                :upper 0.9987531172069826
+                                :id 1
+                                :status :observed
+                                :width 1000}]
+            :level-band "A1"
+            :dk 0
+            :live-estimate {:ready? true
+                            :label "Current estimate: about 982 recognized Polish lemmas"
+                            :range-label "Likely range: 919-999"}
+            :wrong 0
+            :total 30
+            :review-answers []
+            :estimate-label nil
+            :lemma-estimate 982
+            :answered 30
+            :accuracy-pct 100
+            :estimate-unit "recognized Polish lemmas"
+            :scoring-model-version "latent-guessing-v1"
+            :guessing-posterior {:mean 0.06597837419871878
+                                 :lower 0.006172839506172839
+                                 :upper 0.29012345679012347}
+            :adaptive-decision nil
+            :correct 30
+            :band-stats (assoc zero-band-stats
+                               :B1 {:answered 30
+                                    :correct 30
+                                    :wrong 0
+                                    :dk 0
+                                    :proportion 1
+                                    :pct 100})}
+           (scoring/summarize-results questions answers)))))
+
+(deftest characterizes-adaptive-route-higher-decision-output
+  (is (= {:request {:level "a1" :block 0}
+          :real-item-count 80
+          :surface-rank-end 2000
+          :next-block-id :a2
+          :surface-rank-start 1
+          :estimate-label nil
+          :label "A1"
+          :id :a1
+          :accuracy-pct 85
+          :action :route-higher
+          :correct-rate 17/20
+          :lower-block-id :pre-a1
+          :correct 68
+          :higher-block-id :a2}
+         (scoring/adaptive-block-decision
+          (data/adaptive-block :a1)
+          (scored-answers :a1 1 68 0 12)))))
 
 (deftest latent-guessing-keeps-dont-know-sessions-low-guess
   (let [result (scoring/summarize-results
