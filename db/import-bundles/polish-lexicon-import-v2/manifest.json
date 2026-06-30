@@ -1,0 +1,319 @@
+{
+  "schema_name": "polish_lexicon",
+  "bundle_name": "polish-lexicon-import-v2",
+  "selection_scope": "example-referenced-lemmas-with-connected-surfaces",
+  "generated_at": "2026-06-30T11:42:53+00:00",
+  "source_git_commit_sha": "908004b89602fb107120bea5741693b6185fdd60",
+  "encoding": "utf-8",
+  "delimiter": "\t",
+  "header": true,
+  "null_value": "\\N",
+  "selection": {
+    "example_rows": 1830,
+    "referenced_lemma_ids": 1830,
+    "direct_example_surface_ids": 1753,
+    "connected_surface_ids": 26687,
+    "audit_tables": "header-only"
+  },
+  "generator_commands": [
+    "python3 scripts/build_polish_lexicon_handoff.py --bundle-name polish-lexicon-import-v2 --out-dir handoff/polish-lexicon-import-v2 --import-dir data/database-import --example-targets curated/example_targets.tsv --validation-source-examples curated/example_sentences.tsv"
+  ],
+  "validation_commands": [
+    "python3 -m unittest discover -s tests",
+    "python3 scripts/polish_lexicon_import.py validate-examples --examples curated/example_sentences.tsv --example-targets curated/example_targets.tsv --strict-item-bank",
+    "python3 scripts/polish_lexicon_import.py validate-examples --import-dir handoff/polish-lexicon-import-v2/tsv --examples handoff/polish-lexicon-import-v2/tsv/example_sentences.tsv --example-targets curated/example_targets.tsv --strict-item-bank",
+    "manifest hash/count verification for every handoff TSV and support file",
+    "direct check for missing example lemma/surface refs"
+  ],
+  "tables": [
+    {
+      "table": "lemmas",
+      "file": "tsv/lemmas.tsv",
+      "rows": 1830,
+      "sha256": "ef2cdb8e91149db9cb0e47cc1a54244a5535b554218273cfcb8f2c51bc114de4",
+      "header": [
+        "lemma_id",
+        "lemma",
+        "total_frequency_sn_sum",
+        "total_frequency_sn_sum_rank",
+        "total_subtlex_frequency",
+        "lemma_subtlex_pos_count",
+        "surface_form_count",
+        "nkjp_frequency",
+        "nkjp_frequency_rank"
+      ]
+    },
+    {
+      "table": "lemma_subtlex_pos",
+      "file": "tsv/lemma_subtlex_pos.tsv",
+      "rows": 1896,
+      "sha256": "c0f97e4bd411c891ca30292a7f9d03ba8da56a345217592c0a1949f73bde3723",
+      "header": [
+        "lemma_subtlex_pos_id",
+        "lemma_id",
+        "lemma",
+        "subtlex_pos",
+        "subtlex_frequency",
+        "contextual_diversity_count",
+        "contextual_diversity"
+      ]
+    },
+    {
+      "table": "surface_forms",
+      "file": "tsv/surface_forms.tsv",
+      "rows": 26687,
+      "sha256": "08ad2aa0024fcf6a0f782c7f3f5402dd30b85f156c3064ed04467bdf75eb6501",
+      "header": [
+        "surface_form_id",
+        "surface_form"
+      ]
+    },
+    {
+      "table": "surface_subtlex_metrics",
+      "file": "tsv/surface_subtlex_metrics.tsv",
+      "rows": 26687,
+      "sha256": "a2f1a91a0d31f4f92ed72e890ed77f63d166b703a5e98d7344eebe41768034be",
+      "header": [
+        "surface_form_id",
+        "spellcheck",
+        "alphabetical",
+        "nchar",
+        "subtlex_frequency",
+        "subtlex_frequency_rank",
+        "capitalized_frequency",
+        "contextual_diversity",
+        "contextual_diversity_count",
+        "dominant_pos",
+        "dominant_pos_frequency",
+        "dominant_lemma_pos",
+        "dominant_lemma_pos_frequency",
+        "dominant_lemma_pos_total_frequency",
+        "all_pos",
+        "all_pos_frequency",
+        "all_lemma_pos",
+        "all_lemma_pos_frequency",
+        "all_lemma_pos_total_frequency",
+        "lg_frequency",
+        "lg_million_frequency",
+        "zipf_frequency",
+        "lg_contextual_diversity",
+        "frequency_sn_sum",
+        "zipf_frequency_sn_sum",
+        "avg_zipf_freq_sn",
+        "avg_zipf_freq_sn_rank"
+      ]
+    },
+    {
+      "table": "surface_nkjp_metrics",
+      "file": "tsv/surface_nkjp_metrics.tsv",
+      "rows": 26687,
+      "sha256": "8a39291c1a376608eb3ece4faa2a3665be9e1e7f86e50dc65a35d20a7d51c582",
+      "header": [
+        "surface_form_id",
+        "nkjp_frequency",
+        "nkjp_frequency_rank",
+        "occurrence_pct",
+        "per_million"
+      ]
+    },
+    {
+      "table": "surface_form_lemma_links",
+      "file": "tsv/surface_form_lemma_links.tsv",
+      "rows": 27219,
+      "sha256": "8dd1ab1793e063088cd3fff05e89cde7b828aed008c17ff4df51c08f143bce5c",
+      "header": [
+        "surface_form_lemma_link_id",
+        "surface_form_id",
+        "lemma_id",
+        "lemma_subtlex_pos_id"
+      ]
+    },
+    {
+      "table": "surface_form_lemma_frequency_ranks",
+      "file": "tsv/surface_form_lemma_frequency_ranks.tsv",
+      "rows": 27169,
+      "sha256": "a99fd7148c69f5b7128441c83bb126cb4703ac5b51fdcfc963ef0c80b88c720a",
+      "header": [
+        "surface_form_lemma_frequency_rank_id",
+        "surface_form_id",
+        "lemma_id",
+        "surface_form",
+        "lemma",
+        "surface_frequency_sn_sum",
+        "surface_lemma_link_subtlex_pos",
+        "surface_lemma_link_frequency",
+        "surface_lemma_link_total_frequency",
+        "surface_lemma_link_frequency_share",
+        "surface_lemma_link_frequency_sn_sum",
+        "surface_avg_zipf_freq_sn",
+        "surface_avg_zipf_freq_sn_rank",
+        "lemma_total_frequency_sn_sum",
+        "lemma_total_frequency_sn_sum_rank"
+      ]
+    },
+    {
+      "table": "freedict_entries",
+      "file": "tsv/freedict_entries.tsv",
+      "rows": 1944,
+      "sha256": "d82b5784decffae3835180b08c1a9c846f1c222cb2b4109c28c296693ca98d09",
+      "header": [
+        "freedict_entry_id",
+        "lemma_id",
+        "source_entry_index",
+        "headword",
+        "entry_key"
+      ]
+    },
+    {
+      "table": "freedict_entry_pos",
+      "file": "tsv/freedict_entry_pos.tsv",
+      "rows": 1941,
+      "sha256": "388e0379f8ad5c62cf536c4cbd3c3b36732ad69ee1792151d2d8c1ab28da003f",
+      "header": [
+        "freedict_entry_pos_id",
+        "freedict_entry_id",
+        "pos"
+      ]
+    },
+    {
+      "table": "freedict_pronunciations",
+      "file": "tsv/freedict_pronunciations.tsv",
+      "rows": 1884,
+      "sha256": "cf424217ae7ec6302d88e90ca7c52f9ed9b5d968cc20c0f5e4d8ea2396ee8317",
+      "header": [
+        "freedict_pronunciation_id",
+        "freedict_entry_id",
+        "pronunciation"
+      ]
+    },
+    {
+      "table": "freedict_senses",
+      "file": "tsv/freedict_senses.tsv",
+      "rows": 3265,
+      "sha256": "d732c09f0c7e9aecb70489c3a01d7720dd8223af35972dfbf6c06c0cc39215b7",
+      "header": [
+        "freedict_sense_id",
+        "freedict_entry_id",
+        "sense_index"
+      ]
+    },
+    {
+      "table": "freedict_sense_translations",
+      "file": "tsv/freedict_sense_translations.tsv",
+      "rows": 5605,
+      "sha256": "664f3aac0f7e56c0b0207d7544db59afbe6456a1d5e696104bb0d3e9c354ff3c",
+      "header": [
+        "freedict_sense_translation_id",
+        "freedict_sense_id",
+        "translation"
+      ]
+    },
+    {
+      "table": "freedict_sense_definitions",
+      "file": "tsv/freedict_sense_definitions.tsv",
+      "rows": 3827,
+      "sha256": "2bce7484356538034b8258578039311ee893ee94cf5610671d2126e7323fcdd4",
+      "header": [
+        "freedict_sense_definition_id",
+        "freedict_sense_id",
+        "definition"
+      ]
+    },
+    {
+      "table": "example_sentences",
+      "file": "tsv/example_sentences.tsv",
+      "rows": 1830,
+      "sha256": "dda2b0dfbada9f3880d02817f0080d62a350c8bf715a0175a5e7ed187e9f90a9",
+      "header": [
+        "example_sentence_id",
+        "sentence",
+        "sentence_translation",
+        "surface_form_id",
+        "lemma_id",
+        "word_translation",
+        "distractor_1_translation",
+        "distractor_2_translation",
+        "distractor_3_translation",
+        "distractor_4_translation"
+      ]
+    },
+    {
+      "table": "rejected_lemmas",
+      "file": "tsv/rejected_lemmas.tsv",
+      "rows": 0,
+      "sha256": "c1d37b3969ff26a89d4beddf0a3651f3b5dae19d595ee65c0eea899bfd0cbca9",
+      "header": [
+        "rejected_lemma_id",
+        "lemma",
+        "subtlex_pos",
+        "spelling",
+        "reason_code",
+        "subtlex_frequency",
+        "contextual_diversity_count",
+        "contextual_diversity",
+        "total_frequency_sn_sum"
+      ]
+    },
+    {
+      "table": "rejected_surfaces",
+      "file": "tsv/rejected_surfaces.tsv",
+      "rows": 0,
+      "sha256": "abbc19d2539e41527326911db61807bf876938b62af750d07bb48ccb19074dd0",
+      "header": [
+        "rejected_surface_id",
+        "surface_form",
+        "reason_code",
+        "subtlex_frequency",
+        "capitalized_frequency",
+        "avg_zipf_freq_sn"
+      ]
+    },
+    {
+      "table": "rejected_freedict_rows",
+      "file": "tsv/rejected_freedict_rows.tsv",
+      "rows": 0,
+      "sha256": "13a5b2d25bdad999ec8af3bd9e69c7ccdf082d4c1707b7beb6f2459dfed9d7f8",
+      "header": [
+        "rejected_freedict_id",
+        "lemma",
+        "freedict_headword",
+        "entry_key",
+        "source_entry_index",
+        "source_pos",
+        "sense_index",
+        "reason_code",
+        "translation",
+        "definition"
+      ]
+    },
+    {
+      "table": "nkjp_build_stats",
+      "file": "tsv/nkjp_build_stats.tsv",
+      "rows": 8,
+      "sha256": "27077dd3561d9eb1bb6780eb5c3646a44d84a07da02157e8260e58533e484afc",
+      "header": [
+        "stage",
+        "rows",
+        "count"
+      ]
+    }
+  ],
+  "support_files": [
+    {
+      "file": "schema.sql",
+      "sha256": "9f379fb53bb928fe620736dee5bded3ba51fbb9b1d3c01dd92400ad18b4f3a4a"
+    },
+    {
+      "file": "load.sql",
+      "sha256": "7ad3978fc89cdbd08a975a1ef2a1e307a047f183ad340dc22b13455699efa9fe"
+    },
+    {
+      "file": "DATA_STRUCTURE.md",
+      "sha256": "8d6f9f8b38981f8eb122778ba8ed3921e63638d9ef6188587312c70262b1e4aa"
+    },
+    {
+      "file": "POSTGRES_IMPORT.md",
+      "sha256": "3890ba599a10cefa5ded863fef7f2031636aad21a04c4a0ff65839819ce1c1f2"
+    }
+  ]
+}

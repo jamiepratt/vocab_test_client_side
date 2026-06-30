@@ -177,6 +177,66 @@
      :header ["stage" "rows" "count"]
      :rows ["test\t1\t1"]}]))
 
+(def legacy-example-source-header
+  ["example_sentence_id"
+   "sentence"
+   "sentence_translation"
+   "surface_form_id"
+   "lemma_id"
+   "word_translation"
+   "distractor_1_translation"
+   "distractor_2_translation"
+   "distractor_3_translation"
+   "distractor_4_translation"])
+
+(defn- legacy-source-row
+  [example-id sentence sentence-translation surface-form-id lemma-id word-translation
+   distractor-1 distractor-2 distractor-3 distractor-4]
+  (str/join "\t"
+            [example-id sentence sentence-translation surface-form-id lemma-id word-translation
+             distractor-1 distractor-2 distractor-3 distractor-4]))
+
+(defn- replacement-legacy-source-rows []
+  [(legacy-source-row 1 "Kot pije wodę." "The cat drinks water." 1 1 "cat"
+                      "horse" "duck" "frog" "plant")
+   (legacy-source-row 2 "Kot śpi." "The cat sleeps." 1 1 "cat"
+                      "train" "desk" "glass" "street")])
+
+(defn- legacy-distractor-source-bundle!
+  ([rows]
+   (legacy-distractor-source-bundle! "polish-lexicon-import-v2" rows))
+  ([bundle-name rows]
+   (let [root (temp-dir)
+         file "tsv/example_sentences.tsv"
+         content (table-content legacy-example-source-header rows)]
+     (write-file! root file content)
+     (write-file! root "manifest.json"
+                  (json/write-str
+                   {:schema_name "polish_lexicon"
+                    :bundle_name bundle-name
+                    :selection_scope "test"
+                    :source_git_commit_sha "test"
+                    :encoding "utf-8"
+                    :delimiter "\t"
+                    :header true
+                    :null_value "\\N"
+                    :tables [{:table "example_sentences"
+                              :file file
+                              :rows (data-row-count content)
+                              :sha256 (db/file-sha256 (io/file root file))
+                              :header legacy-example-source-header}]}))
+     root)))
+
+(defn- lexicon-core-counts [conn]
+  (into {}
+        (map (fn [table]
+               [table
+                (:c (jdbc/execute-one!
+                     conn
+                     [(str "SELECT count(*) AS c FROM polish_lexicon." table)]
+                     {:builder-fn rs/as-unqualified-lower-maps}))]))
+        ["lemmas" "lemma_subtlex_pos" "surface_forms" "example_sentences"]))
+
 (deftest converts-postgres-urls-to-jdbc-urls
   (is (= "jdbc:postgresql://localhost:5432/vocab?sslmode=require&user=j%40m&password=p%3Ass"
          (db/database-url->jdbc-url
@@ -243,6 +303,45 @@
     (is (thrown-with-msg? clojure.lang.ExceptionInfo
                           #"legacy distractor columns"
                           (db/validate-bundle! bundle)))))
+
+(deftest validates-v2-legacy-distractor-source-bundles
+  (let [manifest (db/validate-distractor-source-bundle!
+                  (legacy-distractor-source-bundle!
+                   (replacement-legacy-source-rows)))]
+    (is (= "polish-lexicon-import-v2" (:bundle_name manifest)))
+    (is (= 2 (:example-count manifest)))
+    (is (= "example_sentences" (get-in manifest [:example-entry :table])))))
+
+(deftest rejects-non-v2-distractor-source-bundles
+  (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                        #"polish-lexicon-import-v2"
+                        (db/validate-distractor-source-bundle!
+                         (legacy-distractor-source-bundle!
+                          "polish-lexicon-import-v1"
+                          (replacement-legacy-source-rows))))))
+
+(deftest rejects-invalid-legacy-source-distractors
+  (testing "blank distractor"
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                          #"blank"
+                          (db/validate-distractor-source-bundle!
+                           (legacy-distractor-source-bundle!
+                            [(legacy-source-row 1 "Kot pije wodę." "The cat drinks water." 1 1 "cat"
+                                                "horse" "" "frog" "plant")])))))
+  (testing "duplicate distractor"
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                          #"duplicates"
+                          (db/validate-distractor-source-bundle!
+                           (legacy-distractor-source-bundle!
+                            [(legacy-source-row 1 "Kot pije wodę." "The cat drinks water." 1 1 "cat"
+                                                "horse" "Horse" "frog" "plant")])))))
+  (testing "correct-answer distractor"
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                          #"correct answer"
+                          (db/validate-distractor-source-bundle!
+                           (legacy-distractor-source-bundle!
+                            [(legacy-source-row 1 "Kot pije wodę." "The cat drinks water." 1 1 "cat"
+                                                "horse" "cat" "frog" "plant")]))))))
 
 (deftest rejects-case-insensitive-lemma-pos-distractor-duplicates
   (let [bundle (write-bundle!
@@ -493,6 +592,72 @@
                     conn
                     ["SELECT count(*) AS c
                       FROM polish_lexicon.example_sentence_distractor_assignments"])))))
+        (finally
+          (with-open [conn (jdbc/get-connection {:connection-uri jdbc-url})]
+            (jdbc/execute! conn ["DROP SCHEMA IF EXISTS polish_lexicon CASCADE"])
+            (jdbc/execute! conn ["DROP TABLE IF EXISTS schema_migrations"])))))))
+
+(deftest replaces-distractors-from-v2-source-without-changing-core-tables
+  (when-let [database-url (not-empty (System/getenv "TEST_DATABASE_URL"))]
+    (let [jdbc-url (db/database-url->jdbc-url database-url)
+          bundle (small-bundle!)
+          source-bundle (legacy-distractor-source-bundle!
+                         (replacement-legacy-source-rows))]
+      (try
+        (with-open [conn (jdbc/get-connection {:connection-uri jdbc-url})]
+          (jdbc/execute! conn ["DROP SCHEMA IF EXISTS polish_lexicon CASCADE"])
+          (jdbc/execute! conn ["DROP TABLE IF EXISTS schema_migrations"]))
+        (db/migrate! database-url)
+        (db/import-bundle! database-url bundle {:replace? true})
+        (let [before-counts (with-open [conn (jdbc/get-connection {:connection-uri jdbc-url})]
+                              (lexicon-core-counts conn))
+              result (db/replace-distractors! database-url source-bundle)]
+          (is (= 2 (:example-count result)))
+          (is (= 8 (:distractor-count result)))
+          (is (= 4 (:assignment-count result)))
+          (with-open [conn (jdbc/get-connection {:connection-uri jdbc-url})]
+            (is (= before-counts (lexicon-core-counts conn)))
+            (is (= "horse,duck,frog,plant"
+                   (:defaults
+                    (jdbc/execute-one!
+                     conn
+                     ["SELECT string_agg(distractor_translation, ',' ORDER BY import_order) AS defaults
+                       FROM polish_lexicon.lemma_pos_distractors
+                       WHERE lemma_subtlex_pos_id = 1
+                         AND is_default"]
+                     {:builder-fn rs/as-unqualified-lower-maps}))))
+            (is (= "train,desk,glass,street"
+                   (:assignments
+                    (jdbc/execute-one!
+                     conn
+                     ["SELECT string_agg(d.distractor_translation, ',' ORDER BY d.import_order) AS assignments
+                       FROM polish_lexicon.example_sentence_distractor_assignments a
+                       JOIN polish_lexicon.lemma_pos_distractors d
+                         ON d.lemma_pos_distractor_id = a.lemma_pos_distractor_id
+                       WHERE a.example_sentence_id = 2"]
+                     {:builder-fn rs/as-unqualified-lower-maps}))))))
+        (finally
+          (with-open [conn (jdbc/get-connection {:connection-uri jdbc-url})]
+            (jdbc/execute! conn ["DROP SCHEMA IF EXISTS polish_lexicon CASCADE"])
+            (jdbc/execute! conn ["DROP TABLE IF EXISTS schema_migrations"])))))))
+
+(deftest rejects-distractor-replacement-when-example-metadata-differs
+  (when-let [database-url (not-empty (System/getenv "TEST_DATABASE_URL"))]
+    (let [jdbc-url (db/database-url->jdbc-url database-url)
+          bundle (small-bundle!)
+          source-bundle (legacy-distractor-source-bundle!
+                         [(legacy-source-row 1 "Kot zmieniony." "The cat drinks water." 1 1 "cat"
+                                             "horse" "duck" "frog" "plant")
+                          (second (replacement-legacy-source-rows))])]
+      (try
+        (with-open [conn (jdbc/get-connection {:connection-uri jdbc-url})]
+          (jdbc/execute! conn ["DROP SCHEMA IF EXISTS polish_lexicon CASCADE"])
+          (jdbc/execute! conn ["DROP TABLE IF EXISTS schema_migrations"]))
+        (db/migrate! database-url)
+        (db/import-bundle! database-url bundle {:replace? true})
+        (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                              #"do not match current DB examples"
+                              (db/replace-distractors! database-url source-bundle)))
         (finally
           (with-open [conn (jdbc/get-connection {:connection-uri jdbc-url})]
             (jdbc/execute! conn ["DROP SCHEMA IF EXISTS polish_lexicon CASCADE"])

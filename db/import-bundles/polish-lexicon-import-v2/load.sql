@@ -1,0 +1,21 @@
+-- Run from handoff/polish-lexicon-import-v2 after schema.sql.
+SET search_path TO polish_lexicon, public;
+
+\copy polish_lexicon.lemmas FROM 'tsv/lemmas.tsv' WITH (FORMAT csv, HEADER true, DELIMITER E'\t', NULL '\N')
+\copy polish_lexicon.lemma_subtlex_pos FROM 'tsv/lemma_subtlex_pos.tsv' WITH (FORMAT csv, HEADER true, DELIMITER E'\t', NULL '\N')
+\copy polish_lexicon.surface_forms FROM 'tsv/surface_forms.tsv' WITH (FORMAT csv, HEADER true, DELIMITER E'\t', NULL '\N')
+\copy polish_lexicon.surface_subtlex_metrics FROM 'tsv/surface_subtlex_metrics.tsv' WITH (FORMAT csv, HEADER true, DELIMITER E'\t', NULL '\N')
+\copy polish_lexicon.surface_nkjp_metrics FROM 'tsv/surface_nkjp_metrics.tsv' WITH (FORMAT csv, HEADER true, DELIMITER E'\t', NULL '\N')
+\copy polish_lexicon.surface_form_lemma_links FROM 'tsv/surface_form_lemma_links.tsv' WITH (FORMAT csv, HEADER true, DELIMITER E'\t', NULL '\N')
+\copy polish_lexicon.surface_form_lemma_frequency_ranks FROM 'tsv/surface_form_lemma_frequency_ranks.tsv' WITH (FORMAT csv, HEADER true, DELIMITER E'\t', NULL '\N')
+\copy polish_lexicon.freedict_entries FROM 'tsv/freedict_entries.tsv' WITH (FORMAT csv, HEADER true, DELIMITER E'\t', NULL '\N')
+\copy polish_lexicon.freedict_entry_pos FROM 'tsv/freedict_entry_pos.tsv' WITH (FORMAT csv, HEADER true, DELIMITER E'\t', NULL '\N')
+\copy polish_lexicon.freedict_pronunciations FROM 'tsv/freedict_pronunciations.tsv' WITH (FORMAT csv, HEADER true, DELIMITER E'\t', NULL '\N')
+\copy polish_lexicon.freedict_senses FROM 'tsv/freedict_senses.tsv' WITH (FORMAT csv, HEADER true, DELIMITER E'\t', NULL '\N')
+\copy polish_lexicon.freedict_sense_translations FROM 'tsv/freedict_sense_translations.tsv' WITH (FORMAT csv, HEADER true, DELIMITER E'\t', NULL '\N')
+\copy polish_lexicon.freedict_sense_definitions FROM 'tsv/freedict_sense_definitions.tsv' WITH (FORMAT csv, HEADER true, DELIMITER E'\t', NULL '\N')
+\copy polish_lexicon.example_sentences FROM 'tsv/example_sentences.tsv' WITH (FORMAT csv, HEADER true, DELIMITER E'\t', NULL '\N')
+\copy polish_lexicon.rejected_lemmas FROM 'tsv/rejected_lemmas.tsv' WITH (FORMAT csv, HEADER true, DELIMITER E'\t', NULL '\N')
+\copy polish_lexicon.rejected_surfaces FROM 'tsv/rejected_surfaces.tsv' WITH (FORMAT csv, HEADER true, DELIMITER E'\t', NULL '\N')
+\copy polish_lexicon.rejected_freedict_rows FROM 'tsv/rejected_freedict_rows.tsv' WITH (FORMAT csv, HEADER true, DELIMITER E'\t', NULL '\N')
+\copy polish_lexicon.nkjp_build_stats FROM 'tsv/nkjp_build_stats.tsv' WITH (FORMAT csv, HEADER true, DELIMITER E'\t', NULL '\N')

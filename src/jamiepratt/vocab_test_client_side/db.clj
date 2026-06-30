@@ -146,11 +146,26 @@
           {:table (:table entry) :sha256 (:sha256 entry)}))
   entry)
 
+(def legacy-example-distractor-column-order
+  ["distractor_1_translation"
+   "distractor_2_translation"
+   "distractor_3_translation"
+   "distractor_4_translation"])
+
 (def legacy-example-distractor-columns
-  #{"distractor_1_translation"
-    "distractor_2_translation"
-    "distractor_3_translation"
-    "distractor_4_translation"})
+  (set legacy-example-distractor-column-order))
+
+(def legacy-example-sentence-header
+  ["example_sentence_id"
+   "sentence"
+   "sentence_translation"
+   "surface_form_id"
+   "lemma_id"
+   "word_translation"
+   "distractor_1_translation"
+   "distractor_2_translation"
+   "distractor_3_translation"
+   "distractor_4_translation"])
 
 (def normalized-table-headers
   {"example_sentences"
@@ -193,7 +208,7 @@
       (fail "Manifest normalized table header is not the target schema."
             {:table table :expected expected :actual header}))))
 
-(defn- validate-manifest-shape! [manifest]
+(defn- validate-manifest-common-shape! [manifest]
   (when-not (= schema-name (:schema_name manifest))
     (fail "Manifest schema_name is not polish_lexicon."
           {:schema-name (:schema_name manifest)}))
@@ -206,7 +221,10 @@
   (when-not (= "\\N" (:null_value manifest))
     (fail "Manifest null_value must be \\\\N." {:null-value (:null_value manifest)}))
   (when-not (seq (:tables manifest))
-    (fail "Manifest tables must not be empty." {}))
+    (fail "Manifest tables must not be empty." {})))
+
+(defn- validate-manifest-shape! [manifest]
+  (validate-manifest-common-shape! manifest)
   (doseq [entry (:tables manifest)]
     (validate-table-entry! entry)
     (validate-example-sentence-header! entry))
@@ -219,6 +237,12 @@
     (if-let [line (.readLine reader)]
       (str/split line #"\t" -1)
       (fail "TSV file is empty." {:file (str file)}))))
+
+(defn- tsv-data-row-count [file]
+  (with-open [reader (io/reader file :encoding "UTF-8")]
+    (when-not (.readLine reader)
+      (fail "TSV file is empty." {:file (str file)}))
+    (count (line-seq reader))))
 
 (defn- parse-tsv-row [line]
   (let [length (count line)]
@@ -284,7 +308,8 @@
       (fail "TSV header mismatch."
             {:table (:table entry)
              :expected (:header entry)
-             :actual actual-header}))))
+             :actual actual-header}))
+    file))
 
 (defn- validate-lemma-pos-distractor-rows! [bundle-dir {:keys [table] :as entry}]
   (when (= "lemma_pos_distractors" table)
@@ -308,6 +333,97 @@
 (defn- require-table-entry! [manifest table]
   (or (table-entry manifest table)
       (fail "Manifest is missing normalized distractor table." {:table table})))
+
+(defn- source-cell [manifest value]
+  (when-not (= value (:null_value manifest))
+    value))
+
+(defn- source-canonical-translation [manifest row column]
+  (canonical-translation (source-cell manifest (get row column))))
+
+(defn- read-example-source-rows! [bundle-dir entry]
+  (with-open [reader (io/reader (bundle-file bundle-dir (:file entry)) :encoding "UTF-8")]
+    (when-not (.readLine reader)
+      (fail "TSV file is empty." {:file (:file entry)}))
+    (loop [row-number 1
+           rows []]
+      (if-let [line (.readLine reader)]
+        (let [fields (parse-tsv-row line)]
+          (when-not (= (count (:header entry)) (count fields))
+            (fail "TSV row width mismatch."
+                  {:file (:file entry)
+                   :row row-number
+                   :expected (count (:header entry))
+                   :actual (count fields)}))
+          (recur (inc row-number) (conj rows (zipmap (:header entry) fields))))
+        rows))))
+
+(defn- validate-example-source-row! [manifest row]
+  (let [example-id (get row "example_sentence_id")
+        correct (source-canonical-translation manifest row "word_translation")
+        distractors (mapv (fn [column]
+                            [column (source-cell manifest (get row column))])
+                          legacy-example-distractor-column-order)
+        canonical-distractors (mapv (fn [[column value]]
+                                      [column (canonical-translation value)])
+                                    distractors)]
+    (when-let [[column _] (some (fn [[column value]]
+                                  (when (str/blank? value)
+                                    [column value]))
+                                distractors)]
+      (fail "Legacy example distractor is blank."
+            {:example-sentence-id example-id :column column}))
+    (when-let [[column value] (some (fn [[column value]]
+                                      (when (= correct value)
+                                        [column value]))
+                                    canonical-distractors)]
+      (fail "Legacy example distractor matches the correct answer."
+            {:example-sentence-id example-id
+             :column column
+             :distractor-translation value}))
+    (when-not (= (count canonical-distractors)
+                 (count (distinct (map second canonical-distractors))))
+      (fail "Legacy example distractors contain duplicates."
+            {:example-sentence-id example-id
+             :distractor-translations (mapv second canonical-distractors)}))))
+
+(defn- validate-example-source-data! [bundle-dir manifest entry]
+  (doseq [row (read-example-source-rows! bundle-dir entry)]
+    (validate-example-source-row! manifest row)))
+
+(defn validate-distractor-source-bundle! [bundle-dir]
+  (let [root (canonical-file bundle-dir)
+        manifest-file (bundle-file root "manifest.json")
+        manifest (read-manifest root)]
+    (validate-manifest-common-shape! manifest)
+    (when-not (= "polish-lexicon-import-v2" (:bundle_name manifest))
+      (fail "Distractor source bundle must be polish-lexicon-import-v2."
+            {:bundle-name (:bundle_name manifest)}))
+    (doseq [entry (:tables manifest)]
+      (validate-table-entry! entry))
+    (let [entry (or (table-entry manifest "example_sentences")
+                    (fail "Manifest is missing example_sentences."
+                          {:table "example_sentences"}))]
+      (when-not (= "tsv/example_sentences.tsv" (:file entry))
+        (fail "Distractor source example_sentences must use tsv/example_sentences.tsv."
+              {:file (:file entry)}))
+      (when-not (= legacy-example-sentence-header (:header entry))
+        (fail "Distractor source example_sentences must use legacy distractor columns."
+              {:expected legacy-example-sentence-header
+               :actual (:header entry)}))
+      (let [file (validate-table-file! root entry)
+            row-count (tsv-data-row-count file)]
+        (when-not (= (:rows entry) row-count)
+          (fail "TSV row count mismatch."
+                {:table "example_sentences"
+                 :expected (:rows entry)
+                 :actual row-count}))
+        (validate-example-source-data! root manifest entry)
+        (assoc manifest
+               :bundle-dir root
+               :manifest-sha256 (file-sha256 manifest-file)
+               :example-entry entry
+               :example-count row-count)))))
 
 (defn- validate-assignment-row! [examples-by-id distractors-by-id row]
   (let [example-id (get row "example_sentence_id")
@@ -643,6 +759,205 @@
     (doseq [entry (:tables manifest)]
       (copy-table! copy-manager (:bundle-dir manifest) entry))))
 
+(def distractor-source-stage-table
+  "pv_replace_distractor_source_examples")
+
+(defn- qtemp-table [table]
+  (qident table))
+
+(defn- copy-temp-sql [table header]
+  (str "COPY " (qtemp-table table)
+       " (" (str/join ", " (map qident header)) ") "
+       "FROM STDIN WITH (FORMAT csv, HEADER true, DELIMITER E'\\t', NULL '\\N')"))
+
+(defn- create-distractor-source-stage! [conn]
+  (jdbc/execute!
+   conn
+   [(str "CREATE TEMP TABLE " (qtemp-table distractor-source-stage-table) " ("
+         "example_sentence_id integer NOT NULL, "
+         "sentence text NOT NULL, "
+         "sentence_translation text NOT NULL, "
+         "surface_form_id integer NOT NULL, "
+         "lemma_id integer NOT NULL, "
+         "word_translation text NOT NULL, "
+         "distractor_1_translation text NOT NULL, "
+         "distractor_2_translation text NOT NULL, "
+         "distractor_3_translation text NOT NULL, "
+         "distractor_4_translation text NOT NULL"
+         ") ON COMMIT DROP")]))
+
+(defn- copy-distractor-source-examples! [conn manifest]
+  (create-distractor-source-stage! conn)
+  (let [copy-manager (CopyManager. (base-connection conn))
+        entry (:example-entry manifest)]
+    (with-open [in (io/input-stream (bundle-file (:bundle-dir manifest) (:file entry)))]
+      (.copyIn copy-manager
+               (copy-temp-sql distractor-source-stage-table (:header entry))
+               in))))
+
+(defn- staged-example-mismatch-summary [conn]
+  (jdbc/execute-one!
+   conn
+   [(str "WITH mismatches AS ("
+         "SELECT coalesce(source.example_sentence_id, db_examples.example_sentence_id) "
+         "AS example_sentence_id "
+         "FROM " (qtemp-table distractor-source-stage-table) " source "
+         "FULL OUTER JOIN " (qtable "example_sentences") " db_examples "
+         "ON db_examples.example_sentence_id = source.example_sentence_id "
+         "WHERE source.example_sentence_id IS NULL "
+         "OR db_examples.example_sentence_id IS NULL "
+         "OR source.sentence <> db_examples.sentence "
+         "OR source.sentence_translation <> db_examples.sentence_translation "
+         "OR source.surface_form_id <> db_examples.surface_form_id "
+         "OR source.lemma_id <> db_examples.lemma_id "
+         "OR source.word_translation <> db_examples.word_translation) "
+         "SELECT count(*) AS mismatch_count, "
+         "min(example_sentence_id) AS first_example_sentence_id "
+         "FROM mismatches")]
+   {:builder-fn rs/as-unqualified-lower-maps}))
+
+(defn- verify-staged-examples-match! [conn]
+  (let [staged-count (scalar-long
+                      conn
+                      (str "SELECT count(*) AS c FROM "
+                           (qtemp-table distractor-source-stage-table)))
+        current-count (table-row-count conn "example_sentences")
+        {:keys [mismatch_count first_example_sentence_id]}
+        (staged-example-mismatch-summary conn)]
+    (when (or (not= staged-count current-count)
+              (pos? (long mismatch_count)))
+      (fail "Distractor source examples do not match current DB examples."
+            {:staged-count staged-count
+             :current-count current-count
+             :mismatch-count (long mismatch_count)
+             :first-example-sentence-id first_example_sentence_id}))))
+
+(defn- staged-distractors-cte []
+  (str "staged_distractors AS ("
+       "SELECT source.example_sentence_id, "
+       "db_examples.lemma_subtlex_pos_id, "
+       "distractor.source_order, "
+       "btrim(distractor.distractor_translation) AS distractor_translation, "
+       "lower(btrim(distractor.distractor_translation)) AS distractor_key "
+       "FROM " (qtemp-table distractor-source-stage-table) " source "
+       "JOIN " (qtable "example_sentences") " db_examples "
+       "ON db_examples.example_sentence_id = source.example_sentence_id "
+       "CROSS JOIN LATERAL (VALUES "
+       "(1, source.distractor_1_translation), "
+       "(2, source.distractor_2_translation), "
+       "(3, source.distractor_3_translation), "
+       "(4, source.distractor_4_translation)"
+       ") AS distractor(source_order, distractor_translation))"))
+
+(defn- example-distractor-sets-cte []
+  (str "example_distractor_sets AS ("
+       "SELECT example_sentence_id, "
+       "lemma_subtlex_pos_id, "
+       "array_agg(distractor_key ORDER BY distractor_key) AS distractor_keys "
+       "FROM staged_distractors "
+       "GROUP BY example_sentence_id, lemma_subtlex_pos_id)"))
+
+(defn- default-distractor-sets-cte []
+  (str "default_distractor_sets AS ("
+       "SELECT DISTINCT ON (lemma_subtlex_pos_id) "
+       "lemma_subtlex_pos_id, "
+       "distractor_keys, "
+       "first_example_sentence_id "
+       "FROM ("
+       "SELECT lemma_subtlex_pos_id, "
+       "distractor_keys, "
+       "count(*) AS set_count, "
+       "min(example_sentence_id) AS first_example_sentence_id "
+       "FROM example_distractor_sets "
+       "GROUP BY lemma_subtlex_pos_id, distractor_keys"
+       ") sets "
+       "ORDER BY lemma_subtlex_pos_id, set_count DESC, first_example_sentence_id)"))
+
+(defn- truncate-normalized-distractor-tables! [conn]
+  (jdbc/execute!
+   conn
+   [(str "TRUNCATE TABLE "
+         (qtable "example_sentence_distractor_assignments")
+         ", "
+         (qtable "lemma_pos_distractors"))]))
+
+(defn- insert-replacement-distractors! [conn]
+  (jdbc/execute!
+   conn
+   [(str "WITH "
+         (staged-distractors-cte) ", "
+         (example-distractor-sets-cte) ", "
+         (default-distractor-sets-cte) ", "
+         "default_distractor_order AS ("
+         "SELECT d.lemma_subtlex_pos_id, "
+         "d.distractor_key, "
+         "d.source_order "
+         "FROM staged_distractors d "
+         "JOIN default_distractor_sets defaults "
+         "ON defaults.lemma_subtlex_pos_id = d.lemma_subtlex_pos_id "
+         "AND defaults.first_example_sentence_id = d.example_sentence_id"
+         "), "
+         "distinct_distractors AS ("
+         "SELECT lemma_subtlex_pos_id, "
+         "distractor_key, "
+         "(array_agg(distractor_translation "
+         "ORDER BY example_sentence_id, source_order))[1] AS distractor_translation, "
+         "min(source_order) AS first_source_order, "
+         "min(example_sentence_id) AS first_example_sentence_id "
+         "FROM staged_distractors "
+         "GROUP BY lemma_subtlex_pos_id, distractor_key"
+         "), "
+         "ranked_distractors AS ("
+         "SELECT distincts.lemma_subtlex_pos_id, "
+         "distincts.distractor_translation, "
+         "(default_order.distractor_key IS NOT NULL) AS is_default, "
+         "row_number() OVER ("
+         "PARTITION BY distincts.lemma_subtlex_pos_id "
+         "ORDER BY CASE WHEN default_order.distractor_key IS NULL THEN 1 ELSE 0 END, "
+         "coalesce(default_order.source_order, distincts.first_source_order), "
+         "distincts.first_example_sentence_id, "
+         "distincts.distractor_key"
+         ")::integer AS import_order "
+         "FROM distinct_distractors distincts "
+         "LEFT JOIN default_distractor_order default_order "
+         "ON default_order.lemma_subtlex_pos_id = distincts.lemma_subtlex_pos_id "
+         "AND default_order.distractor_key = distincts.distractor_key"
+         ") "
+         "INSERT INTO " (qtable "lemma_pos_distractors") " "
+         "(lemma_pos_distractor_id, lemma_subtlex_pos_id, "
+         "distractor_translation, is_default, import_order) "
+         "SELECT row_number() OVER ("
+         "ORDER BY lemma_subtlex_pos_id, import_order"
+         ")::integer, "
+         "lemma_subtlex_pos_id, "
+         "distractor_translation, "
+         "is_default, "
+         "import_order "
+         "FROM ranked_distractors")]))
+
+(defn- insert-replacement-distractor-assignments! [conn]
+  (jdbc/execute!
+   conn
+   [(str "WITH "
+         (staged-distractors-cte) ", "
+         (example-distractor-sets-cte) ", "
+         (default-distractor-sets-cte) " "
+         "INSERT INTO " (qtable "example_sentence_distractor_assignments") " "
+         "(example_sentence_id, lemma_pos_distractor_id) "
+         "SELECT staged.example_sentence_id, "
+         "distractors.lemma_pos_distractor_id "
+         "FROM staged_distractors staged "
+         "JOIN example_distractor_sets example_sets "
+         "ON example_sets.example_sentence_id = staged.example_sentence_id "
+         "AND example_sets.lemma_subtlex_pos_id = staged.lemma_subtlex_pos_id "
+         "JOIN default_distractor_sets defaults "
+         "ON defaults.lemma_subtlex_pos_id = staged.lemma_subtlex_pos_id "
+         "JOIN " (qtable "lemma_pos_distractors") " distractors "
+         "ON distractors.lemma_subtlex_pos_id = staged.lemma_subtlex_pos_id "
+         "AND lower(btrim(distractors.distractor_translation)) = staged.distractor_key "
+         "WHERE example_sets.distractor_keys <> defaults.distractor_keys "
+         "ORDER BY staged.example_sentence_id, staged.source_order")]))
+
 (defn- record-import! [conn manifest row-counts]
   (jdbc/execute-one!
    conn
@@ -688,6 +1003,22 @@
           {:manifest-sha256 (:manifest-sha256 manifest)
            :tables (count (:tables manifest))
            :row-counts row-counts})))))
+
+(defn replace-distractors! [database-url bundle-dir]
+  (let [manifest (validate-distractor-source-bundle! bundle-dir)
+        jdbc-url (database-url->jdbc-url database-url)]
+    (with-open [conn (jdbc/get-connection {:connection-uri jdbc-url})]
+      (jdbc/with-transaction [tx conn]
+        (copy-distractor-source-examples! tx manifest)
+        (verify-staged-examples-match! tx)
+        (truncate-normalized-distractor-tables! tx)
+        (insert-replacement-distractors! tx)
+        (insert-replacement-distractor-assignments! tx)
+        (verify-key-checks! tx)
+        {:manifest-sha256 (:manifest-sha256 manifest)
+         :example-count (:example-count manifest)
+         :distractor-count (table-row-count tx "lemma_pos_distractors")
+         :assignment-count (table-row-count tx "example_sentence_distractor_assignments")}))))
 
 (defn verify-bundle! [database-url bundle-dir]
   (let [manifest (validate-bundle! bundle-dir)
@@ -943,6 +1274,13 @@
                    (:tables result)
                    (:manifest-sha256 result))))
 
+(defn- print-distractor-result! [result]
+  (println (format "Replaced distractors; manifest %s; examples %s; distractors %s; assignments %s"
+                   (:manifest-sha256 result)
+                   (:example-count result)
+                   (:distractor-count result)
+                   (:assignment-count result))))
+
 (defn -main [& args]
   (try
     (case (first args)
@@ -970,7 +1308,14 @@
         (print-result! "Verified"
                        (verify-bundle! (database-url-env) bundle-dir)))
 
-      (fail "Usage: clojure -M:db migrate|rollback|import <bundle> [--replace]|verify <bundle>"
+      "replace-distractors"
+      (let [bundle-dir (second args)]
+        (when-not bundle-dir
+          (fail "replace-distractors requires a bundle directory." {}))
+        (print-distractor-result!
+         (replace-distractors! (database-url-env) bundle-dir)))
+
+      (fail "Usage: clojure -M:db migrate|rollback|import <bundle> [--replace]|verify <bundle>|replace-distractors <bundle>"
             {:args args}))
     (catch Throwable t
       (binding [*out* *err*]
