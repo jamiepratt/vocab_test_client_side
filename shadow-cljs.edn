@@ -3,9 +3,16 @@
  :nrepl {:port 7888
          :middleware [cider.piggieback/wrap-cljs-repl]}
  :builds
- {:dev
+  {:dev
   {:target :browser
    :output-dir "public/js"
+   :asset-path "/js"
+   :module-loader true
+   :modules
+   {:main {:init-fn jamiepratt.vocab-test-client-side.core/init}}}
+  :e2e
+  {:target :browser
+   :output-dir "target/e2e/public/js"
    :asset-path "/js"
    :module-loader true
    :modules

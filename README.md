@@ -85,6 +85,8 @@ Run fast semantic browser tests against the dev build:
 npm run test:e2e
 ```
 
+This builds an isolated dev E2E bundle in `target/e2e/public` and serves it at <http://localhost:8001/index.html>, so a long-running `npm run dev` on port `8000` is left alone.
+
 Run the same smoke flow visibly:
 
 ```sh

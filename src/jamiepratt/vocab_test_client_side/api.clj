@@ -10,6 +10,7 @@
 
 (def default-allowed-origins
   #{"http://localhost:8000"
+    "http://localhost:8001"
     "http://localhost:4173"
     "https://lexibench.com"
     "https://www.lexibench.com"

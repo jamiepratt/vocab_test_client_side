@@ -17,6 +17,7 @@ This file is the repo-level context for `grill-me-with-docs`. Treat it as the de
   - `:release` for optimized release smoke testing.
 - Keep `npm run dev` as the main local development command.
 - Serve the dev app at <http://localhost:8000/index.html>.
+- Serve dev E2E tests from an isolated static build at <http://localhost:8001/index.html>.
 - Run Shadow nREPL on port `7888`.
 - Use the REPL as a development accelerator, not as the test runner of record.
 - Use the REPL for quick evals, state inspection, state pokes, and debugging.
@@ -45,6 +46,7 @@ This file is the repo-level context for `grill-me-with-docs`. Treat it as the de
 - Use Chrome browser control as the microscope for current app behavior.
 - Inspect the same live browser state in Chrome after recompilation.
 - Run `npm run test:e2e` repeatedly during development.
+- Keep Playwright off the long-running `8000` dev server; dev E2E builds `target/e2e/public` and serves it on `8001`.
 - Use Playwright as the tripwire for repeatable browser regressions.
 - Add or update Playwright tests once the desired behavior is understood.
 
@@ -59,7 +61,7 @@ This file is the repo-level context for `grill-me-with-docs`. Treat it as the de
 - Preserved app state during hot reload is useful for fast iteration.
 - Preserved state is not proof that startup, reload, or release behavior works.
 - Playwright and release smoke tests are responsible for clean-load behavior.
-- Playwright should reuse the existing Shadow dev server when it is already running.
+- Playwright should not own or terminate the long-running Shadow dev server.
 
 ## Release Smoke Testing
 
@@ -68,6 +70,7 @@ This file is the repo-level context for `grill-me-with-docs`. Treat it as the de
 - The `:release` build writes to `target/release/public/js`.
 - Release smoke testing copies `public/index.html` to `target/release/public/index.html`.
 - Release smoke tests serve `target/release/public` on `localhost:4173`.
+- Dev E2E tests serve `target/e2e/public` on `localhost:8001`.
 - Dev and release tests share the same semantic smoke flow.
 
 ## Static Checks

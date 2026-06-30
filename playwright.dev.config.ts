@@ -9,7 +9,7 @@ export default defineConfig({
   reporter: "list",
   use: {
     ...devices["Desktop Chrome"],
-    baseURL: "http://localhost:8000",
+    baseURL: "http://localhost:8001",
     trace: "on-first-retry",
   },
   webServer: [
@@ -20,9 +20,9 @@ export default defineConfig({
       timeout: 120_000,
     },
     {
-      command: "npm run dev:frontend",
-      url: "http://localhost:8000/index.html",
-      reuseExistingServer: true,
+      command: "npm run e2e:frontend",
+      url: "http://localhost:8001/index.html",
+      reuseExistingServer: false,
       timeout: 120_000,
     },
   ],

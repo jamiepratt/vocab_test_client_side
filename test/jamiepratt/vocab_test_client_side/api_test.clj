@@ -71,6 +71,14 @@
     (testing "legacy dictionary questions are not exposed as the product route"
       (is (= {"error" "Not found"} body)))))
 
+(deftest e2e-dev-origin-is-allowed
+  (let [response (api/handler {:request-method :get
+                               :uri "/healthz"
+                               :headers {"origin" "http://localhost:8001"}})]
+    (is (= 200 (:status response)))
+    (is (= "http://localhost:8001"
+           (get-in response [:headers "Access-Control-Allow-Origin"])))))
+
 (deftest sentence-question-block-serves-default-distractors
   (let [handler (api/make-handler
                  {:sentence-question-rows
