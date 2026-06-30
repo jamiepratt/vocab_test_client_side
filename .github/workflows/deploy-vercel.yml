@@ -20,6 +20,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Setup Clojure
+        uses: DeLaGuardo/setup-clojure@13
+        with:
+          cli: latest
+
+      - name: Run DB migrations
+        run: clojure -M:db migrate
+        env:
+          DATABASE_URL: ${{ secrets.NEON_DIRECT_DATABASE_URL }}
+
       - name: Setup Fly
         uses: superfly/flyctl-actions/setup-flyctl@master
 
