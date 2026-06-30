@@ -294,6 +294,45 @@
     box-shadow: 0 8px 20px rgb(23 32 38 / 8%);
   }
 
+  @keyframes app-auto-scroll-control-flash {
+    0% {
+      border-color: var(--app-line);
+      background: var(--app-surface);
+      box-shadow: 0 8px 20px rgb(23 32 38 / 8%);
+      animation-timing-function: ease-out;
+    }
+
+    50% {
+      border-color: var(--app-accent);
+      background: color-mix(in srgb, var(--app-accent-soft) 74%, var(--app-surface));
+      box-shadow:
+        0 0 0 3px color-mix(in srgb, var(--app-accent) 22%, transparent),
+        0 12px 28px rgb(23 32 38 / 14%);
+      animation-timing-function: ease-in;
+    }
+
+    100% {
+      border-color: var(--app-line);
+      background: var(--app-surface);
+      box-shadow: 0 8px 20px rgb(23 32 38 / 8%);
+    }
+  }
+
+  .app-auto-scroll-control--flash {
+    border-color: var(--app-accent);
+    background: color-mix(in srgb, var(--app-accent-soft) 74%, var(--app-surface));
+    box-shadow:
+      0 0 0 3px color-mix(in srgb, var(--app-accent) 22%, transparent),
+      0 12px 28px rgb(23 32 38 / 14%);
+    animation: app-auto-scroll-control-flash var(--app-auto-scroll-flash-duration, 2000ms) both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .app-auto-scroll-control--flash {
+      animation: none;
+    }
+  }
+
   .app-auto-scroll-label {
     color: var(--app-muted);
     font-size: 0.75rem;

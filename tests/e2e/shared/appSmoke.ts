@@ -59,6 +59,48 @@ function activeQuestionCard(page: Page) {
   return questionCards(page).last();
 }
 
+function autoScrollControl(page: Page) {
+  return page.locator(".app-auto-scroll-control");
+}
+
+async function scrollY(page: Page) {
+  return page.evaluate(() => window.scrollY);
+}
+
+async function expectScrollNear(page: Page, expected: number) {
+  const current = await scrollY(page);
+  expect(Math.abs(current - expected)).toBeLessThanOrEqual(1);
+}
+
+async function watchScrollIntoView(page: Page) {
+  await page.evaluate(() => {
+    const win = window as typeof window & {
+      __autoScrollTargets?: string[];
+      __originalScrollIntoView?: Element["scrollIntoView"];
+    };
+
+    win.__autoScrollTargets = [];
+    if (!win.__originalScrollIntoView) {
+      win.__originalScrollIntoView = Element.prototype.scrollIntoView;
+      Element.prototype.scrollIntoView = function scrollIntoViewSpy(arg?: boolean | ScrollIntoViewOptions) {
+        win.__autoScrollTargets?.push(this.id);
+        return win.__originalScrollIntoView!.call(this, arg);
+      };
+    }
+  });
+}
+
+async function scrollIntoViewTargets(page: Page) {
+  return page.evaluate(() => {
+    const win = window as typeof window & { __autoScrollTargets?: string[] };
+    return win.__autoScrollTargets ?? [];
+  });
+}
+
+function autoScrollSelect(page: Page) {
+  return page.getByRole("combobox", { name: "Auto-scroll behavior" });
+}
+
 function questionCard(page: Page, item: number) {
   return page.locator(`#question-card-${item}`);
 }
@@ -270,6 +312,24 @@ async function expectLiveEstimateBelowQuestionCard(page: Page) {
   expect(liveEstimateBox!.y).toBeGreaterThanOrEqual(cardBox!.y + cardBox!.height);
   expect(Math.abs(liveEstimateBox!.width - cardBox!.width)).toBeLessThanOrEqual(1);
   expect(liveEstimateBox!.y - (cardBox!.y + cardBox!.height)).toBeGreaterThanOrEqual(16);
+}
+
+async function expectAutoScrollControlBelowCard(page: Page, item: number) {
+  await expect.poll(async () => page.evaluate((cardId) => {
+    const card = document.getElementById(cardId);
+    const control = document.querySelector(".app-auto-scroll-control");
+
+    return Boolean(card && control && (card.compareDocumentPosition(control) & Node.DOCUMENT_POSITION_FOLLOWING));
+  }, `question-card-${item}`)).toBe(true);
+}
+
+async function expectAutoScrollControlBeforeCard(page: Page, item: number) {
+  await expect.poll(async () => page.evaluate((cardId) => {
+    const card = document.getElementById(cardId);
+    const control = document.querySelector(".app-auto-scroll-control");
+
+    return Boolean(card && control && (control.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING));
+  }, `question-card-${item}`)).toBe(true);
 }
 
 async function expectSentenceQuestion(page: Page, question: {
@@ -848,14 +908,17 @@ export async function runAppSmoke(page: Page) {
     "Live estimate of how many dictionary forms of words you know",
   );
   await expect(page.getByLabel("Live estimate")).toContainText(pendingLiveEstimateText);
-  const autoScroll = page.getByRole("combobox", { name: "Auto-scroll behavior" });
+  const autoScroll = autoScrollSelect(page);
   await expect(autoScroll).toHaveValue("0");
   await expect(autoScroll.locator("option")).toHaveText([
+    "No auto-scroll",
     "New question immediately",
     "Review correct answer for 3 seconds",
     "Review correct answer for 5 seconds",
     "Review correct answer for 10 seconds",
   ]);
+  await autoScroll.selectOption("off");
+  await expect(autoScroll).toHaveValue("off");
   await autoScroll.selectOption("3000");
   await expect(autoScroll).toHaveValue("3000");
   await autoScroll.selectOption("0");
@@ -976,6 +1039,73 @@ export async function runAppSmoke(page: Page) {
   await expect(page.getByRole("heading", { level: 1, name: "Results" })).toHaveCount(0);
   await expect(questionCards(page)).toHaveCount(1);
   await expect(page.getByRole("region", { name: "Words to review (79)" })).toHaveCount(0);
+}
+
+export async function runAutoScrollControls(page: Page) {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await routeSentenceBlock(page);
+  await routeAnswerEvents(page);
+  await page.addInitScript(() => {
+    Math.random = () => 0;
+    localStorage.removeItem("vocab-theme");
+    localStorage.removeItem("vocab-design");
+  });
+
+  await page.goto("/index.html?autoScrollFlow=off#/");
+  await page.getByRole("button", { name: "Begin Test" }).click();
+
+  const autoScroll = autoScrollSelect(page);
+  await expect(autoScroll).toHaveValue("3000");
+  await expect(autoScroll.locator("option")).toHaveText([
+    "No auto-scroll",
+    "New question immediately",
+    "Review correct answer for 3 seconds",
+    "Review correct answer for 5 seconds",
+    "Review correct answer for 10 seconds",
+  ]);
+
+  await autoScroll.selectOption("off");
+  const scrollBeforeOffAnswer = await page.evaluate(() => window.scrollY);
+  await answerCurrentQuestion(page, "cat");
+  await expect(questionCards(page)).toHaveCount(2);
+  await page.waitForTimeout(250);
+  const scrollAfterOffAnswer = await page.evaluate(() => window.scrollY);
+  expect(Math.abs(scrollAfterOffAnswer - scrollBeforeOffAnswer)).toBeLessThanOrEqual(1);
+  await expectAutoScrollControlBelowCard(page, 2);
+  await expect(autoScrollControl(page)).not.toHaveClass(/app-auto-scroll-control--flash/);
+
+  await page.goto("/index.html?autoScrollFlow=delayed#/");
+  await page.getByRole("button", { name: "Begin Test" }).click();
+  await watchScrollIntoView(page);
+  await expect(autoScrollSelect(page)).toHaveValue("3000");
+  await answerCurrentQuestion(page, "cat");
+  const scrollBeforeDelayedAutoScroll = await scrollY(page);
+  await expect(questionCards(page)).toHaveCount(2);
+  await expectAutoScrollControlBelowCard(page, 1);
+  await expectAutoScrollControlBeforeCard(page, 2);
+  await expect(autoScrollControl(page)).toHaveClass(/app-auto-scroll-control--flash/, { timeout: 700 });
+  await expectScrollNear(page, scrollBeforeDelayedAutoScroll);
+  expect(await scrollIntoViewTargets(page)).toEqual([]);
+  await page.waitForTimeout(1750);
+  await expect(autoScrollControl(page)).toHaveClass(/app-auto-scroll-control--flash/);
+  await expectScrollNear(page, scrollBeforeDelayedAutoScroll);
+  expect(await scrollIntoViewTargets(page)).toEqual([]);
+  await expect.poll(async () => scrollIntoViewTargets(page), { timeout: 2500 }).toContain("question-card-2");
+  await expectAutoScrollControlBelowCard(page, 2);
+  await expect(autoScrollControl(page)).toHaveClass(/app-auto-scroll-control--flash/);
+  await expect(autoScrollControl(page)).not.toHaveClass(/app-auto-scroll-control--flash/, { timeout: 3500 });
+
+  await page.goto("/index.html?autoScrollFlow=cancel#/");
+  await page.getByRole("button", { name: "Begin Test" }).click();
+  await answerCurrentQuestion(page, "cat");
+  await expect(autoScrollControl(page)).toHaveClass(/app-auto-scroll-control--flash/, { timeout: 700 });
+  await expectAutoScrollControlBelowCard(page, 1);
+  await page.waitForTimeout(50);
+  await page.mouse.wheel(0, 80);
+  await expectAutoScrollControlBelowCard(page, 2);
+  await expect(autoScrollControl(page)).not.toHaveClass(/app-auto-scroll-control--flash/);
+  await page.waitForTimeout(3200);
+  await expect(autoScrollControl(page)).not.toHaveClass(/app-auto-scroll-control--flash/);
 }
 
 export async function runHighEstimateRegression(page: Page) {

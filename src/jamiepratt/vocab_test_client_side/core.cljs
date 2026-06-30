@@ -54,20 +54,51 @@
       (.randomUUID crypto)
       (fallback-anonymous-session-id))))
 
-(def default-auto-scroll-delay-ms 10000)
+(def default-auto-scroll-delay-ms 3000)
+
+(def auto-scroll-off-option-value "off")
 
 (def auto-scroll-options
-  [{:delay-ms 0
+  [{:delay-ms nil
+    :value auto-scroll-off-option-value
+    :label "No auto-scroll"}
+   {:delay-ms 0
+    :value "0"
     :label "New question immediately"}
    {:delay-ms 3000
+    :value "3000"
     :label "Review correct answer for 3 seconds"}
    {:delay-ms 5000
+    :value "5000"
     :label "Review correct answer for 5 seconds"}
    {:delay-ms 10000
+    :value "10000"
     :label "Review correct answer for 10 seconds"}])
 
 (def auto-scroll-delay-values
-  (set (map :delay-ms auto-scroll-options)))
+  (set (keep :delay-ms auto-scroll-options)))
+
+(defn auto-scroll-highlight-duration-ms [delay-ms]
+  (if (number? delay-ms)
+    (* 2 (max 0 delay-ms))
+    0))
+
+(def auto-scroll-smooth-fallback-ms 700)
+
+(defn parse-auto-scroll-delay-value [value]
+  (let [normalized (.toLowerCase (str value))]
+    (if (= auto-scroll-off-option-value normalized)
+      {:valid? true
+       :delay-ms nil}
+      (let [parsed (js/parseInt normalized 10)]
+        {:valid? (and (not (js/isNaN parsed))
+                      (contains? auto-scroll-delay-values parsed))
+         :delay-ms parsed}))))
+
+(defn auto-scroll-behavior-for-delay [delay-ms]
+  (if (= 0 delay-ms)
+    "auto"
+    "smooth"))
 
 (defn location-param [param-name]
   (let [search-params (js/URLSearchParams. (.-search js/location))
@@ -83,17 +114,14 @@
 (defn configured-auto-scroll-delay-ms []
   (if-let [value (or (location-param "scrollDelayMs")
                      (location-param "scroll-delay-ms"))]
-    (let [parsed (js/parseInt value 10)]
-      (if (and (not (js/isNaN parsed))
-               (contains? auto-scroll-delay-values parsed))
-        parsed
+    (let [{:keys [valid? delay-ms]} (parse-auto-scroll-delay-value value)]
+      (if valid?
+        delay-ms
         default-auto-scroll-delay-ms))
     default-auto-scroll-delay-ms))
 
 (defn configured-auto-scroll-behavior []
-  (if (zero? (configured-auto-scroll-delay-ms))
-    "auto"
-    "smooth"))
+  (auto-scroll-behavior-for-delay (configured-auto-scroll-delay-ms)))
 
 (defn initial-state []
   {:screen :start
@@ -110,6 +138,8 @@
    :question-choices []
    :scroll-delay-ms (configured-auto-scroll-delay-ms)
    :scroll-behavior (configured-auto-scroll-behavior)
+   :auto-scroll-ui-anchor :active
+   :auto-scroll-highlight? false
    :answers []
    :answer-locked? false
    :feedback nil
@@ -209,6 +239,9 @@
 (defonce auto-scroll-pending-target-id
   (atom nil))
 
+(defonce auto-scroll-highlight-timeout
+  (atom nil))
+
 (defonce measured-elements
   (atom {}))
 
@@ -234,11 +267,33 @@
   (doseq [[var-name element] @measured-elements]
     (set-layout-height-var! var-name element)))
 
+(defn clear-auto-scroll-highlight-timeout! []
+  (when-let [id @auto-scroll-highlight-timeout]
+    (js/clearTimeout id))
+  (reset! auto-scroll-highlight-timeout nil))
+
+(defn restore-auto-scroll-controls! []
+  (clear-auto-scroll-highlight-timeout!)
+  (swap! app-state assoc
+         :auto-scroll-ui-anchor :active
+         :auto-scroll-highlight? false))
+
+(defn flash-auto-scroll-controls! [duration-ms]
+  (clear-auto-scroll-highlight-timeout!)
+  (swap! app-state assoc :auto-scroll-highlight? true)
+  (reset! auto-scroll-highlight-timeout
+          (js/setTimeout
+           (fn []
+             (reset! auto-scroll-highlight-timeout nil)
+             (swap! app-state assoc :auto-scroll-highlight? false))
+           duration-ms)))
+
 (defn clear-auto-scroll! []
   (when-let [cleanup @auto-scroll-cleanup]
     (cleanup))
   (reset! auto-scroll-cleanup nil)
-  (reset! auto-scroll-pending-target-id nil))
+  (reset! auto-scroll-pending-target-id nil)
+  (restore-auto-scroll-controls!))
 
 (defn scroll-to-target! [target-id behavior]
   (when-let [element (.getElementById js/document target-id)]
@@ -255,43 +310,81 @@
    (schedule-auto-scroll! target-id delay-ms (:scroll-behavior @app-state)))
   ([target-id delay-ms behavior]
    (clear-auto-scroll!)
-   (let [delay-ms (or delay-ms default-auto-scroll-delay-ms)
-         behavior (or behavior "smooth")
-         cancelled? (atom false)
-         timeout-id (atom nil)
-         raf-id (atom nil)
-         cancel-events ["scroll" "wheel" "touchstart" "keydown"]]
-     (letfn [(remove-listeners! []
-               (doseq [event-name cancel-events]
-                 (.removeEventListener js/window event-name cancel! false)))
-             (finish! []
-               (when-let [id @timeout-id]
-                 (js/clearTimeout id))
-               (when-let [id @raf-id]
-                 (js/cancelAnimationFrame id))
-               (remove-listeners!)
-               (reset! auto-scroll-cleanup nil)
-               (reset! auto-scroll-pending-target-id nil))
-             (cancel! [_]
-               (reset! cancelled? true)
-               (finish!))
-             (scroll! []
-               (when-not @cancelled?
-                 (if (scroll-to-target! target-id behavior)
+   (when (and target-id (some? delay-ms))
+     (let [delay-ms delay-ms
+           behavior (or behavior (auto-scroll-behavior-for-delay delay-ms))
+           highlight-duration-ms (auto-scroll-highlight-duration-ms delay-ms)
+           cancelled? (atom false)
+           completed? (atom false)
+           scroll-timeout-id (atom nil)
+           raf-id (atom nil)
+           completion-timeout-id (atom nil)
+           scrollend-listener (atom nil)
+           pending-cancel-events ["scroll" "wheel" "touchstart" "keydown"]
+           running-cancel-events ["wheel" "touchstart" "keydown"]]
+       (letfn [(remove-listeners! [events listener]
+                 (doseq [event-name events]
+                   (.removeEventListener js/window event-name listener false)))
+               (finish! []
+                 (when-let [id @scroll-timeout-id]
+                   (js/clearTimeout id))
+                 (when-let [id @raf-id]
+                   (js/cancelAnimationFrame id))
+                 (when-let [id @completion-timeout-id]
+                   (js/clearTimeout id))
+                 (when-let [listener @scrollend-listener]
+                   (.removeEventListener js/window "scrollend" listener false))
+                 (remove-listeners! pending-cancel-events cancel!)
+                 (remove-listeners! running-cancel-events cancel!)
+                 (reset! auto-scroll-cleanup nil)
+                 (reset! auto-scroll-pending-target-id nil))
+               (complete! []
+                 (when-not @completed?
+                   (reset! completed? true)
                    (finish!)
-                   (reset! timeout-id (js/setTimeout scroll! 50)))))]
-       (reset! auto-scroll-cleanup #(do
-                                      (reset! cancelled? true)
-                                      (finish!)))
-       (reset! auto-scroll-pending-target-id target-id)
-       (reset! raf-id
-               (js/requestAnimationFrame
-                (fn []
-                  (when (pos? delay-ms)
-                    (doseq [event-name cancel-events]
-                      (.addEventListener js/window event-name cancel! false)))
-                  (reset! timeout-id
-                          (js/setTimeout scroll! delay-ms)))))))))
+                   (when-not @cancelled?
+                     (swap! app-state assoc :auto-scroll-ui-anchor :active))))
+               (wait-for-scroll-finish! []
+                 (if (= "smooth" behavior)
+                   (let [listener (fn [_] (complete!))]
+                     (reset! scrollend-listener listener)
+                     (.addEventListener js/window "scrollend" listener (clj->js {:once true}))
+                     (reset! completion-timeout-id
+                             (js/setTimeout complete! auto-scroll-smooth-fallback-ms)))
+                   (reset! completion-timeout-id
+                           (js/setTimeout complete! 0))))
+               (cancel! [_]
+                 (reset! cancelled? true)
+                 (finish!)
+                 (restore-auto-scroll-controls!))
+               (scroll! []
+                 (when-not @cancelled?
+                   (if (scroll-to-target! target-id behavior)
+                     (do
+                       (remove-listeners! pending-cancel-events cancel!)
+                       (doseq [event-name running-cancel-events]
+                         (.addEventListener js/window event-name cancel! false))
+                       (wait-for-scroll-finish!))
+                     (reset! scroll-timeout-id (js/setTimeout scroll! 50)))))
+               (flash! []
+                 (when-not @cancelled?
+                   (flash-auto-scroll-controls! highlight-duration-ms)))]
+         (swap! app-state assoc
+                :auto-scroll-ui-anchor :answered
+                :auto-scroll-highlight? false)
+         (reset! auto-scroll-cleanup #(do
+                                        (reset! cancelled? true)
+                                        (finish!)))
+         (reset! auto-scroll-pending-target-id target-id)
+         (flash!)
+         (reset! raf-id
+                 (js/requestAnimationFrame
+                  (fn []
+                    (when (pos? delay-ms)
+                      (doseq [event-name pending-cancel-events]
+                        (.addEventListener js/window event-name cancel! false)))
+                    (reset! scroll-timeout-id
+                            (js/setTimeout scroll! delay-ms))))))))))
 
 (def button-class
   "app-primary-button sm:w-auto")
@@ -765,28 +858,50 @@
     :else
     []))
 
-(defn update-auto-scroll-delay! [delay-ms]
-  (when (contains? auto-scroll-delay-values delay-ms)
-    (swap! app-state assoc :scroll-delay-ms delay-ms)
-    (when-let [target-id @auto-scroll-pending-target-id]
-      (schedule-auto-scroll! target-id delay-ms))))
+(defn update-auto-scroll-delay! [value]
+  (let [{:keys [valid? delay-ms]} (parse-auto-scroll-delay-value value)]
+    (when valid?
+      (let [behavior (auto-scroll-behavior-for-delay delay-ms)]
+        (swap! app-state assoc
+               :scroll-delay-ms delay-ms
+               :scroll-behavior behavior)
+        (if-let [target-id @auto-scroll-pending-target-id]
+          (schedule-auto-scroll! target-id delay-ms behavior)
+          (restore-auto-scroll-controls!))))))
 
-(defn auto-scroll-control [scroll-delay-ms]
-  (let [selected-delay-ms (if (contains? auto-scroll-delay-values scroll-delay-ms)
-                            scroll-delay-ms
-                            default-auto-scroll-delay-ms)]
-    [:label {:class "app-auto-scroll-control"
+(defn selected-auto-scroll-option-value [scroll-delay-ms]
+  (cond
+    (nil? scroll-delay-ms)
+    auto-scroll-off-option-value
+
+    (contains? auto-scroll-delay-values scroll-delay-ms)
+    (str scroll-delay-ms)
+
+    :else
+    (str default-auto-scroll-delay-ms)))
+
+(defn auto-scroll-control [scroll-delay-ms highlight?]
+  (let [selected-value (selected-auto-scroll-option-value scroll-delay-ms)]
+    [:label {:class (str "app-auto-scroll-control"
+                         (when highlight? " app-auto-scroll-control--flash"))
+             :style {"--app-auto-scroll-flash-duration"
+                     (str (auto-scroll-highlight-duration-ms scroll-delay-ms) "ms")}
              :for "auto-scroll-delay"}
      [:span {:class "app-auto-scroll-label"} "Auto-scroll"]
      [:select {:id "auto-scroll-delay"
                :class "app-auto-scroll-select"
                :aria-label "Auto-scroll behavior"
-               :value (str selected-delay-ms)
+               :value selected-value
                :on-change #(update-auto-scroll-delay!
-                            (js/parseInt (.-value (.-currentTarget %)) 10))}
-      (for [{:keys [delay-ms label]} auto-scroll-options]
-        ^{:key delay-ms}
-        [:option {:value (str delay-ms)} label])]]))
+                            (.-value (.-currentTarget %)))}
+      (for [{:keys [value label]} auto-scroll-options]
+        ^{:key value}
+        [:option {:value value} label])]]))
+
+(defn active-controls [{:keys [scroll-delay-ms results-data auto-scroll-highlight?]}]
+  [:div {:class "app-active-controls app-flow-target"}
+   [auto-scroll-control scroll-delay-ms auto-scroll-highlight?]
+   [live-estimate-panel results-data]])
 
 (defn block-scored-count [answers question]
   (count (filter #(= (:adaptive-block-id question)
@@ -871,36 +986,50 @@
                         (min (count session-questions) (inc (count answers))))]
     (take visible-count session-questions)))
 
+(defn show-active-controls? [{:keys [screen questions-loading? questions-error session-questions]}]
+  (and (= :quiz screen)
+       (seq session-questions)
+       (not questions-loading?)
+       (nil? questions-error)))
+
+(defn active-controls-anchor-index [{:keys [answers auto-scroll-ui-anchor]} visible-count]
+  (if (and (= :answered auto-scroll-ui-anchor)
+           (pos? (count answers)))
+    (dec (count answers))
+    (dec visible-count)))
+
 (declare results-screen)
 
-(defn quiz-screen [{:keys [screen scroll-delay-ms results-data
-                           questions-loading? questions-error] :as state}]
-  [:main {:class "app-page app-quiz-page"}
-   [quiz-status-card state]
-   [:div {:class "app-quiz-stack"}
-    (doall
-     (map-indexed
-      (fn [question-index question]
-        ^{:key (str (:adaptive-block-id question) "-" (:item-id question) "-" question-index)}
-        [question-card state question-index question])
-      (visible-session-questions state)))
-    (when (and (= :quiz screen)
-               (seq (:session-questions state))
-               (not questions-loading?)
-               (nil? questions-error))
-      [:div {:class "app-active-controls app-flow-target"}
-       [auto-scroll-control scroll-delay-ms]
-       [live-estimate-panel results-data]])
-    (when questions-loading?
-      [:section {:id "loading-card"
-                 :class "app-card app-flow-target grid gap-2 p-5 text-sm font-semibold app-muted"}
-       "Loading sentence questions..."])
-    (when questions-error
-      [:p {:role "alert"
-           :class "app-card app-feedback-error rounded-md p-3 text-sm font-semibold"}
-       questions-error])
-    (when (= :results screen)
-      [results-screen state])]])
+(defn quiz-screen [{:keys [screen questions-loading? questions-error] :as state}]
+  (let [visible-questions (vec (visible-session-questions state))
+        show-controls? (show-active-controls? state)
+        controls-anchor-index (active-controls-anchor-index state (count visible-questions))]
+    [:main {:class "app-page app-quiz-page"}
+     [quiz-status-card state]
+     [:div {:class "app-quiz-stack"}
+      (doall
+       (map-indexed
+        (fn [question-index question]
+          ^{:key (str (:adaptive-block-id question) "-" (:item-id question) "-" question-index)}
+          [:<>
+           [question-card state question-index question]
+           (when (and show-controls?
+                      (= question-index controls-anchor-index))
+             [active-controls state])])
+        visible-questions))
+      (when (and show-controls?
+                 (not (<= 0 controls-anchor-index (dec (count visible-questions)))))
+        [active-controls state])
+      (when questions-loading?
+        [:section {:id "loading-card"
+                   :class "app-card app-flow-target grid gap-2 p-5 text-sm font-semibold app-muted"}
+         "Loading sentence questions..."])
+      (when questions-error
+        [:p {:role "alert"
+             :class "app-card app-feedback-error rounded-md p-3 text-sm font-semibold"}
+         questions-error])
+      (when (= :results screen)
+        [results-screen state])]]))
 
 (defn posterior-stratum-status-label [status]
   (case status

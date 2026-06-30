@@ -1,6 +1,7 @@
 import { test } from "@playwright/test";
 import {
   runAnswerEventSubmissionFailure,
+  runAutoScrollControls,
   runApiQuestionLoading,
   runAppSmoke,
   runCurrentDocsTerminology,
@@ -10,6 +11,11 @@ import {
 test("renders and responds to user input", async ({ page }) => {
   test.setTimeout(60000);
   await runAppSmoke(page);
+});
+
+test("handles auto-scroll options and delayed control placement", async ({ page }) => {
+  test.setTimeout(40000);
+  await runAutoScrollControls(page);
 });
 
 test("keeps high estimate copy consistent with the displayed estimate", async ({ page }) => {
