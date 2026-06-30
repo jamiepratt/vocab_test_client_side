@@ -10,6 +10,8 @@
    :item-type (:item-type question)
    :word (:word question)
    :frequency-bucket (:frequency-bucket question)
+   :lemma-inventory-stratum (:lemma-inventory-stratum question)
+   :lemma-rank (:lemma-inventory-rank question)
    :selected (case result
                :correct (:correct question)
                :wrong "wrong answer"
@@ -23,6 +25,8 @@
            :adaptive-block-id block-id
            :item-type "sentence-context-lemma"
            :frequency-bucket :rank-1-250
+           :lemma-inventory-stratum 1
+           :lemma-rank (inc index)
            :result (if (< index correct-count) :correct :dk)})
         (range 80)))
 
@@ -32,6 +36,8 @@
            :adaptive-block-id block-id
            :item-type "sentence-context-lemma"
            :frequency-bucket :rank-1-250
+           :lemma-inventory-stratum 1
+           :lemma-inventory-rank (inc index)
            :word (str (name block-id) "-" index)
            :correct (str "meaning-" index)})
         (range 80)))
@@ -42,7 +48,7 @@
   ([stratum result opts]
    (merge {:adaptive-block-id :pre-a1
            :item-type "sentence-context-lemma"
-           :inventory-stratum stratum
+           :lemma-inventory-stratum stratum
            :lemma-rank (inc (* 1000 (dec stratum)))
            :choice-count 5
            :guess-rate 0.2
@@ -60,6 +66,93 @@
 
 (defn posterior-statuses [result]
   (into {} (map (juxt :id :status) (:posterior-strata result))))
+
+(deftest real-vocabulary-answers-require-lemma-inventory-stratum
+  (is (thrown-with-msg?
+       clojure.lang.ExceptionInfo
+       #"missing lemma-inventory-stratum"
+       (scoring/summarize-results
+        []
+        [{:adaptive-block-id :pre-a1
+          :item-type "sentence-context-lemma"
+          :lemma-rank 1
+          :result :correct}]))))
+
+(deftest real-vocabulary-answers-require-lemma-rank
+  (is (thrown-with-msg?
+       clojure.lang.ExceptionInfo
+       #"missing lemma-rank"
+       (scoring/summarize-results
+        []
+        [(dissoc (lemma-answer 1 :correct) :lemma-rank)]))))
+
+(deftest real-vocabulary-answers-reject-mismatched-lemma-stratum
+  (is (thrown-with-msg?
+       clojure.lang.ExceptionInfo
+       #"does not match lemma-rank"
+       (scoring/summarize-results
+        []
+        [(assoc (lemma-answer 1 :correct) :lemma-inventory-stratum 2)]))))
+
+(deftest real-vocabulary-answers-reject-legacy-stratum-fields
+  (is (thrown-with-msg?
+       clojure.lang.ExceptionInfo
+       #"missing lemma-inventory-stratum"
+       (scoring/summarize-results
+        []
+        [(dissoc (lemma-answer 1 :correct {:fixed-stratum 1})
+                 :lemma-inventory-stratum)])))
+  (is (thrown-with-msg?
+       clojure.lang.ExceptionInfo
+       #"missing lemma-inventory-stratum"
+       (scoring/summarize-results
+        []
+        [{:adaptive-block-id :pre-a1
+          :item-type "sentence-context-lemma"
+          :band :B1
+          :lemma-rank 1
+          :result :correct}]))))
+
+(deftest frequency-bucket-only-real-answers-are-rejected
+  (is (thrown-with-msg?
+       clojure.lang.ExceptionInfo
+       #"missing lemma-inventory-stratum"
+       (scoring/summarize-results
+        []
+        [{:adaptive-block-id :pre-a1
+          :item-type "sentence-context-lemma"
+          :frequency-bucket :rank-1-250
+          :result :correct}]))))
+
+(deftest summary-omits-frequency-bucket-stats
+  (let [result (scoring/summarize-results
+                []
+                [(lemma-answer 1 :correct)])]
+    (is (not (contains? result :frequency-bucket-stats)))))
+
+(deftest posterior-strata-include-result-ui-fields
+  (let [result (scoring/summarize-results
+                []
+                (scored-answers :b1 3 80 0 0))
+        rows (:posterior-strata result)
+        assumed-row (first rows)
+        observed-row (last rows)
+        observed-range (or (:likely-range observed-row) {})
+        observed-estimate (or (:estimate observed-row) -1)]
+    (is (= [1 2 3] (mapv :id rows)))
+    (is (= :assumed-known-lower (:status assumed-row)))
+    (is (= {:answered 80
+            :correct 80
+            :wrong 0
+            :dk 0}
+           (select-keys observed-row [:answered :correct :wrong :dk])))
+    (is (integer? (:estimate observed-row)))
+    (is (map? observed-range))
+    (is (<= 0
+            (:lower observed-range -1)
+            observed-estimate
+            (:upper observed-range -1)
+            (:width observed-row)))))
 
 (deftest latent-guessing-keeps-dont-know-sessions-low-guess
   (let [result (scoring/summarize-results
@@ -111,10 +204,10 @@
            (posterior-statuses result)))
     (is (> (:lemma-estimate result) 4500))))
 
-(deftest out-of-range-strata-are-capped-for-vocabulary-estimates
+(deftest top-stratum-vocabulary-estimates-are-capped-at-inventory-size
   (let [result (scoring/summarize-results
                 []
-                (scored-answers :c2-plus 12 80 0 0))]
+                (scored-answers :c2-plus 10 80 0 0))]
     (is (= [1 2 3 4 5 6 7 8 9 10]
            (mapv :id (:posterior-strata result))))
     (is (<= (:lemma-estimate result) data/lemma-inventory-size))))

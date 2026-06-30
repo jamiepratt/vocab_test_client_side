@@ -17,41 +17,6 @@
 (defn clamp [lower upper n]
   (min upper (max lower n)))
 
-(defn empty-frequency-bucket-stats []
-  (into {} (map (fn [bucket-id]
-                  [bucket-id {:answered 0
-                              :correct 0
-                              :wrong 0
-                              :dk 0
-                              :proportion 0
-                              :pct 0}])
-                data/ordered-frequency-bucket-ids)))
-
-(defn add-frequency-bucket-answer [stats {:keys [frequency-bucket band result]}]
-  (let [bucket-id (or frequency-bucket band)]
-    (if (contains? stats bucket-id)
-      (-> stats
-          (update-in [bucket-id :answered] inc)
-          (update-in [bucket-id result] inc))
-      stats)))
-
-;; Compatibility for old in-memory/prototype answers that only stored :band.
-(def legacy-display-band-strata
-  {:B1 1
-   :B2 1
-   :B3 1
-   :B4 2
-   :B5 3
-   :B6 4})
-
-(defn answer-stratum-id [{:keys [inventory-stratum fixed-stratum lemma-rank
-                                 lemma-inventory-rank band]}]
-  (or inventory-stratum
-      fixed-stratum
-      (data/lemma-inventory-stratum-id lemma-rank)
-      (data/lemma-inventory-stratum-id lemma-inventory-rank)
-      (legacy-display-band-strata band)))
-
 (def real-item-types
   #{nil
     "sentence-context-lemma"
@@ -82,14 +47,49 @@
           (/ (+ index 0.5) guessing-grid-size))
         (range guessing-grid-size)))
 
-(defn capped-stratum-id [stratum-id]
-  (when (and (number? stratum-id)
-             (pos? stratum-id))
-    (min (count data/lemma-inventory-strata)
-         (long stratum-id))))
+(def missing-field-token ::missing-field)
+
+(defn required-scoring-field [answer field]
+  (let [value (get answer field missing-field-token)]
+    (when (or (= missing-field-token value)
+              (nil? value))
+      (throw (ex-info (str "Real vocabulary answer is missing "
+                           (name field)
+                           ".")
+                      {:reason :missing-scoring-field
+                       :field field
+                       :answer answer})))
+    value))
+
+(defn positive-whole-number? [value]
+  (and (number? value)
+       (pos? value)
+       (== value (long value))))
+
+(defn required-positive-whole-number [answer field]
+  (let [value (required-scoring-field answer field)]
+    (when-not (positive-whole-number? value)
+      (throw (ex-info (str "Real vocabulary answer has invalid "
+                           (name field)
+                           ".")
+                      {:reason :invalid-scoring-field
+                       :field field
+                       :value value
+                       :answer answer})))
+    (long value)))
 
 (defn answer-scoring-stratum-id [answer]
-  (capped-stratum-id (answer-stratum-id answer)))
+  (let [stratum-id (required-positive-whole-number answer :lemma-inventory-stratum)
+        lemma-rank (required-positive-whole-number answer :lemma-rank)
+        expected-stratum-id (data/lemma-inventory-stratum-id lemma-rank)]
+    (when-not (= stratum-id expected-stratum-id)
+      (throw (ex-info "Real vocabulary answer lemma-inventory-stratum does not match lemma-rank."
+                      {:reason :lemma-stratum-rank-mismatch
+                       :lemma-inventory-stratum stratum-id
+                       :lemma-rank lemma-rank
+                       :expected-lemma-inventory-stratum expected-stratum-id
+                       :answer answer})))
+    stratum-id))
 
 (defn random-choice-rate [{:keys [guess-rate choice-count]}]
   (let [raw (or (when (number? guess-rate)
@@ -266,6 +266,28 @@
      :correct correct
      :correct-rate correct-rate}))
 
+(def empty-stratum-answer-counts
+  {:answered 0
+   :correct 0
+   :wrong 0
+   :dk 0})
+
+(def counted-result-keys
+  #{:correct :wrong :dk})
+
+(defn add-stratum-answer-count [counts {:keys [result] :as answer}]
+  (let [stratum-id (answer-scoring-stratum-id answer)]
+    (cond-> (update-in counts [stratum-id :answered] (fnil inc 0))
+      (contains? counted-result-keys result)
+      (update-in [stratum-id result] (fnil inc 0)))))
+
+(defn stratum-answer-counts [answers]
+  (reduce add-stratum-answer-count {} answers))
+
+(defn counts-for-stratum [counts stratum-id]
+  (merge empty-stratum-answer-counts
+         (get counts stratum-id)))
+
 (defn high-confidence-pass? [answers]
   (boolean
    (some (fn [[block-id block-answers]]
@@ -304,10 +326,12 @@
         assumed-ids (assumed-known-lower-stratum-ids answers observed-ids)
         assumed-set (set assumed-ids)
         reported-ids (reported-stratum-ids answers)
+        answer-counts (stratum-answer-counts answers)
         floor-result? (= :report-floor (:action adaptive-decision))
         stratum-summaries (mapv
                            (fn [stratum-id]
-                             (let [{:keys [width]} (data/lemma-inventory-strata-by-id stratum-id)
+                             (let [{:keys [start end width label]}
+                                   (data/lemma-inventory-strata-by-id stratum-id)
                                    posterior (if (contains? assumed-set stratum-id)
                                                {:mean 1
                                                 :lower 1
@@ -316,9 +340,22 @@
                                                (assoc (get-in latent-posterior
                                                               [:strata stratum-id])
                                                       :status :observed))]
-                               (assoc posterior
-                                      :id stratum-id
-                                      :width width)))
+                               (merge posterior
+                                      (counts-for-stratum answer-counts stratum-id)
+                                      (let [estimate (round-lemma-count
+                                                      (* width (:mean posterior)))
+                                            lower (round-lemma-count
+                                                   (* width (:lower posterior)))
+                                            upper (round-lemma-count
+                                                   (* width (:upper posterior)))]
+                                        {:id stratum-id
+                                         :label label
+                                         :rank-start start
+                                         :rank-end end
+                                         :width width
+                                         :estimate estimate
+                                         :likely-range {:lower lower
+                                                        :upper (max lower upper)}}))))
                            reported-ids)
         estimate (round-lemma-count
                   (reduce + (map #(* (:width %) (:mean %))
@@ -448,21 +485,6 @@
             :correct-rate correct-rate
             :accuracy-pct (round-value (* 100 correct-rate))))))
 
-(defn with-frequency-bucket-proportions [stats]
-  (into {}
-        (map (fn [[bucket-id {:keys [answered correct] :as stat}]]
-               (let [proportion (if (pos? answered)
-                                  (/ correct answered)
-                                  0)]
-                 [bucket-id (assoc stat
-                                   :proportion proportion
-                                   :pct (round-value (* 100 proportion)))]))
-             stats)))
-
-(defn frequency-bucket-stats-for [answers]
-  (with-frequency-bucket-proportions
-    (reduce add-frequency-bucket-answer (empty-frequency-bucket-stats) answers)))
-
 (defn summarize-results
   ([questions answers]
    (summarize-results questions answers nil))
@@ -473,7 +495,6 @@
          dk (count (filter #(= :dk (:result %)) evidence-answers))
          wrong (count (filter #(= :wrong (:result %)) evidence-answers))
          review-answers (filterv #(not= :correct (:result %)) evidence-answers)
-         frequency-bucket-stats (frequency-bucket-stats-for evidence-answers)
          posterior (with-estimate-level
                      (posterior-summary evidence-answers adaptive-decision))]
      (with-live-estimate
@@ -486,7 +507,6 @@
                :accuracy-pct (if (pos? total)
                                (round-value (* 100 (/ correct total)))
                                0)
-               :frequency-bucket-stats frequency-bucket-stats
                :review-answers review-answers
                :estimate-label (or (:estimate-label posterior)
                                    (:estimate-label adaptive-decision))
