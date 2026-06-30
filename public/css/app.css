@@ -448,11 +448,6 @@
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
-  .sm\:grid-cols-\[7rem_1fr_6rem\] {
-    @media (width >= 40rem) {
-      grid-template-columns: 7rem 1fr 6rem;
-    }
-  }
   .sm\:items-center {
     @media (width >= 40rem) {
       align-items: center;

@@ -891,18 +891,55 @@
     (when (= :results screen)
       [results-screen state])]])
 
-(defn frequency-bucket-result-row [results-data bucket-id]
-  (let [{:keys [answered correct pct]}
-        (get-in results-data [:frequency-bucket-stats bucket-id])]
-    [:li {:class "grid min-w-0 gap-2 rounded-md border app-border p-3 text-sm sm:grid-cols-[7rem_1fr_6rem] sm:items-center"}
-     [:span {:class (str "font-bold " (frequency-bucket-style-class bucket-id :text))}
-      (data/frequency-bucket-labels bucket-id)]
-     [:div {:class "h-2 overflow-hidden rounded-full app-subtle-bg"
-            :aria-hidden true}
-      [:div {:class (str "h-full rounded-full " (frequency-bucket-style-class bucket-id :bar))
-             :style {:width (str pct "%")}}]]
-     [:span {:class "font-semibold app-muted"}
-      (str correct "/" answered " (" pct "%)")]]))
+(defn posterior-stratum-status-label [status]
+  (case status
+    :assumed-known-lower "assumed known from higher-rank pass"
+    :observed "observed"
+    (name status)))
+
+(defn posterior-stratum-count-label [{:keys [answered correct status]}]
+  (if (= :assumed-known-lower status)
+    "not directly tested"
+    (str correct "/" answered)))
+
+(defn posterior-stratum-rank-label [{:keys [rank-start rank-end]}]
+  (str "Lemma ranks "
+       (scoring/format-count rank-start)
+       "-"
+       (scoring/format-count rank-end)))
+
+(defn posterior-stratum-estimate-label [{:keys [estimate likely-range]}]
+  (str "est. "
+       (scoring/format-count estimate)
+       " (range "
+       (scoring/format-range likely-range)
+       ")"))
+
+(defn posterior-stratum-result-row [{:keys [status] :as row}]
+  [:li {:class "flex min-w-0 flex-wrap items-center gap-2 rounded-md border app-border p-3 text-sm font-semibold"}
+   [:span {:class "font-bold app-ink"}
+    (posterior-stratum-rank-label row)]
+   [:span {:class "app-muted"} " | "]
+   [:span {:class "app-muted"}
+    (posterior-stratum-status-label status)]
+   [:span {:class "app-muted"} " | "]
+   [:span {:class "app-ink-soft"}
+    (posterior-stratum-count-label row)]
+   [:span {:class "app-muted"} " | "]
+   [:span {:class "app-accent-text"}
+    (posterior-stratum-estimate-label row)]])
+
+(defn lemma-rank-results-section [posterior-strata]
+  (when (seq posterior-strata)
+    [:section {:aria-labelledby "lemma-rank-results-heading"
+               :class "grid gap-3"}
+     [:h2 {:id "lemma-rank-results-heading"
+           :class "text-lg font-bold app-ink"}
+      "Vocabulary estimate by lemma rank"]
+     [:ul {:class "grid gap-2"}
+      (for [{:keys [id] :as row} posterior-strata]
+        ^{:key id}
+        [posterior-stratum-result-row row])]]))
 
 (defn review-answer-row [{:keys [frequency-bucket word correct]}]
   [:li {:class "grid min-w-0 gap-1 rounded-md border app-border p-3 text-sm sm:grid-cols-3 sm:items-center"}
@@ -941,15 +978,7 @@
     [:p (str "Answered: " (:answered results-data))]
     [:p (str "Wrong: " (:wrong results-data))]
     [:p (str "Don't know: " (:dk results-data))]]
-   [:section {:aria-labelledby "frequency-bucket-results-heading"
-              :class "grid gap-3"}
-    [:h2 {:id "frequency-bucket-results-heading"
-          :class "text-lg font-bold app-ink"}
-     "Accuracy by frequency bucket"]
-    [:ul {:class "grid gap-2"}
-     (for [bucket-id data/ordered-frequency-bucket-ids]
-       ^{:key bucket-id}
-       [frequency-bucket-result-row results-data bucket-id])]]
+   [lemma-rank-results-section (:posterior-strata results-data)]
    [review-section (:review-answers results-data)]
    [:section {:aria-labelledby "estimate-heading"
               :class "grid gap-4 border-t app-border pt-6"}

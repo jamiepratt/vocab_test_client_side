@@ -24,10 +24,6 @@ async function expectComfortableButtons(page: Page) {
   }
 }
 
-async function textColor(locator: Locator) {
-  return locator.evaluate((element) => getComputedStyle(element).color);
-}
-
 async function cssValue(locator: Locator, property: string) {
   return locator.evaluate((element, propertyName) => getComputedStyle(element).getPropertyValue(propertyName), property);
 }
@@ -70,6 +66,10 @@ function questionCard(page: Page, item: number) {
 async function answerCurrentQuestion(page: Page, answer: string) {
   await activeQuestionCard(page).getByRole("button", { name: answer, exact: true }).click();
   await expect(page.getByRole("button", { name: "Next" })).toHaveCount(0);
+}
+
+async function answerCurrentQuestionFast(page: Page, answer: string) {
+  await activeQuestionCard(page).getByRole("button", { name: answer, exact: true }).click();
 }
 
 type SentenceItem = {
@@ -126,12 +126,18 @@ function sentenceItem(index: number, overrides: {
   target?: string;
   correct?: string;
   distractors?: string[];
+  lemmaRank?: number;
+  lemmaInventoryStratum?: number;
+  surfaceDifficultyRank?: number;
 } = {}): SentenceItem {
   const starter = starterItems[index];
   const target = overrides.target ?? starter?.target ?? `słowo${index + 1}`;
   const sentence = overrides.sentence ?? starter?.sentence ?? `To jest ${target} w krótkim zdaniu.`;
   const translation = overrides.translation ?? starter?.translation ?? `This is ${target} in a short sentence.`;
   const correct = overrides.correct ?? starter?.correct ?? `meaning-${index + 1}`;
+  const lemmaRank = overrides.lemmaRank ?? index + 1;
+  const surfaceDifficultyRank = overrides.surfaceDifficultyRank ?? lemmaRank;
+  const lemmaInventoryStratum = overrides.lemmaInventoryStratum ?? Math.floor((lemmaRank - 1) / 1000) + 1;
   const distractors = overrides.distractors ?? starter?.distractors ?? [
     `wrong-a-${index + 1}`,
     `wrong-b-${index + 1}`,
@@ -148,9 +154,9 @@ function sentenceItem(index: number, overrides: {
     "highlight-span": targetSpan(sentence, target),
     "lemma-id": index + 1,
     "lemma-pos-id": 1000 + index,
-    "lemma-inventory-rank": index + 1,
-    "surface-difficulty-rank": index + 1,
-    "lemma-inventory-stratum": Math.floor(index / 1000) + 1,
+    "lemma-inventory-rank": lemmaRank,
+    "surface-difficulty-rank": surfaceDifficultyRank,
+    "lemma-inventory-stratum": lemmaInventoryStratum,
     "correct-translation": correct,
     distractors,
     "item-type": "sentence-context-lemma",
@@ -163,9 +169,11 @@ function sentenceBlockFixture(overrides: {
   block?: number;
   rankStart?: number;
   rankEnd?: number;
+  lemmaRankStart?: number;
 } = {}) {
   const block = overrides.block ?? 0;
   const offset = block * 80;
+  const lemmaRankStart = overrides.lemmaRankStart ?? offset + 1;
 
   return {
     level: "pre-a1",
@@ -177,6 +185,8 @@ function sentenceBlockFixture(overrides: {
     "surface-rank-start": overrides.rankStart ?? 1,
     "surface-rank-end": overrides.rankEnd ?? 80,
     items: Array.from({ length: 80 }, (_, index) => {
+      const lemmaRank = lemmaRankStart + index;
+
       if (block === 0 && index === 79) {
         return sentenceItem(index, {
           sentence: "Niezłomny duch pomaga jej dalej pracować.",
@@ -184,10 +194,15 @@ function sentenceBlockFixture(overrides: {
           target: "Niezłomny",
           correct: "unyielding / steadfast / indomitable",
           distractors: ["fragile / weak", "flexible", "hesitant", "temporary"],
+          lemmaRank,
+          surfaceDifficultyRank: lemmaRank,
         });
       }
 
-      return sentenceItem(index + offset);
+      return sentenceItem(index + offset, {
+        lemmaRank,
+        surfaceDifficultyRank: lemmaRank,
+      });
     }),
     "invalid-items": [],
   };
@@ -318,32 +333,29 @@ async function expectWrongAnswerStrongerThanDontKnow(wrongButton: Locator, dkBut
   expect(redDominance(wrongBorder)).toBeGreaterThan(redDominance(dkBorder));
 }
 
-async function expectFrequencyBucketBreakdown(page: Page) {
-  const breakdown = page.getByRole("region", { name: "Accuracy by frequency bucket" });
-  const expectedBuckets = [
-    ["1-250", "1/80 (1%)"],
-    ["251-500", "0/0 (0%)"],
-    ["501-1K", "0/0 (0%)"],
-    ["1,001-2K", "0/0 (0%)"],
-    ["2,001-3.5K", "0/0 (0%)"],
-    ["3,501+", "0/0 (0%)"],
-  ];
+async function expectObservedLemmaRankBreakdown(page: Page) {
+  const breakdown = page.getByRole("region", { name: "Vocabulary estimate by lemma rank" });
+  const row = breakdown.getByRole("listitem").filter({ hasText: "Lemma ranks 1-1,000" });
 
+  await expect(page.getByRole("region", { name: "Accuracy by frequency bucket" })).toHaveCount(0);
   await expect(breakdown).toBeVisible();
+  await expect(breakdown.getByRole("listitem")).toHaveCount(1);
+  await expect(row).toContainText(/Lemma ranks 1-1,000\s*\|\s*observed\s*\|\s*1\/80\s*\|\s*est\. [0-9,]+ \(range [0-9,]+-[0-9,]+\)/);
+}
 
-  for (const [bucket, score] of expectedBuckets) {
-    const row = breakdown.getByRole("listitem").filter({ hasText: bucket });
-    await expect(row).toContainText(score);
-  }
+async function expectAssumedKnownLemmaRankBreakdown(page: Page) {
+  const breakdown = page.getByRole("region", { name: "Vocabulary estimate by lemma rank" });
+  const assumedRow = breakdown.getByRole("listitem").filter({ hasText: "Lemma ranks 1-1,000" });
+  const observedRow = breakdown.getByRole("listitem").filter({ hasText: "Lemma ranks 8,001-9,000" });
 
-  const bucketColors = await Promise.all(
-    expectedBuckets.map(([bucket]) => {
-      const label = breakdown.getByRole("listitem").filter({ hasText: bucket }).locator("span").first();
-      return textColor(label);
-    }),
+  await expect(page.getByRole("region", { name: "Accuracy by frequency bucket" })).toHaveCount(0);
+  await expect(breakdown).toBeVisible();
+  await expect(assumedRow).toContainText(
+    /Lemma ranks 1-1,000\s*\|\s*assumed known from higher-rank pass\s*\|\s*not directly tested\s*\|\s*est\. 1,000 \(range 1,000-1,000\)/,
   );
-
-  expect(new Set(bucketColors).size).toBe(expectedBuckets.length);
+  await expect(observedRow).toContainText(
+    /Lemma ranks 8,001-9,000\s*\|\s*observed\s*\|\s*80\/80\s*\|\s*est\. [0-9,]+ \(range [0-9,]+-[0-9,]+\)/,
+  );
 }
 
 async function expectReviewList(page: Page) {
@@ -782,7 +794,7 @@ export async function runAppSmoke(page: Page) {
   await expect(page.getByText("Estimated passive vocabulary", { exact: true })).toHaveCount(0);
   await expect(page.getByText("within +/-150 words", { exact: false })).toHaveCount(0);
   await expect(page.getByText("This test scores recognition of Polish lemmas in sentence context.", { exact: false })).toBeVisible();
-  await expectFrequencyBucketBreakdown(page);
+  await expectObservedLemmaRankBreakdown(page);
   await expectReviewList(page);
   await expectNoHorizontalOverflow(page);
 
@@ -808,15 +820,19 @@ export async function runAppSmoke(page: Page) {
 }
 
 export async function runHighEstimateRegression(page: Page) {
-  const block = sentenceBlockFixture();
-  const harderBlock = sentenceBlockFixture({ block: 1, rankStart: 81, rankEnd: 160 });
+  const block = sentenceBlockFixture({ rankStart: 8001, rankEnd: 8080, lemmaRankStart: 8001 });
+  const harderBlock = sentenceBlockFixture({ block: 1, rankStart: 9001, rankEnd: 9080, lemmaRankStart: 9001 });
   harderBlock.items[0] = sentenceItem(80, {
     sentence: "Trudniejsze słowo pojawia się dalej.",
     target: "Trudniejsze",
     correct: "more difficult",
     distractors: ["easier", "later", "clean", "bright"],
+    lemmaRank: 9001,
+    surfaceDifficultyRank: 9001,
   });
+  harderBlock.items = [harderBlock.items[0]];
   const correctAnswers = block.items.map((item) => item["correct-translation"]);
+  const harderCorrectAnswers = harderBlock.items.map((item) => item["correct-translation"]);
   const requestedBlocks: string[] = [];
 
   await page.setViewportSize({ width: 390, height: 844 });
@@ -836,26 +852,40 @@ export async function runHighEstimateRegression(page: Page) {
     localStorage.removeItem("vocab-design");
   });
   await page.goto(instantScrollUrl);
+  await page.getByRole("radio", { name: "C2", exact: true }).click();
   await page.getByRole("button", { name: "Begin Test" }).click();
 
   for (let index = 0; index < correctAnswers.length; index++) {
-    await answerCurrentQuestion(page, correctAnswers[index]);
+    await answerCurrentQuestionFast(page, correctAnswers[index]);
     if (index < correctAnswers.length - 1) {
       await expect(questionCard(page, index + 2)).toBeVisible();
     }
   }
 
   await expect(page.getByRole("status")).toContainText("first block was too easy");
-  await expectSentenceQuestion(page, {
-    scored: 0,
-    item: 1,
-    range: "81-160",
-    sentence: "Trudniejsze słowo pojawia się dalej.",
-    target: "Trudniejsze",
-    choices: ["easier", "later", "clean", "bright", "more difficult"],
-  });
+  await expect(page.getByText("0 / 1 scored", { exact: true })).toBeVisible();
+  await expect(page.getByText("Item 1 of 1", { exact: true })).toBeVisible();
+  await expect(page.getByText("9,001-9,080", { exact: true })).toBeVisible();
+  await expect(activeQuestionCard(page).getByText("Trudniejsze słowo pojawia się dalej.")).toBeVisible();
+  await expect(activeQuestionCard(page).getByRole("term")).toHaveText("Trudniejsze");
+  await expect(activeQuestionCard(page).getByRole("group", { name: "Answer choices" }).getByRole("button")).toHaveText([
+    "easier",
+    "later",
+    "clean",
+    "bright",
+    "more difficult",
+  ]);
+  await expect(dontKnowButton(activeQuestionCard(page))).toBeVisible();
   expect(requestedBlocks).toContain("0");
   expect(requestedBlocks).toContain("1");
+
+  for (const answer of harderCorrectAnswers) {
+    await answerCurrentQuestionFast(page, answer);
+  }
+
+  await expect(page.getByRole("heading", { level: 1, name: "Results" })).toBeVisible();
+  await expect(page.getByText("Estimated recognized Polish lemmas", { exact: true })).toBeVisible();
+  await expectAssumedKnownLemmaRankBreakdown(page);
   await expectNoHorizontalOverflow(page);
 }
 
