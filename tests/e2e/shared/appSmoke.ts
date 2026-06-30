@@ -83,8 +83,7 @@ type SentenceItem = {
   "lemma-pos-id": number;
   "lemma-inventory-rank": number;
   "surface-difficulty-rank": number;
-  "inventory-stratum": number;
-  "fixed-stratum": number;
+  "lemma-inventory-stratum": number;
   "correct-translation": string;
   distractors: string[];
   "item-type": string;
@@ -151,8 +150,7 @@ function sentenceItem(index: number, overrides: {
     "lemma-pos-id": 1000 + index,
     "lemma-inventory-rank": index + 1,
     "surface-difficulty-rank": index + 1,
-    "inventory-stratum": Math.floor(index / 1000) + 1,
-    "fixed-stratum": Math.floor(index / 1000) + 1,
+    "lemma-inventory-stratum": Math.floor(index / 1000) + 1,
     "correct-translation": correct,
     distractors,
     "item-type": "sentence-context-lemma",
@@ -934,7 +932,9 @@ export async function runAnswerEventSubmissionFailure(page: Page) {
   expect(event["target-lemma-id"]).toBe(1);
   expect(event["target-surface-form-id"]).toBe(2000);
   expect(event["candidate-rank"]).toBe(1);
-  expect(event["inventory-stratum"]).toBe(1);
+  expect(event["lemma-inventory-stratum"]).toBe(1);
+  expect(event).not.toHaveProperty("inventory-stratum");
+  expect(event).not.toHaveProperty("fixed-stratum");
   expect(event["lemma-rank"]).toBe(1);
   expect(event["surface-difficulty-rank"]).toBe(1);
   expect(event["item-type"]).toBe("sentence-context-lemma");
