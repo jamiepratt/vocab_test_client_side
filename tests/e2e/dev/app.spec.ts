@@ -6,6 +6,7 @@ import {
   runAppSmoke,
   runCurrentDocsTerminology,
   runHighEstimateRegression,
+  runPreA1QuestionPreload,
 } from "../shared/appSmoke";
 
 test("renders and responds to user input", async ({ page }) => {
@@ -28,6 +29,10 @@ test("publishes current docs with lemma-inventory result terminology", async ({ 
 
 test("loads questions from the configured API", async ({ page }) => {
   await runApiQuestionLoading(page);
+});
+
+test("preloads pre-A1 questions on page load", async ({ page }) => {
+  await runPreA1QuestionPreload(page);
 });
 
 test("continues when answer-event submission fails", async ({ page }) => {

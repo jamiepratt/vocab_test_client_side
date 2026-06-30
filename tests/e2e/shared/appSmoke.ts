@@ -1209,6 +1209,51 @@ export async function runApiQuestionLoading(page: Page) {
   expect(requestedUrl).toContain("level=a1");
 }
 
+export async function runPreA1QuestionPreload(page: Page) {
+  const requestedUrls: string[] = [];
+  const block = sentenceBlockFixture();
+  block.items[0] = sentenceItem(0, {
+    sentence: "To zdanie było gotowe przed kliknięciem.",
+    target: "gotowe",
+    correct: "ready",
+    distractors: ["slow", "empty", "late", "wrong"],
+  });
+
+  await page.route(/\/api\/sentence-question-blocks(\?.*)?$/, async (route) => {
+    requestedUrls.push(route.request().url());
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(block),
+    });
+  });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => {
+    Math.random = () => 0;
+    localStorage.removeItem("vocab-theme");
+    localStorage.removeItem("vocab-design");
+  });
+  await page.goto(instantScrollUrl);
+
+  await expect.poll(() => requestedUrls.length).toBe(1);
+  expect(requestedUrls[0]).toContain("/api/sentence-question-blocks");
+  expect(requestedUrls[0]).toContain("level=absolute-beginner");
+  expect(requestedUrls[0]).toContain("block=0");
+  await expect(page.getByRole("button", { name: "Loading sentence questions..." })).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Begin Test" }).click();
+
+  await expectSentenceQuestion(page, {
+    scored: 0,
+    item: 1,
+    sentence: "To zdanie było gotowe przed kliknięciem.",
+    target: "gotowe",
+    choices: ["slow", "empty", "late", "wrong", "ready"],
+  });
+  await expect(page.getByRole("button", { name: "Loading sentence questions..." })).toHaveCount(0);
+  expect(requestedUrls).toHaveLength(1);
+}
+
 export async function runAnswerEventSubmissionFailure(page: Page) {
   const answerEvents: unknown[] = [];
   let sawWarning = false;

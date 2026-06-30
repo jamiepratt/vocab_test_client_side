@@ -152,6 +152,9 @@
 (defonce app-state
   (r/atom (initial-state)))
 
+(defonce sentence-question-block-loads
+  (atom {}))
+
 (def primary-routes
   [{:id :test
     :label "Test"
@@ -432,6 +435,44 @@
          "&block="
          block)))
 
+(defn cached-sentence-block [adaptive-block-id]
+  (let [cache-entry (get @sentence-question-block-loads adaptive-block-id)]
+    (when (= :ready (:status cache-entry))
+      (:block cache-entry))))
+
+(defn sentence-block-load-promise! [adaptive-block-id]
+  (let [cache-entry (get @sentence-question-block-loads adaptive-block-id)]
+    (case (:status cache-entry)
+      :ready (.resolve js/Promise (:block cache-entry))
+      :pending (:promise cache-entry)
+      (let [adaptive-block (data/adaptive-block adaptive-block-id)
+            promise (-> (js/fetch (sentence-block-url adaptive-block))
+                        (.then (fn [response]
+                                 (if (.-ok response)
+                                   (.json response)
+                                   (throw (js/Error. "Could not load sentence questions")))))
+                        (.then (fn [body]
+                                 (let [block (js->clj body :keywordize-keys true)]
+                                   (swap! sentence-question-block-loads
+                                          assoc adaptive-block-id
+                                          {:status :ready
+                                           :block block})
+                                   block)))
+                        (.catch (fn [error]
+                                  (swap! sentence-question-block-loads dissoc adaptive-block-id)
+                                  (throw error))))]
+        (swap! sentence-question-block-loads assoc adaptive-block-id
+               {:status :pending
+                :promise promise})
+        promise))))
+
+(defn preload-question-block! [adaptive-block-id]
+  (-> (sentence-block-load-promise! adaptive-block-id)
+      (.catch (fn [_] nil))))
+
+(defn preload-default-starting-block! []
+  (preload-question-block! (:id (data/starting-block :absolute-beginner))))
+
 (defn answer-event-url []
   (str (api-base-url) "/api/answer-events"))
 
@@ -502,9 +543,45 @@
 (defn choice-options [question]
   (vec (shuffle (answer-options question))))
 
+(defn receive-question-block! [adaptive-block-id adaptive-block selected-level reset-session? scroll-after-load? block]
+  (let [question-block (assoc block
+                              :adaptive-block-id adaptive-block-id
+                              :adaptive-block adaptive-block)
+        questions (mapv (partial normalize-sentence-item adaptive-block-id)
+                        (range)
+                        (:items block))]
+    (if (seq questions)
+      (do
+        (swap! app-state
+               (fn [state]
+                 (assoc state
+                        :screen :quiz
+                        :selected-level selected-level
+                        :question-block question-block
+                        :adaptive-block adaptive-block
+                        :questions questions
+                        :session-questions (into (:session-questions state) questions)
+                        :questions-loading? false
+                        :questions-error nil
+                        :current-question-index 0
+                        :question-choices (mapv choice-options questions)
+                        :answer-locked? false
+                        :feedback nil
+                        :item-started-at-ms (now-ms))))
+        (when scroll-after-load?
+          (schedule-auto-scroll!
+           (question-card-id (count (:answers @app-state)))
+           (if reset-session?
+             0
+             (:scroll-delay-ms @app-state)))))
+      (swap! app-state assoc
+             :questions-loading? false
+             :questions-error "Could not load sentence questions."))))
+
 (defn load-question-block! [adaptive-block-id continuation-message reset-session? & [scroll-after-load?]]
   (let [selected-level (:selected-level @app-state)
-        adaptive-block (data/adaptive-block adaptive-block-id)]
+        adaptive-block (data/adaptive-block adaptive-block-id)
+        cached-block (cached-sentence-block adaptive-block-id)]
     (when reset-session?
       (clear-auto-scroll!))
     (swap! app-state
@@ -512,53 +589,18 @@
              (assoc (if reset-session?
                       (assoc (initial-state) :selected-level selected-level)
                       state)
-                    :questions-loading? true
+                    :questions-loading? (not (some? cached-block))
                     :questions-error nil
                     :continuation-message continuation-message)))
-    (-> (js/fetch (sentence-block-url adaptive-block))
-        (.then (fn [response]
-                 (if (.-ok response)
-                   (.json response)
-                   (throw (js/Error. "Could not load sentence questions")))))
-        (.then (fn [body]
-                 (let [block (js->clj body :keywordize-keys true)
-                       question-block (assoc block
-                                             :adaptive-block-id adaptive-block-id
-                                             :adaptive-block adaptive-block)
-                       questions (mapv (partial normalize-sentence-item adaptive-block-id)
-                                       (range)
-                                       (:items block))]
-                   (if (seq questions)
-                     (do
-                       (swap! app-state
-                              (fn [state]
-                                (assoc state
-                                       :screen :quiz
-                                       :selected-level selected-level
-                                       :question-block question-block
-                                       :adaptive-block adaptive-block
-                                       :questions questions
-                                       :session-questions (into (:session-questions state) questions)
-                                       :questions-loading? false
-                                       :questions-error nil
-                                       :current-question-index 0
-                                       :question-choices (mapv choice-options questions)
-                                       :answer-locked? false
-                                       :feedback nil
-                                       :item-started-at-ms (now-ms))))
-                       (when scroll-after-load?
-                         (schedule-auto-scroll!
-                          (question-card-id (count (:answers @app-state)))
-                          (if reset-session?
-                            0
-                            (:scroll-delay-ms @app-state)))))
-                     (swap! app-state assoc
-                            :questions-loading? false
-                            :questions-error "Could not load sentence questions.")))))
-        (.catch (fn [_]
-                  (swap! app-state assoc
-                         :questions-loading? false
-                         :questions-error "Could not load sentence questions."))))))
+    (if (some? cached-block)
+      (receive-question-block! adaptive-block-id adaptive-block selected-level reset-session? scroll-after-load? cached-block)
+      (-> (sentence-block-load-promise! adaptive-block-id)
+          (.then (fn [block]
+                   (receive-question-block! adaptive-block-id adaptive-block selected-level reset-session? scroll-after-load? block)))
+          (.catch (fn [_]
+                    (swap! app-state assoc
+                           :questions-loading? false
+                           :questions-error "Could not load sentence questions.")))))))
 
 (defn begin-test []
   (clear-auto-scroll!)
@@ -1361,6 +1403,7 @@
       [routed-screen route state]]]))
 
 (defn ^:dev/after-load init []
+  (preload-default-starting-block!)
   (when-not @route-listener-registered?
     (reset! route-listener-registered? true)
     (.addEventListener js/window "hashchange" #(do
