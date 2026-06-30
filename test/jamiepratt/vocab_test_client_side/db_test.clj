@@ -44,7 +44,7 @@
    :target-lemma-id 11
    :target-surface-form-id 22
    :candidate-rank 33
-   :inventory-stratum 1
+   :lemma-inventory-stratum 1
    :lemma-rank 44
    :surface-difficulty-rank 55
    :item-type "sentence-context-lemma"
@@ -325,7 +325,7 @@
                            (assoc valid-answer-event :anonymous-session-id "not-a-uuid")))))
   (testing "required calibration metadata is rejected when missing"
     (doseq [field [:test-block-id :target-lemma-id :candidate-rank
-                   :inventory-stratum :lemma-rank :item-type :choice-count
+                   :lemma-inventory-stratum :lemma-rank :item-type :choice-count
                    :guess-rate :selected-answer :correct :response-time-ms
                    :attention-check-status]]
       (is (thrown-with-msg? clojure.lang.ExceptionInfo
@@ -333,6 +333,13 @@
                             (db/validate-answer-event!
                              (dissoc valid-answer-event field)))
           (str field " should be required"))))
+  (testing "obsolete inventory stratum payloads are rejected"
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                          #"lemma-inventory-stratum"
+                          (db/validate-answer-event!
+                           (-> valid-answer-event
+                               (dissoc :lemma-inventory-stratum)
+                               (assoc :inventory-stratum 1))))))
   (testing "one item difficulty signal is required"
     (is (thrown-with-msg? clojure.lang.ExceptionInfo
                           #"surface-difficulty-rank"
@@ -358,17 +365,18 @@
           (run-migration-file! conn "resources/migrations/202606260001-polish-lexicon-schema.up.sql")
           (run-migration-file! conn "resources/migrations/202606270001-normalize-example-sentence-distractors.up.sql")
           (run-migration-file! conn "resources/migrations/202606270002-retain-anonymous-answer-events.up.sql")
+          (run-migration-file! conn "resources/migrations/202606300001-rename-answer-event-stratum.up.sql")
           (let [stored (db/record-answer-event! conn valid-answer-event)]
             (is (pos-int? (:answer-event-id stored)))
             (is (= (select-keys valid-answer-event
                                 [:test-block-id :target-lemma-id :target-surface-form-id
-                                 :candidate-rank :inventory-stratum :lemma-rank
+                                 :candidate-rank :lemma-inventory-stratum :lemma-rank
                                  :surface-difficulty-rank :item-type :choice-count
                                  :selected-answer :correct :response-time-ms
                                  :attention-check-status])
                    (select-keys stored
                                 [:test-block-id :target-lemma-id :target-surface-form-id
-                                 :candidate-rank :inventory-stratum :lemma-rank
+                                 :candidate-rank :lemma-inventory-stratum :lemma-rank
                                  :surface-difficulty-rank :item-type :choice-count
                                  :selected-answer :correct :response-time-ms
                                  :attention-check-status])))
@@ -379,6 +387,44 @@
           (with-open [conn (jdbc/get-connection {:connection-uri jdbc-url})]
             (jdbc/execute! conn ["DROP SCHEMA IF EXISTS polish_lexicon CASCADE"])
             (jdbc/execute! conn ["DROP TABLE IF EXISTS schema_migrations"])))))))
+
+(deftest renames-answer-event-stratum-without-losing-data
+  (when-let [database-url (not-empty (System/getenv "TEST_DATABASE_URL"))]
+    (let [jdbc-url (db/database-url->jdbc-url database-url)]
+      (try
+        (with-open [conn (jdbc/get-connection {:connection-uri jdbc-url})]
+          (jdbc/execute! conn ["DROP SCHEMA IF EXISTS polish_lexicon CASCADE"])
+          (jdbc/execute! conn ["CREATE SCHEMA polish_lexicon"])
+          (run-migration-file! conn "resources/migrations/202606270002-retain-anonymous-answer-events.up.sql")
+          (jdbc/execute! conn ["INSERT INTO polish_lexicon.answer_events
+                                (anonymous_session_id, test_block_id, target_lemma_id,
+                                 target_surface_form_id, candidate_rank, inventory_stratum,
+                                 lemma_rank, surface_difficulty_rank, item_type, choice_count,
+                                 guess_rate, selected_answer, correct, response_time_ms,
+                                 attention_check_status)
+                                VALUES ('123e4567-e89b-12d3-a456-426614174000',
+                                        'adaptive-block-0', 11, 22, 33, 7, 44, 55,
+                                        'sentence-context-lemma', 5, 0.2, 'cat',
+                                        true, 1234, 'not-attention-check')"])
+          (run-migration-file! conn "resources/migrations/202606300001-rename-answer-event-stratum.up.sql")
+          (is (= 7
+                 (:lemma_inventory_stratum
+                  (jdbc/execute-one!
+                   conn
+                   ["SELECT lemma_inventory_stratum
+                     FROM polish_lexicon.answer_events"]
+                   {:builder-fn rs/as-unqualified-lower-maps}))))
+          (run-migration-file! conn "resources/migrations/202606300001-rename-answer-event-stratum.down.sql")
+          (is (= 7
+                 (:inventory_stratum
+                  (jdbc/execute-one!
+                   conn
+                   ["SELECT inventory_stratum
+                     FROM polish_lexicon.answer_events"]
+                   {:builder-fn rs/as-unqualified-lower-maps})))))
+        (finally
+          (with-open [conn (jdbc/get-connection {:connection-uri jdbc-url})]
+            (jdbc/execute! conn ["DROP SCHEMA IF EXISTS polish_lexicon CASCADE"])))))))
 
 (deftest normalizes-legacy-example-distractors-without-changing-effective-set
   (when-let [database-url (not-empty (System/getenv "TEST_DATABASE_URL"))]

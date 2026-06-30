@@ -17,7 +17,7 @@
    "target-lemma-id" 11
    "target-surface-form-id" 22
    "candidate-rank" 33
-   "inventory-stratum" 1
+   "lemma-inventory-stratum" 1
    "lemma-rank" 44
    "surface-difficulty-rank" 55
    "item-type" "sentence-context-lemma"
@@ -109,8 +109,7 @@
               "lemma-pos-id" 111
               "lemma-inventory-rank" 42
               "surface-difficulty-rank" 17
-              "inventory-stratum" 1
-              "fixed-stratum" 1
+              "lemma-inventory-stratum" 1
               "correct-translation" "cat"
               "distractors" ["dog" "bird" "fish" "tree"]
               "item-type" "sentence-context-lemma"
@@ -121,10 +120,12 @@
                            "target-surface" "target-surface-form-id"
                            "highlight-span"
                            "lemma-id" "lemma-pos-id" "lemma-inventory-rank"
-                           "surface-difficulty-rank" "inventory-stratum"
-                           "fixed-stratum"
+                           "surface-difficulty-rank"
+                           "lemma-inventory-stratum"
                            "correct-translation" "distractors" "item-type"
-                           "choice-count" "guess-rate"]))))))
+                           "choice-count" "guess-rate"])))
+      (is (not (contains? item "inventory-stratum")))
+      (is (not (contains? item "fixed-stratum"))))))
 
 (deftest sentence-question-block-prefers-assigned-distractors
   (let [handler (api/make-handler
@@ -297,8 +298,31 @@
              (:anonymous-session-id @recorded)))
       (is (= 11 (:target-lemma-id @recorded)))
       (is (= 22 (:target-surface-form-id @recorded)))
+      (is (= 1 (:lemma-inventory-stratum @recorded)))
       (is (= "sentence-context-lemma" (:item-type @recorded)))
       (is (= "not-attention-check" (:attention-check-status @recorded))))))
+
+(deftest answer-event-post-rejects-obsolete-inventory-stratum-field
+  (let [calls (atom 0)
+        handler (api/make-handler
+                 {:answer-event-writer
+                  (fn [event]
+                    (swap! calls inc)
+                    (db/validate-answer-event! event)
+                    {:answer-event-id 1})})
+        response (handler {:request-method :post
+                           :uri "/api/answer-events"
+                           :headers {"origin" "http://localhost:8000"
+                                     "content-type" "application/json"}
+                           :body (json-request-body
+                                  (-> valid-answer-event
+                                      (dissoc "lemma-inventory-stratum")
+                                      (assoc "inventory-stratum" 1)))})
+        body (json-body response)]
+    (is (= 400 (:status response)))
+    (is (= "Answer event is missing lemma-inventory-stratum."
+           (get body "error")))
+    (is (= 1 @calls))))
 
 (deftest answer-event-post-rejects-malformed-payloads
   (let [calls (atom 0)
@@ -322,9 +346,10 @@
                                :uri "/api/answer-events"
                                :headers {"origin" "http://localhost:8000"}
                                :body (json-request-body
-                                      (dissoc valid-answer-event "target-lemma-id"))})
+                                      (dissoc valid-answer-event
+                                              "lemma-inventory-stratum"))})
             body (json-body response)]
         (is (= 400 (:status response)))
-        (is (= "Answer event is missing target-lemma-id."
+        (is (= "Answer event is missing lemma-inventory-stratum."
                (get body "error")))
         (is (= 1 @calls))))))

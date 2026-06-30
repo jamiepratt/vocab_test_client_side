@@ -705,7 +705,7 @@
    :test-block-id
    :target-lemma-id
    :candidate-rank
-   :inventory-stratum
+   :lemma-inventory-stratum
    :lemma-rank
    :item-type
    :choice-count
@@ -805,7 +805,7 @@
      :target-lemma-id (require-positive-int! event :target-lemma-id)
      :target-surface-form-id (optional-positive-int! event :target-surface-form-id)
      :candidate-rank (require-positive-int! event :candidate-rank)
-     :inventory-stratum (require-positive-int! event :inventory-stratum)
+     :lemma-inventory-stratum (require-positive-int! event :lemma-inventory-stratum)
      :lemma-rank (require-positive-int! event :lemma-rank)
      :surface-difficulty-rank surface-difficulty-rank
      :calibrated-difficulty calibrated-difficulty
@@ -820,12 +820,12 @@
 (defn- answer-event-insert-sql []
   (str "INSERT INTO " (qtable "answer_events") " "
        "(anonymous_session_id, test_block_id, target_lemma_id, target_surface_form_id, "
-       "candidate_rank, inventory_stratum, lemma_rank, surface_difficulty_rank, "
+       "candidate_rank, lemma_inventory_stratum, lemma_rank, surface_difficulty_rank, "
        "calibrated_difficulty, item_type, choice_count, guess_rate, selected_answer, "
        "correct, response_time_ms, attention_check_status) "
        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
        "RETURNING answer_event_id, anonymous_session_id, submitted_at, test_block_id, "
-       "target_lemma_id, target_surface_form_id, candidate_rank, inventory_stratum, "
+       "target_lemma_id, target_surface_form_id, candidate_rank, lemma_inventory_stratum, "
        "lemma_rank, surface_difficulty_rank, calibrated_difficulty, item_type, "
        "choice_count, guess_rate, selected_answer, correct, response_time_ms, "
        "attention_check_status"))
@@ -836,7 +836,7 @@
    (:target-lemma-id event)
    (:target-surface-form-id event)
    (:candidate-rank event)
-   (:inventory-stratum event)
+   (:lemma-inventory-stratum event)
    (:lemma-rank event)
    (:surface-difficulty-rank event)
    (:calibrated-difficulty event)
