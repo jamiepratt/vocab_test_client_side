@@ -463,28 +463,16 @@ async function expectAssumedKnownLemmaRankBreakdown(page: Page) {
   await expectLemmaRankProgressbars(observedRows);
 }
 
-async function expectReviewList(page: Page) {
-  const review = page.getByRole("region", { name: "Words to review (79)" });
-  const reviewItems = review.getByRole("listitem");
+async function expectVocabularyEstimateAboveScore(page: Page, scoreText: string) {
+  const estimateBox = await page.getByRole("region", { name: "Vocabulary estimate", exact: true }).boundingBox();
+  const scoreBox = await page.getByText(scoreText, { exact: true }).boundingBox();
 
-  await expect(review).toBeVisible();
-  await expect(reviewItems).toHaveCount(79);
+  expect(estimateBox).not.toBeNull();
+  expect(scoreBox).not.toBeNull();
 
-  const reviewText = await reviewItems.allTextContents();
-  expect(reviewText.every((text) => /Lemma rank \d+/.test(text))).toBe(true);
-  expect(reviewText.some((text) => /1-250|251-500|501-1K|1,001-2K|2,001-3\.5K|3,501\+/.test(text))).toBe(false);
-  expect(reviewText[0]).toContain("Lemma rank 90");
-  expect(reviewText[0]).toContain("Niezłomny");
-  expect(reviewText[0]).toContain("unyielding / steadfast / indomitable");
-  expect(reviewText[1]).toContain("Lemma rank 120");
-  expect(reviewText[1]).toContain("piję");
-  expect(reviewText[1]).toContain("I drink");
-  expect(reviewText[2]).toContain("Lemma rank 3");
-  expect(reviewText[2]).toContain("Duży");
-  expect(reviewText[2]).toContain("big / large");
-  expect(reviewText[78]).toContain("Lemma rank 79");
-  expect(reviewText[78]).toContain("słowo79");
-  expect(reviewText[78]).toContain("meaning-79");
+  if (estimateBox && scoreBox) {
+    expect(estimateBox.y).toBeLessThan(scoreBox.y);
+  }
 }
 
 async function publicMarkdownBody(page: Page, path: string) {
@@ -1005,6 +993,7 @@ export async function runAppSmoke(page: Page) {
 
   await expect(page.getByRole("heading", { level: 1, name: "Results" })).toBeVisible();
   await expect(page.getByText("1%", { exact: true })).toBeVisible();
+  await expectVocabularyEstimateAboveScore(page, "1%");
   await expect(page.getByText("1 of 80 correct", { exact: true })).toBeVisible();
   await expect(page.getByText("Wrong: 2", { exact: true })).toBeVisible();
   await expect(page.getByText("Don't know: 77", { exact: true })).toBeVisible();
@@ -1016,7 +1005,7 @@ export async function runAppSmoke(page: Page) {
   await expect(page.getByText("within +/-150 words", { exact: false })).toHaveCount(0);
   await expect(page.getByText("This test scores recognition of Polish lemmas in sentence context.", { exact: false })).toBeVisible();
   await expectObservedLemmaRankBreakdown(page);
-  await expectReviewList(page);
+  await expect(page.getByRole("region", { name: "Words to review (79)" })).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
 
   await expect(page.getByRole("button", { name: "Next" })).toHaveCount(0);

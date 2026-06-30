@@ -1108,26 +1108,30 @@
         ^{:key id}
         [posterior-stratum-result-row row])]]))
 
-(defn review-answer-row [{:keys [frequency-bucket lemma-rank word correct]}]
-  [:li {:class "grid min-w-0 gap-1 rounded-md border app-border p-3 text-sm sm:grid-cols-3 sm:items-center"}
-   [:span {:class (str "font-bold "
-                       (frequency-bucket-style-class frequency-bucket :text))}
-    (str "Lemma rank " (scoring/format-count lemma-rank))]
-   [:span {:class "break-words font-semibold app-ink"} word]
-   [:span {:class "break-words app-muted"} correct]])
-
-(defn review-section [review-answers]
-  (when (seq review-answers)
-    (let [heading (str "Words to review (" (count review-answers) ")")]
-      [:section {:aria-labelledby "review-heading"
-                 :class "grid gap-3"}
-       [:h2 {:id "review-heading"
-             :class "text-lg font-bold app-ink"}
-        heading]
-       [:ul {:class "grid gap-2"}
-        (for [{:keys [question-index] :as answer} review-answers]
-          ^{:key (str (:adaptive-block-id answer) "-" question-index)}
-          [review-answer-row answer])]])))
+(defn vocabulary-estimate-section [results-data]
+  [:section {:aria-labelledby "estimate-heading"
+             :class "grid gap-4"}
+   [:div {:class "flex flex-wrap items-center justify-between gap-3"}
+    [:h2 {:id "estimate-heading"
+          :class "text-lg font-bold app-ink"}
+     "Vocabulary estimate"]
+    [:p {:class "rounded-full px-3 py-1 text-xs font-bold ring-1 app-subtle-bg app-ink-soft"
+         :aria-label (str "Approximate level: " (:estimate-level results-data))}
+     (:estimate-level results-data)]]
+   [:div {:class "app-accent-panel grid gap-1 rounded-md border p-4"}
+    [:p {:class "text-xs font-bold uppercase app-muted"}
+     "Estimated recognized Polish lemmas"]
+    [:p {:class "app-accent-text break-words text-4xl font-bold"}
+     (scoring/estimate-display results-data)]
+    [:p {:class "text-sm font-semibold app-ink-soft"}
+     (str "Likely range: " (scoring/format-range (:likely-range results-data)))]]
+   [:p {:class "break-words text-base font-semibold app-ink-soft"}
+    (str "Approximate level: " (:estimate-level results-data))]
+   [:p {:class "break-words text-base leading-7 app-muted"}
+    "Likely ranges are broad for short tests and narrow as more sentence-context evidence is added."]
+   [:p {:class "break-words rounded-md app-subtle-bg p-3 text-sm leading-6 app-muted"}
+    [:strong {:class "font-semibold app-ink"} "A note on Polish: "]
+    "This test scores recognition of Polish lemmas in sentence context."]])
 
 (defn results-screen [{:keys [results-data]}]
   [:section {:id results-panel-id
@@ -1136,7 +1140,9 @@
    [:div {:class "grid gap-2 text-center"}
     [:h1 {:id "results-heading"
           :class "text-4xl font-bold leading-tight app-ink"}
-     "Results"]
+     "Results"]]
+   [vocabulary-estimate-section results-data]
+   [:div {:class "grid gap-2 border-t app-border pt-6 text-center"}
     [:p {:class "app-accent-text text-6xl font-bold"}
      (str (:accuracy-pct results-data) "%")]
     [:p {:class "text-base font-semibold app-muted"}
@@ -1146,30 +1152,6 @@
     [:p (str "Wrong: " (:wrong results-data))]
     [:p (str "Don't know: " (:dk results-data))]]
    [lemma-rank-results-section (:posterior-strata results-data)]
-   [review-section (:review-answers results-data)]
-   [:section {:aria-labelledby "estimate-heading"
-              :class "grid gap-4 border-t app-border pt-6"}
-    [:div {:class "flex flex-wrap items-center justify-between gap-3"}
-     [:h2 {:id "estimate-heading"
-           :class "text-lg font-bold app-ink"}
-      "Vocabulary estimate"]
-     [:p {:class "rounded-full px-3 py-1 text-xs font-bold ring-1 app-subtle-bg app-ink-soft"
-          :aria-label (str "Approximate level: " (:estimate-level results-data))}
-      (:estimate-level results-data)]]
-    [:div {:class "app-accent-panel grid gap-1 rounded-md border p-4"}
-     [:p {:class "text-xs font-bold uppercase app-muted"}
-      "Estimated recognized Polish lemmas"]
-     [:p {:class "app-accent-text break-words text-4xl font-bold"}
-      (scoring/estimate-display results-data)]
-     [:p {:class "text-sm font-semibold app-ink-soft"}
-      (str "Likely range: " (scoring/format-range (:likely-range results-data)))]]
-    [:p {:class "break-words text-base font-semibold app-ink-soft"}
-     (str "Approximate level: " (:estimate-level results-data))]
-    [:p {:class "break-words text-base leading-7 app-muted"}
-     "Likely ranges are broad for short tests and narrow as more sentence-context evidence is added."]
-    [:p {:class "break-words rounded-md app-subtle-bg p-3 text-sm leading-6 app-muted"}
-     [:strong {:class "font-semibold app-ink"} "A note on Polish: "]
-     "This test scores recognition of Polish lemmas in sentence context."]]
    [:button {:type "button"
              :class button-class
              :on-click begin-test}
