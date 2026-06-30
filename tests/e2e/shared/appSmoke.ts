@@ -275,6 +275,7 @@ async function expectSentenceQuestion(page: Page, question: {
   scored: number;
   item: number;
   range?: string;
+  rangeColor?: string;
   sentence: string;
   target: string;
   choices: string[];
@@ -290,7 +291,11 @@ async function expectSentenceQuestion(page: Page, question: {
   await expectLiveEstimateBelowQuestionCard(page);
   await expect(page.getByText(`Item ${question.item} of 80`, { exact: true })).toBeVisible();
   if (question.range) {
-    await expect(page.getByText(question.range, { exact: true })).toBeVisible();
+    const rangeBadge = page.getByLabel("Quiz status details").getByText(question.range, { exact: true });
+    await expect(rangeBadge).toBeVisible();
+    if (question.rangeColor) {
+      await expect(rangeBadge).toHaveCSS("color", question.rangeColor);
+    }
   }
   const questionHeading = card.getByRole("heading", { level: 2, name: "What does the highlighted word in this sentence mean?" });
   await expect(questionHeading).toBeVisible();
@@ -360,15 +365,26 @@ async function expectAssumedKnownLemmaRankBreakdown(page: Page) {
 
 async function expectReviewList(page: Page) {
   const review = page.getByRole("region", { name: "Words to review (79)" });
+  const reviewItems = review.getByRole("listitem");
 
   await expect(review).toBeVisible();
-  await expect(review.getByRole("listitem")).toHaveCount(79);
-  await expect(review.getByRole("listitem").filter({ hasText: "piję" })).toContainText("1-250");
-  await expect(review.getByRole("listitem").filter({ hasText: "piję" })).toContainText("I drink");
-  await expect(review.getByRole("listitem").filter({ hasText: "Duży" })).toContainText("big / large");
-  await expect(review.getByRole("listitem").filter({ hasText: "słowo13" })).toContainText("1-250");
-  await expect(review.getByRole("listitem").filter({ hasText: "Niezłomny" })).toContainText("1-250");
-  await expect(review.getByRole("listitem").filter({ hasText: "Niezłomny" })).toContainText("unyielding / steadfast / indomitable");
+  await expect(reviewItems).toHaveCount(79);
+
+  const reviewText = await reviewItems.allTextContents();
+  expect(reviewText.every((text) => /Lemma rank \d+/.test(text))).toBe(true);
+  expect(reviewText.some((text) => /1-250|251-500|501-1K|1,001-2K|2,001-3\.5K|3,501\+/.test(text))).toBe(false);
+  expect(reviewText[0]).toContain("Lemma rank 90");
+  expect(reviewText[0]).toContain("Niezłomny");
+  expect(reviewText[0]).toContain("unyielding / steadfast / indomitable");
+  expect(reviewText[1]).toContain("Lemma rank 120");
+  expect(reviewText[1]).toContain("piję");
+  expect(reviewText[1]).toContain("I drink");
+  expect(reviewText[2]).toContain("Lemma rank 3");
+  expect(reviewText[2]).toContain("Duży");
+  expect(reviewText[2]).toContain("big / large");
+  expect(reviewText[78]).toContain("Lemma rank 79");
+  expect(reviewText[78]).toContain("słowo79");
+  expect(reviewText[78]).toContain("meaning-79");
 }
 
 async function expectPublicMarkdown(page: Page, path: string, requiredText: string) {
@@ -563,8 +579,22 @@ async function expectThemeSwitcher(page: Page) {
 }
 
 export async function runAppSmoke(page: Page) {
+  const block = sentenceBlockFixture();
+  block.items[1] = {
+    ...block.items[1],
+    "lemma-inventory-rank": 120,
+    "surface-difficulty-rank": 120,
+    "lemma-inventory-stratum": 1,
+  };
+  block.items[79] = {
+    ...block.items[79],
+    "lemma-inventory-rank": 90,
+    "surface-difficulty-rank": 90,
+    "lemma-inventory-stratum": 1,
+  };
+
   await page.setViewportSize({ width: 390, height: 844 });
-  await routeSentenceBlock(page);
+  await routeSentenceBlock(page, block);
   await routeAnswerEvents(page);
   await page.addInitScript(() => {
     Math.random = () => 0;
@@ -677,7 +707,8 @@ export async function runAppSmoke(page: Page) {
   await expectSentenceQuestion(page, {
     scored: 0,
     item: 1,
-    range: "1-80",
+    range: "1-500",
+    rangeColor: "rgb(153, 27, 27)",
     sentence: "Kot pije wodę.",
     target: "Kot",
     choices: firstChoices,
@@ -774,7 +805,7 @@ export async function runAppSmoke(page: Page) {
     choices: lastChoices,
   });
 
-  await dontKnowButton(activeQuestionCard(page)).click();
+  await answerCurrentQuestion(page, "fragile / weak");
 
   await expect(questionCard(page, 80).getByText("Correct answer: unyielding / steadfast / indomitable", { exact: true })).toBeVisible();
   await expectAnsweredTranslation(questionCard(page, 80), "Her unyielding spirit helps her keep working.");
@@ -785,8 +816,8 @@ export async function runAppSmoke(page: Page) {
   await expect(page.getByRole("heading", { level: 1, name: "Results" })).toBeVisible();
   await expect(page.getByText("1%", { exact: true })).toBeVisible();
   await expect(page.getByText("1 of 80 correct", { exact: true })).toBeVisible();
-  await expect(page.getByText("Wrong: 1", { exact: true })).toBeVisible();
-  await expect(page.getByText("Don't know: 78", { exact: true })).toBeVisible();
+  await expect(page.getByText("Wrong: 2", { exact: true })).toBeVisible();
+  await expect(page.getByText("Don't know: 77", { exact: true })).toBeVisible();
   await expect(page.getByText("Estimated recognized Polish lemmas", { exact: true })).toBeVisible();
   await expect(page.getByText("under 200", { exact: true })).toBeVisible();
   await expect(page.getByText("Likely range: 0-200", { exact: true })).toBeVisible();
@@ -807,7 +838,8 @@ export async function runAppSmoke(page: Page) {
   await expectSentenceQuestion(page, {
     scored: 0,
     item: 1,
-    range: "1-80",
+    range: "1-500",
+    rangeColor: "rgb(153, 27, 27)",
     sentence: "Kot pije wodę.",
     target: "Kot",
     choices: firstChoices,
@@ -828,7 +860,7 @@ export async function runHighEstimateRegression(page: Page) {
     correct: "more difficult",
     distractors: ["easier", "later", "clean", "bright"],
     lemmaRank: 9001,
-    surfaceDifficultyRank: 9001,
+    surfaceDifficultyRank: 501,
   });
   harderBlock.items = [harderBlock.items[0]];
   const correctAnswers = block.items.map((item) => item["correct-translation"]);
@@ -865,7 +897,10 @@ export async function runHighEstimateRegression(page: Page) {
   await expect(page.getByRole("status")).toContainText("first block was too easy");
   await expect(page.getByText("0 / 1 scored", { exact: true })).toBeVisible();
   await expect(page.getByText("Item 1 of 1", { exact: true })).toBeVisible();
-  await expect(page.getByText("9,001-9,080", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Quiz status details").getByText("8,000-15,000", { exact: true })).toHaveCSS(
+    "color",
+    "rgb(109, 40, 217)",
+  );
   await expect(activeQuestionCard(page).getByText("Trudniejsze słowo pojawia się dalej.")).toBeVisible();
   await expect(activeQuestionCard(page).getByRole("term")).toHaveText("Trudniejsze");
   await expect(activeQuestionCard(page).getByRole("group", { name: "Answer choices" }).getByRole("button")).toHaveText([

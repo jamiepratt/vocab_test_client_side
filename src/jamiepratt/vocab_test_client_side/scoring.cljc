@@ -275,6 +275,30 @@
 (def counted-result-keys
   #{:correct :wrong :dk})
 
+(def missing-rank-sort-value 999999999999)
+
+(defn review-result-sort-value [result]
+  (case result
+    :wrong 0
+    :dk 1
+    2))
+
+(defn review-rank-sort-value [rank]
+  (if (number? rank)
+    (long rank)
+    missing-rank-sort-value))
+
+(defn review-answer-sort-key [{:keys [result lemma-rank question-index]}]
+  [(review-result-sort-value result)
+   (review-rank-sort-value lemma-rank)
+   (review-rank-sort-value question-index)])
+
+(defn sorted-review-answers [answers]
+  (->> answers
+       (filter #(not= :correct (:result %)))
+       (sort-by review-answer-sort-key)
+       vec))
+
 (defn add-stratum-answer-count [counts {:keys [result] :as answer}]
   (let [stratum-id (answer-scoring-stratum-id answer)]
     (cond-> (update-in counts [stratum-id :answered] (fnil inc 0))
@@ -494,7 +518,7 @@
          correct (count (filter #(= :correct (:result %)) evidence-answers))
          dk (count (filter #(= :dk (:result %)) evidence-answers))
          wrong (count (filter #(= :wrong (:result %)) evidence-answers))
-         review-answers (filterv #(not= :correct (:result %)) evidence-answers)
+         review-answers (sorted-review-answers evidence-answers)
          posterior (with-estimate-level
                      (posterior-summary evidence-answers adaptive-decision))]
      (with-live-estimate

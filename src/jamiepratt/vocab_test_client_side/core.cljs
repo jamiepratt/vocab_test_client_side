@@ -313,6 +313,17 @@
          "-"
          (rank-bound-label surface-rank-end))))
 
+(defn quiz-block-rank-window [question-block]
+  (let [adaptive-block (:adaptive-block question-block)]
+    {:rank-start (or (:surface-rank-start adaptive-block)
+                     (:surface-rank-start question-block))
+     :rank-end (or (:surface-rank-end adaptive-block)
+                   (:surface-rank-end question-block))}))
+
+(defn quiz-block-frequency-bucket [question-block]
+  (data/frequency-bucket-id-for-rank
+   (:rank-start (quiz-block-rank-window question-block))))
+
 (defn normalize-sentence-item [adaptive-block-id index item]
   (assoc item
          :adaptive-block-id adaptive-block-id
@@ -805,12 +816,12 @@
       [:span (str scored-count " / " total " scored")]
       [:span (str "Item " current-question-number " of " total)]
       (when question-block
-        [:span {:class (str "rounded-full px-3 py-1 text-xs font-bold ring-1 "
-                            (frequency-bucket-style-class
-                             (:frequency-bucket question)
-                             :badge))}
-         (rank-window-label (:surface-rank-start question-block)
-                            (:surface-rank-end question-block))])]
+        (let [{:keys [rank-start rank-end]} (quiz-block-rank-window question-block)]
+          [:span {:class (str "rounded-full px-3 py-1 text-xs font-bold ring-1 "
+                              (frequency-bucket-style-class
+                               (quiz-block-frequency-bucket question-block)
+                               :badge))}
+           (rank-window-label rank-start rank-end)]))]
      [:div {:class "h-2 overflow-hidden rounded-full app-subtle-bg"
             :role "progressbar"
             :aria-valuemin 0
@@ -941,11 +952,11 @@
         ^{:key id}
         [posterior-stratum-result-row row])]]))
 
-(defn review-answer-row [{:keys [frequency-bucket word correct]}]
+(defn review-answer-row [{:keys [frequency-bucket lemma-rank word correct]}]
   [:li {:class "grid min-w-0 gap-1 rounded-md border app-border p-3 text-sm sm:grid-cols-3 sm:items-center"}
    [:span {:class (str "font-bold "
                        (frequency-bucket-style-class frequency-bucket :text))}
-    (data/frequency-bucket-labels frequency-bucket)]
+    (str "Lemma rank " (scoring/format-count lemma-rank))]
    [:span {:class "break-words font-semibold app-ink"} word]
    [:span {:class "break-words app-muted"} correct]])
 
