@@ -11,7 +11,7 @@ Tags: Static HTML, GitHub Pages ready, Sentence context, Lemma scoring, Vocabula
 - Test uses 80 Polish sentence-context lemma items per block, with adaptive continuation when the first block is outside the informative range.
 - Each quiz item shows a Polish sentence with one highlighted target form, served rank window, progress bar, English choices, and `don't know`.
 - Answering locks choices, shows immediate feedback, and reveals the correct answer for misses.
-- Results show accuracy, answered/wrong/don't know counts, accuracy by frequency bucket, words to review, estimated recognized Polish lemmas, likely range, approximate level, and Retake.
+- Results show accuracy, answered/wrong/don't know counts, `Vocabulary estimate by lemma rank`, words to review with `Lemma rank N` labels, estimated recognized Polish lemmas, likely range, approximate level, and Retake.
 - Methodology pages explain sentence-context vocabulary-size measurement and the staged path toward calibrated adaptive testing.
 
 ## Goal
@@ -68,7 +68,7 @@ Current scoring uses sentence-context lemma items grouped into fixed lemma-inven
 | Sentence | `Kot pije wodę.` | User-visible context. |
 | Target surface | `Kot` | Highlighted form the learner answers about. |
 | Lemma id | `11` | Recognition is scored against the lemma. |
-| Inventory stratum | `1` | Lemma-inventory bin used for posterior estimates. |
+| Lemma-inventory stratum | `lemma-inventory-stratum: 1` | Lemma-inventory bin used for posterior estimates. |
 | Correct answer | `cat` | Recognized item when selected. |
 | Distractors | `dog`, `bird`, `fish`, `tree` | Plausible alternatives. |
 
@@ -82,7 +82,7 @@ Sentence-based scoring counts lemmas, not every observed surface form. If the se
 - Visible rank-window labels, progress, and live estimate readiness.
 - Sentence-question data from the API.
 - Immediate feedback and locked answers.
-- Frequency-bucket result breakdown.
+- Lemma-rank result breakdown (`Vocabulary estimate by lemma rank`).
 - Words-to-review list.
 - Recognized-lemma estimate, likely range, approximate level, and methodology routes.
 
@@ -149,7 +149,7 @@ Sentence-based scoring counts lemmas, not every observed surface form. If the se
 |---|---|---|---|
 | 1. Sentence-context test route | Done | 80 sentence items, answer choices, `don't know`, progress, feedback, retake. | Browser flow works end to end from `#/`. |
 | 2. Structured item loading | Done | Sentence-question blocks served through `/api/sentence-question-blocks`. | App can load questions from local or configured API base URL. |
-| 3. Initial scoring and results | Done | Stratum posterior estimate, likely range, review list, approximate level. | Result page reports range and frequency-bucket breakdown. |
+| 3. Initial scoring and results | Done | Stratum posterior estimate, likely range, review list, approximate level. | Result page reports range and lemma-rank result breakdown. |
 | 4. Telemetry export | Done | Persist anonymized response events for calibration. | Each event has item id, response, timing, ranks, and scoring metadata. |
 | 5. Estimate range | Done | Add lower/center/upper estimate and live readiness. | Result page shows range, not only a single estimate. |
 | 6. Progressive confidence and early finish | New | Show live estimate confidence during the quiz and allow finishing early. | User can stop after minimum evidence and results show early-stop confidence/range. |
@@ -172,8 +172,7 @@ Current sentence item:
   "lemma-pos-id": 111,
   "lemma-inventory-rank": 42,
   "surface-difficulty-rank": 17,
-  "inventory-stratum": 1,
-  "fixed-stratum": 1,
+  "lemma-inventory-stratum": 1,
   "correct-translation": "cat",
   "distractors": ["dog", "bird", "fish", "tree"],
   "item-type": "sentence-context-lemma",
@@ -287,4 +286,4 @@ Expected deployed HTML file: `features-to-implement.html`, relative to the Pages
 - `src/jamiepratt/vocab_test_client_side/scoring.cljc`
 - `src/jamiepratt/vocab_test_client_side/questions.clj`
 
-Last updated June 27, 2026.
+Last updated June 30, 2026.

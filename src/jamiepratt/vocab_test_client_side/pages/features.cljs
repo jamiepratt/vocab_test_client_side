@@ -5,6 +5,9 @@
    [jamiepratt.vocab-test-client-side.doc-assets :refer [features-html]]))
 
 ;; Macro-expanded from public/features-to-implement.html at build time.
+;; Update this marker when the HTML source changes so Shadow re-expands it.
+(def html-source-version "2026-06-30-lisc-006")
+
 (def html (features-html))
 
 (defn doc-anchor-click [event]

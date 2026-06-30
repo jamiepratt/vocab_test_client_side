@@ -485,7 +485,7 @@
           <li>Test uses 80 Polish sentence-context lemma items per block, with adaptive continuation when the first block is outside the informative range.</li>
           <li>Each quiz item shows a Polish sentence with one highlighted target form, served rank window, progress bar, English choices, and <code>don't know</code>.</li>
           <li>Answering locks choices, shows immediate feedback, and reveals the correct answer for misses.</li>
-          <li>Results show accuracy, answered/wrong/don't know counts, accuracy by frequency bucket, words to review, estimated recognized Polish lemmas, likely range, approximate level, and Retake.</li>
+          <li>Results show accuracy, answered/wrong/don't know counts, <code>Vocabulary estimate by lemma rank</code>, words to review with <code>Lemma rank N</code> labels, estimated recognized Polish lemmas, likely range, approximate level, and Retake.</li>
           <li>Methodology pages explain sentence-context vocabulary-size measurement and the staged path toward calibrated adaptive testing.</li>
         </ul>
       </section>
@@ -612,8 +612,8 @@
               <td>Recognition is scored against the lemma.</td>
             </tr>
             <tr>
-              <td>Inventory stratum</td>
-              <td><code>1</code></td>
+              <td>Lemma-inventory stratum</td>
+              <td><code>lemma-inventory-stratum: 1</code></td>
               <td>Lemma-inventory bin used for posterior estimates.</td>
             </tr>
             <tr>
@@ -640,7 +640,7 @@
               <li>80-item sentence-context multiple-choice blocks.</li>
               <li>Visible rank-window labels, progress, and live estimate readiness.</li>
               <li>Sentence-question data from the API.</li>
-              <li>Immediate feedback, review list, recognized-lemma estimate, and methodology routes.</li>
+              <li>Immediate feedback, lemma-rank result breakdown, review list, recognized-lemma estimate, and methodology routes.</li>
             </ul>
           </article>
           <article class="card">
@@ -740,7 +740,7 @@
               <td>3. Initial scoring and results</td>
               <td><span class="status ok">Done</span></td>
               <td>Stratum posterior estimate, likely range, review list, approximate level.</td>
-              <td>Result page reports range and frequency-bucket breakdown.</td>
+              <td>Result page reports range and lemma-rank result breakdown.</td>
             </tr>
             <tr>
               <td>4. Telemetry export</td>
@@ -800,8 +800,7 @@
   "lemma-pos-id": 111,
   "lemma-inventory-rank": 42,
   "surface-difficulty-rank": 17,
-  "inventory-stratum": 1,
-  "fixed-stratum": 1,
+  "lemma-inventory-stratum": 1,
   "correct-translation": "cat",
   "distractors": ["dog", "bird", "fish", "tree"],
   "item-type": "sentence-context-lemma",
@@ -918,7 +917,7 @@
   </div>
 
   <footer>
-    <p>Part of the Polish Passive Vocabulary Size Test project. Last updated June 27, 2026.</p>
+    <p>Part of the Polish Passive Vocabulary Size Test project. Last updated June 30, 2026.</p>
   </footer>
 </body>
 </html>

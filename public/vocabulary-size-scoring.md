@@ -12,16 +12,17 @@ exact vocabulary count.
 
 - Surface-rank window: the exact 80 surface-form difficulty ranks served for a
   question block.
-- Frequency bucket: a broad reporting bucket derived from
-  `surface-difficulty-rank`, used for result breakdowns and review labels.
+- Frequency bucket: a broad display/styling bucket derived from
+  `surface-difficulty-rank`; it is not a result scoring or reporting unit.
 - Lemma-inventory stratum: a 1,000-lemma scoring bin derived from
-  `lemma_inventory_rank`.
+  `lemma-inventory-rank` and carried through the API as
+  `lemma-inventory-stratum`.
 - Approximate level: a coarse label derived from the recognized-lemma estimate.
 
 ## Inventory
 
 The reporting inventory contains 10,000 Polish lemmas. It is divided into
-1,000-lemma fixed strata:
+1,000-lemma lemma-inventory strata:
 
 | Stratum | Lemma ranks |
 | ---: | --- |
@@ -36,7 +37,9 @@ The reporting inventory contains 10,000 Polish lemmas. It is divided into
 | 9 | 8,001-9,000 |
 | 10 | 9,001-10,000 |
 
-Every scored real item belongs to one fixed lemma-inventory stratum.
+Every scored real item belongs to one lemma-inventory stratum. The stratum id
+must match the item's lemma rank, so a rank in 1-1,000 has
+`lemma-inventory-stratum` 1, a rank in 1,001-2,000 has stratum 2, and so on.
 
 ## Live Estimate
 
@@ -50,6 +53,20 @@ Current live wording:
 
 The range should stay prominent. If the interval is wide, the UI should not
 foreground false precision.
+
+## Result Breakdown
+
+The final result reports posterior lemma-rank estimates in the section
+`Vocabulary estimate by lemma rank`. Each row corresponds to one contributing
+lemma-inventory stratum and shows:
+
+- lemma-rank span, such as `Lemma ranks 1-1,000`;
+- evidence status, such as `observed` or `assumed known from higher-rank pass`;
+- direct answer count when observed, such as `1/80`;
+- posterior estimate and likely range for that lemma-rank span.
+
+Review rows use exact lemma-rank labels, such as `Lemma rank 120`, so learners
+can see which missed items came from which part of the inventory.
 
 ## Latent Guessing
 
@@ -73,15 +90,16 @@ probability, and `r` is the random-choice hit rate.
 
 ## Likely Ranges
 
-The model reports posterior likely ranges rather than frequentist confidence
-intervals. Product copy should use `likely range`, `credible range`, or
-`uncertainty range`.
+The model reports posterior lemma-rank estimates with likely ranges rather than
+frequentist confidence intervals. Product copy should use `likely range`,
+`credible range`, or `uncertainty range`.
 
 Final result copy:
 
 > Estimated recognized Polish lemmas: about N
 > Likely range: lower-upper
 > Approximate level: label
+> Vocabulary estimate by lemma rank
 
 Avoid:
 

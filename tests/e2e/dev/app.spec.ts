@@ -3,6 +3,7 @@ import {
   runAnswerEventSubmissionFailure,
   runApiQuestionLoading,
   runAppSmoke,
+  runCurrentDocsTerminology,
   runHighEstimateRegression,
 } from "../shared/appSmoke";
 
@@ -13,6 +14,10 @@ test("renders and responds to user input", async ({ page }) => {
 
 test("keeps high estimate copy consistent with the displayed estimate", async ({ page }) => {
   await runHighEstimateRegression(page);
+});
+
+test("publishes current docs with lemma-inventory result terminology", async ({ page }) => {
+  await runCurrentDocsTerminology(page);
 });
 
 test("loads questions from the configured API", async ({ page }) => {

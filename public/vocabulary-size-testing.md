@@ -14,10 +14,10 @@ interpretation should not change the learner-facing instructions.
 
 - Surface-rank window: the exact 80 surface-form difficulty ranks served for one
   question block.
-- Frequency bucket: a broad reporting bucket derived from each item's
+- Frequency bucket: a broad display/styling bucket derived from each item's
   `surface-difficulty-rank`.
 - Lemma-inventory stratum: a 1,000-lemma scoring bin derived from
-  `lemma_inventory_rank`.
+  `lemma-inventory-rank` and sent as `lemma-inventory-stratum`.
 - Approximate level: the coarse result label derived from the recognized-lemma
   estimate.
 
@@ -33,7 +33,7 @@ Each real item stores:
 - target surface form id;
 - lemma inventory rank;
 - surface-form difficulty rank;
-- inventory stratum, with `fixed-stratum` kept as a compatibility alias;
+- `lemma-inventory-stratum`;
 - item type;
 - choice count and random-choice hit rate;
 - selected answer and correctness.
@@ -102,9 +102,10 @@ inventory because the product promise is vocabulary size in lemmas.
 
 The implementation keeps both ranks:
 
-- `surface_form_difficulty_rank` controls item ordering and block selection;
-- `lemma_inventory_rank` controls the vocabulary-size denominator and scoring
-  stratum.
+- `surface-difficulty-rank` controls item ordering and block selection;
+- `lemma-inventory-rank` controls the vocabulary-size denominator;
+- `lemma-inventory-stratum` groups the item into the 1,000-lemma scoring bin
+  used for posterior estimates.
 
 ## Current Served Windows
 

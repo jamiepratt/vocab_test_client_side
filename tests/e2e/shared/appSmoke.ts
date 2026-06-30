@@ -387,12 +387,31 @@ async function expectReviewList(page: Page) {
   expect(reviewText[78]).toContain("meaning-79");
 }
 
-async function expectPublicMarkdown(page: Page, path: string, requiredText: string) {
+async function publicMarkdownBody(page: Page, path: string) {
   const response = await page.request.get(path);
   const body = await response.text();
 
   expect(response.ok()).toBe(true);
+
+  return body;
+}
+
+async function expectPublicMarkdown(page: Page, path: string, requiredText: string) {
+  const body = await publicMarkdownBody(page, path);
+
   expect(body).toContain(requiredText);
+}
+
+async function expectPublicMarkdownTerms(page: Page, path: string, requiredText: string[], staleText: string[]) {
+  const body = await publicMarkdownBody(page, path);
+
+  for (const text of requiredText) {
+    expect(body).toContain(text);
+  }
+
+  for (const text of staleText) {
+    expect(body).not.toContain(text);
+  }
 }
 
 async function expectLazyRouteHeading(page: Page, level: 1 | 2, name: string) {
@@ -562,6 +581,74 @@ async function expectCurrentScoringPage(page: Page) {
     "href",
     "vocabulary-size-scoring.md",
   );
+}
+
+export async function runCurrentDocsTerminology(page: Page) {
+  await expectPublicMarkdownTerms(
+    page,
+    "/vocabulary-size-scoring.md",
+    [
+      "Lemma-inventory stratum",
+      "`lemma-inventory-stratum`",
+      "posterior lemma-rank estimates",
+      "Vocabulary estimate by lemma rank",
+    ],
+    [
+      "used for result breakdowns and review labels",
+      "frequency-bucket result breakdown",
+      "Accuracy by frequency bucket",
+    ],
+  );
+
+  await expectPublicMarkdownTerms(
+    page,
+    "/vocabulary-size-testing.md",
+    [
+      "`lemma-inventory-stratum`",
+      "Lemma-inventory stratum",
+    ],
+    [
+      "inventory stratum, with `fixed-stratum` kept as a compatibility alias",
+    ],
+  );
+
+  await expectPublicMarkdownTerms(
+    page,
+    "/features-to-implement.md",
+    [
+      "lemma-inventory-stratum",
+      "Vocabulary estimate by lemma rank",
+      "lemma-rank result breakdown",
+    ],
+    [
+      "accuracy by frequency bucket",
+      "Frequency-bucket result breakdown",
+      "\"inventory-stratum\": 1",
+      "\"fixed-stratum\": 1",
+    ],
+  );
+
+  await page.goto("/index.html#/current/testing");
+  await expectLazyRouteHeading(page, 1, "Current vocabulary size testing");
+  await page.getByRole("button", { name: /Detail/ }).click();
+  await expect(page.getByText("lemma-inventory-stratum", { exact: false })).toBeVisible();
+
+  await page.goto("/index.html#/current/scoring");
+  await expectLazyRouteHeading(page, 1, "Current vocabulary size scoring");
+  await page.getByRole("button", { name: /Detail/ }).click();
+  await expect(page.getByText("posterior lemma-rank estimates", { exact: false })).toBeVisible();
+
+  await page.goto("/index.html#/features");
+  await expectLazyRouteHeading(page, 1, "Vocabulary test features to implement");
+  const featuresPage = page.locator("body");
+
+  await expect(featuresPage).toContainText("Vocabulary estimate by lemma rank");
+  await expect(featuresPage).toContainText("lemma-inventory-stratum");
+  await expect(featuresPage).toContainText("lemma-rank result breakdown");
+  await expect(featuresPage).not.toContainText(/accuracy by frequency bucket/i);
+  await expect(featuresPage).not.toContainText(/frequency-bucket result breakdown/i);
+  await expect(featuresPage).not.toContainText(/"inventory-stratum": 1/);
+  await expect(featuresPage).not.toContainText(/"fixed-stratum": 1/);
 }
 
 async function expectThemeSwitcher(page: Page) {

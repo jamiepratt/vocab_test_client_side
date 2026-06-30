@@ -172,7 +172,14 @@
     [:p "Wrong: 17"]
     [:p "Don't know: 24"]]
    [:p {:class "break-words text-base font-semibold app-ink-soft"}
-    "Approximate level: A2"]])
+    "Approximate level: A2"]
+   [:div {:role "region"
+          :aria-label "Example vocabulary estimate by lemma rank"
+          :class "app-subtle-bg grid gap-2 rounded-md p-3 text-sm"}
+    [:p {:class "font-bold app-ink"} "Vocabulary estimate by lemma rank"]
+    [:ul {:class "grid gap-1 app-muted"}
+     [:li "Lemma ranks 1-1,000 | observed | 1/80 | est. 180 (range 0-400)"]
+     [:li "Lemma ranks 1,001-2,000 | observed | 46/80 | est. 620 (range 450-760)"]]]])
 
 (def testing-sections
   [{:id :testing-measures
@@ -210,6 +217,7 @@
     :body (fn []
             [:div {:class "doc-copy"}
              [:p "Current blocks sample ranked surface-form difficulty spans, while results report recognized lemmas from the 10,000-lemma inventory."]
+             [:p "Served items and answer events use " [:code "lemma-inventory-stratum"] " for the scoring bin; " [:code "surface-difficulty-rank"] " remains the item-ordering signal."]
              [:p "For the full reference, open "
               [:a {:href "vocabulary-size-testing.md"} "vocabulary-size-testing.md"]
               ". The compatibility index remains at "
@@ -253,6 +261,7 @@
             [:div {:class "doc-copy"}
              [:p "Current scoring model: " [:code scoring/scoring-model-version] "."]
              [:p "Each item contributes evidence to its lemma-inventory stratum. The model uses a latent session-level guessing parameter and reports a posterior likely range."]
+             [:p "Final results include " [:strong "Vocabulary estimate by lemma rank"] ", a section of posterior lemma-rank estimates grouped by lemma-inventory stratum."]
              [:p "For the full reference, open "
               [:a {:href "vocabulary-size-scoring.md"} "vocabulary-size-scoring.md"]
               "."]])}])
