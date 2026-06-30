@@ -926,19 +926,46 @@
        (scoring/format-range likely-range)
        ")"))
 
-(defn posterior-stratum-result-row [{:keys [status] :as row}]
-  [:li {:class "flex min-w-0 flex-wrap items-center gap-2 rounded-md border app-border p-3 text-sm font-semibold"}
-   [:span {:class "font-bold app-ink"}
-    (posterior-stratum-rank-label row)]
-   [:span {:class "app-muted"} " | "]
-   [:span {:class "app-muted"}
-    (posterior-stratum-status-label status)]
-   [:span {:class "app-muted"} " | "]
-   [:span {:class "app-ink-soft"}
-    (posterior-stratum-count-label row)]
-   [:span {:class "app-muted"} " | "]
-   [:span {:class "app-accent-text"}
-    (posterior-stratum-estimate-label row)]])
+(defn posterior-stratum-band-class [stratum-id]
+  (str "band-bar band-b" (inc (mod (dec (or stratum-id 1)) 6))))
+
+(defn posterior-stratum-width [{:keys [rank-start rank-end width]}]
+  (max 1 (or width
+             (when (and rank-start rank-end)
+               (inc (- rank-end rank-start)))
+             1)))
+
+(defn posterior-stratum-estimate-pct [{:keys [estimate] :as row}]
+  (scoring/clamp
+   0
+   100
+   (scoring/round-value (* 100 (/ (or estimate 0)
+                                  (posterior-stratum-width row))))))
+
+(defn posterior-stratum-result-row [{:keys [id status] :as row}]
+  (let [estimate-pct (posterior-stratum-estimate-pct row)]
+    [:li {:class "grid min-w-0 gap-2 rounded-md border app-border p-3 text-sm font-semibold"}
+     [:div {:class "flex min-w-0 flex-wrap items-center gap-2"}
+      [:span {:class "font-bold app-ink"}
+       (posterior-stratum-rank-label row)]
+      [:span {:class "app-muted"} " | "]
+      [:span {:class "app-muted"}
+       (posterior-stratum-status-label status)]
+      [:span {:class "app-muted"} " | "]
+      [:span {:class "app-ink-soft"}
+       (posterior-stratum-count-label row)]
+      [:span {:class "app-muted"} " | "]
+      [:span {:class "app-accent-text"}
+       (posterior-stratum-estimate-label row)]]
+     [:div {:class "h-2 overflow-hidden rounded-full app-subtle-bg"
+            :role "progressbar"
+            :aria-valuemin 0
+            :aria-valuemax 100
+            :aria-valuenow estimate-pct
+            :aria-valuetext (str estimate-pct "% estimated recognized lemmas in this band")}
+      [:div {:class (str (posterior-stratum-band-class id)
+                         " h-full rounded-full")
+             :style {:width (str estimate-pct "%")}}]]]))
 
 (defn lemma-rank-results-section [posterior-strata]
   (when (seq posterior-strata)

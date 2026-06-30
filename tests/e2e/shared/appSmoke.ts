@@ -239,15 +239,16 @@ async function expectReferenceStyling(page: Page) {
 
 async function expectProgress(page: Page, scored: number) {
   const total = 80;
+  const progress = page.getByRole("region", { name: "Quiz status" }).getByRole("progressbar");
 
   await expect(page.getByText(`${scored} / ${total} scored`)).toBeVisible();
-  await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", String(scored));
-  await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuemax", String(total));
+  await expect(progress).toHaveAttribute("aria-valuenow", String(scored));
+  await expect(progress).toHaveAttribute("aria-valuemax", String(total));
 }
 
 async function expectProgressBelowQuizStatus(page: Page) {
   const status = page.getByLabel("Quiz status details");
-  const progress = page.getByRole("progressbar");
+  const progress = page.getByRole("region", { name: "Quiz status" }).getByRole("progressbar");
 
   const statusBox = await status.boundingBox();
   const progressBox = await progress.boundingBox();
@@ -338,20 +339,56 @@ async function expectWrongAnswerStrongerThanDontKnow(wrongButton: Locator, dkBut
   expect(redDominance(wrongBorder)).toBeGreaterThan(redDominance(dkBorder));
 }
 
+async function expectLemmaRankProgressbar(row: Locator, expectedValue?: string) {
+  const progressbar = row.getByRole("progressbar");
+
+  await expect(progressbar).toHaveCount(1);
+  await expect(progressbar).toHaveAttribute("aria-valuemin", "0");
+  await expect(progressbar).toHaveAttribute("aria-valuemax", "100");
+
+  if (expectedValue) {
+    await expect(progressbar).toHaveAttribute("aria-valuenow", expectedValue);
+    return;
+  }
+
+  const rawValue = await progressbar.getAttribute("aria-valuenow");
+  const value = Number(rawValue);
+
+  expect(rawValue).not.toBeNull();
+  expect(Number.isFinite(value)).toBe(true);
+  expect(value).toBeGreaterThanOrEqual(0);
+  expect(value).toBeLessThanOrEqual(100);
+}
+
+async function expectLemmaRankProgressbars(rows: Locator, expectedValue?: string) {
+  const count = await rows.count();
+
+  expect(count).toBeGreaterThan(0);
+
+  for (let index = 0; index < count; index++) {
+    await expectLemmaRankProgressbar(rows.nth(index), expectedValue);
+  }
+}
+
 async function expectObservedLemmaRankBreakdown(page: Page) {
   const breakdown = page.getByRole("region", { name: "Vocabulary estimate by lemma rank" });
-  const row = breakdown.getByRole("listitem").filter({ hasText: "Lemma ranks 1-1,000" });
+  const rows = breakdown.getByRole("listitem");
+  const row = rows.filter({ hasText: "Lemma ranks 1-1,000" });
 
   await expect(page.getByRole("region", { name: "Accuracy by frequency bucket" })).toHaveCount(0);
   await expect(breakdown).toBeVisible();
-  await expect(breakdown.getByRole("listitem")).toHaveCount(1);
+  await expect(rows).toHaveCount(1);
   await expect(row).toContainText(/Lemma ranks 1-1,000\s*\|\s*observed\s*\|\s*1\/80\s*\|\s*est\. [0-9,]+ \(range [0-9,]+-[0-9,]+\)/);
+  await expectLemmaRankProgressbars(rows.filter({ hasText: "observed" }));
 }
 
 async function expectAssumedKnownLemmaRankBreakdown(page: Page) {
   const breakdown = page.getByRole("region", { name: "Vocabulary estimate by lemma rank" });
-  const assumedRow = breakdown.getByRole("listitem").filter({ hasText: "Lemma ranks 1-1,000" });
-  const observedRow = breakdown.getByRole("listitem").filter({ hasText: "Lemma ranks 8,001-9,000" });
+  const rows = breakdown.getByRole("listitem");
+  const assumedRows = rows.filter({ hasText: "assumed known from higher-rank pass" });
+  const observedRows = rows.filter({ hasText: "observed" });
+  const assumedRow = rows.filter({ hasText: "Lemma ranks 1-1,000" });
+  const observedRow = rows.filter({ hasText: "Lemma ranks 8,001-9,000" });
 
   await expect(page.getByRole("region", { name: "Accuracy by frequency bucket" })).toHaveCount(0);
   await expect(breakdown).toBeVisible();
@@ -361,6 +398,9 @@ async function expectAssumedKnownLemmaRankBreakdown(page: Page) {
   await expect(observedRow).toContainText(
     /Lemma ranks 8,001-9,000\s*\|\s*observed\s*\|\s*80\/80\s*\|\s*est\. [0-9,]+ \(range [0-9,]+-[0-9,]+\)/,
   );
+  await expectLemmaRankProgressbars(rows);
+  await expectLemmaRankProgressbars(assumedRows, "100");
+  await expectLemmaRankProgressbars(observedRows);
 }
 
 async function expectReviewList(page: Page) {
